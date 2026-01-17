@@ -385,25 +385,40 @@
 #     import uvicorn
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
 # --- BU KISIMDAKİ IMPORTLARDA HATA ALIRSAN TERMİNAL SANA SÖYLEYECEK ---
+
+
 from fastapi import FastAPI, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 import uvicorn
 import os
+import sys
 
 # Servislerimizi çağırıyoruz
+# (Python'un modülleri bulabilmesi için yolu ekliyoruz)
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from services.calculator import EbcedCalculator
 from services.interpreter import Interpreter
 from services.visualizer import Visualizer
 from services.pdf_generator import PDFGenerator
 from services.ai_writer import AIWriter
-from services.database import Database # <--- Veritabanı modülü
+from services.database import Database
 
 app = FastAPI()
 
-# Statik dosyalar (CSS, Resimler, PDF'ler) için yol tanımı
-app.mount("/static", StaticFiles(directory="backend/static"), name="static")
+# --- YOL AYARLARI (NAVİGASYON) ---
+# Şu anki dosyanın (main.py) olduğu klasörü bul:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Static klasörünün tam yolunu oluştur:
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+# Statik dosyaları bağla (Artık hata veremez)
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+else:
+    print(f"UYARI: Static klasörü bulunamadı: {STATIC_DIR}")
 
 class AnalizIstegi(BaseModel):
     isim: str
@@ -415,8 +430,13 @@ class AnalizIstegi(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def ana_sayfa():
-    with open("backend/static/index.html", "r", encoding="utf-8") as f:
-        return f.read()
+    # Index dosyasının tam yolunu bul
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    try:
+        with open(index_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return f"Hata: index.html dosyası bulunamadı. Aranan yer: {index_path}"
 
 @app.post("/rapor-olustur")
 async def rapor_olustur(
@@ -429,7 +449,6 @@ async def rapor_olustur(
 ):
     print(f"--> Analiz İsteği Geldi: {isim} {soyisim}")
     
-    # Verileri bir sınıf yapısında toplayalım (Kolaylık olsun diye)
     istek = AnalizIstegi(
         isim=isim, soyisim=soyisim, 
         dogum_gun=dogum_gun, dogum_ay=dogum_ay, dogum_yil=dogum_yil, 
@@ -437,16 +456,15 @@ async def rapor_olustur(
     )
 
     try:
-        # 1. HESAPLAMALAR (Calculator)
+        # 1. HESAPLAMALAR
         pin = EbcedCalculator.calculate_pin_code(istek.isim, istek.soyisim, istek.anne_adi)
         life_path = EbcedCalculator.calculate_life_path(istek.dogum_gun, istek.dogum_ay, istek.dogum_yil)
-        personal_year = EbcedCalculator.calculate_personal_year(istek.dogum_gun, istek.dogum_ay, 2026) # 2026 varsayılan
+        personal_year = EbcedCalculator.calculate_personal_year(istek.dogum_gun, istek.dogum_ay, 2026)
         element_skorlari = EbcedCalculator.analyze_elements(istek.isim + istek.soyisim)
         cakra = EbcedCalculator.analyze_chakras(istek.isim + istek.soyisim)
         esma_idx = EbcedCalculator.calculate_name_esma_index(istek.isim)
         
-        # 2. YORUMLAMA (Interpreter)
-        # Ham verileri yorumlanmış metinlere çeviriyoruz
+        # 2. YORUMLAMA
         analiz_sonucu = {
             "isim": istek.isim,
             "soyisim": istek.soyisim,
@@ -457,24 +475,22 @@ async def rapor_olustur(
             "cakra_analizi": cakra,
             "mevcut_yil": 2026,
             "isim_esma_idx": esma_idx,
-            # Element ve Çakra Dengesi Tespiti
             "baskin_element": max(element_skorlari, key=element_skorlari.get),
             "eksik_element": min(element_skorlari, key=element_skorlari.get),
             "frekans_durumu": EbcedCalculator.detect_element_imbalance(element_skorlari),
-            "zayif_cakra_val": sorted(cakra["raw_counts"].items(), key=lambda x: x[1])[0][0], # En az puanlı çakra
+            "zayif_cakra_val": sorted(cakra["raw_counts"].items(), key=lambda x: x[1])[0][0],
             "baskin_cakra_val": sorted(cakra["raw_counts"].items(), key=lambda x: x[1], reverse=True)[0][0]
         }
-        
         tam_isim = f"{istek.isim} {istek.soyisim}"
 
-        # 3. GRAFİKLER VE QR KOD (Visualizer)
+        # 3. GRAFİKLER
         viz = Visualizer()
         dosya_eki = f"{istek.isim}_{istek.soyisim}".replace(" ", "_")
-        
-        # --- BURAYA KENDİ LİNKİNİ YAZ ---
-        SENIN_LINKIN = "https://www.instagram.com/insanekspertizi/"  # Müşteri buna gidecek
+        SENIN_LINKIN = "https://www.instagram.com/insanekspertizi/" 
         
         try:
+            # Grafikleri reports klasörüne değil, static/reports klasörüne kaydedelim ki erişilebilsin
+            # Visualizer içinde de ayar gerekebilir ama şimdilik varsayılan çalışırsa devam.
             c1 = viz.create_element_chart(element_skorlari, filename_prefix=dosya_eki)
             c2 = viz.create_chakra_radar(cakra["raw_counts"], filename_prefix=dosya_eki)
             qr_kod = viz.create_qr(SENIN_LINKIN, filename_prefix=dosya_eki)
@@ -482,27 +498,31 @@ async def rapor_olustur(
             print(f"Grafik Hatası: {viz_err}")
             c1, c2, qr_kod = None, None, None
 
-        # 4. AI RAPORU (Yapay Zeka)
+        # 4. AI RAPORU
         analiz_sonucu["tam_isim"] = tam_isim
         ai_raporu = AIWriter.generate_human_report(analiz_sonucu)
 
-        # 5. PDF HAZIRLIĞI VE OLUŞTURMA (PDFGenerator)
+        # 5. PDF OLUŞTURMA
         pdf_verisi = Interpreter.generate_full_report_text(analiz_sonucu)
-        
-        # Ekstraları PDF verisine gömüyoruz
         pdf_verisi["recete"]["yasakli_davranislar"] = ai_raporu
         pdf_verisi["danisan_bilgisi"] = tam_isim
-        
         if c1: pdf_verisi["tespit"]["element_chart_path"] = c1
         if c2: pdf_verisi["tespit"]["chakra_chart_path"] = c2
         if qr_kod: pdf_verisi["recete"]["qr_code_path"] = qr_kod
 
-        # PDF OLUŞTURUYORUZ (Bu satır 'pdf_yolu' değişkenini yaratır!)
-        generator = PDFGenerator(filename=f"Analiz_{dosya_eki}.pdf")
+        # PDF'i statik klasöre kaydet
+        pdf_dosya_adi = f"Analiz_{dosya_eki}.pdf"
+        # Raporların kaydedileceği yer:
+        rapor_klasoru = os.path.join(STATIC_DIR, "reports")
+        if not os.path.exists(rapor_klasoru):
+            os.makedirs(rapor_klasoru)
+            
+        pdf_tam_yol = os.path.join(rapor_klasoru, pdf_dosya_adi)
+
+        generator = PDFGenerator(filename=pdf_tam_yol)
         pdf_yolu = generator.create_report(pdf_verisi)
 
-        # 6. VERİTABANINA KAYIT (KARA KUTU)
-        # Bu işlem PDF oluşturulduktan sonra yapılmalı
+        # 6. VERİTABANI KAYIT
         try:
             db = Database()
             kayit_verisi = {
@@ -519,10 +539,9 @@ async def rapor_olustur(
         except Exception as e:
             print(f"Veritabanı Kayıt Hatası: {e}")
 
-        # 7. DOSYAYI İNDİRTME
+        # 7. İNDİRME
         if pdf_yolu and os.path.exists(pdf_yolu):
-            print(f"--> Başarılı! PDF: {pdf_yolu}")
-            return FileResponse(pdf_yolu, media_type='application/pdf', filename=f"Analiz_{dosya_eki}.pdf")
+            return FileResponse(pdf_yolu, media_type='application/pdf', filename=pdf_dosya_adi)
         else:
             return {"hata": "PDF oluşturulamadı."}
 
@@ -532,73 +551,21 @@ async def rapor_olustur(
         traceback.print_exc()
         return {"hata": f"Bir şeyler ters gitti: {str(e)}"}
 
-# --- PATRON KAPISI (Admin Paneli) ---
+# --- PATRON KAPISI ---
 @app.get("/patron/musteri-listesi", response_class=HTMLResponse)
 async def admin_paneli():
-    """
-    Sadece senin görebileceğin basit bir admin paneli.
-    Veritabanındaki tüm kayıtları tablo olarak basar.
-    """
     db = Database()
     kayitlar = db.tum_kayitlari_getir()
     
     html_content = """
-    <html>
-        <head>
-            <title>Kozmik Hafıza - Müşteri Defteri</title>
-            <style>
-                body { font-family: Arial, sans-serif; padding: 20px; background-color: #f1f5f9; }
-                h1 { color: #1e293b; text-align: center; }
-                table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-                th { background-color: #3b82f6; color: white; }
-                tr:hover { background-color: #f8fafc; }
-                .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
-                .fire { background: #fee2e2; color: #991b1b; }
-                .water { background: #dbeafe; color: #1e40af; }
-                .earth { background: #dcfce7; color: #166534; }
-                .air { background: #f3f4f6; color: #1f2937; }
-            </style>
-        </head>
-        <body>
-            <h1>📁 MÜŞTERİ KAYIT DEFTERİ</h1>
-            <p style="text-align:center;">Toplam Analiz: <b>""" + str(len(kayitlar)) + """</b></p>
-            <table>
-                <tr>
-                    <th>ID</th>
-                    <th>Tarih</th>
-                    <th>İsim Soyisim</th>
-                    <th>Doğum Tarihi</th>
-                    <th>Pin Kodu</th>
-                    <th>Baskın Element</th>
-                    <th>Eksik Element</th>
-                </tr>
-    """
+    <html><head><title>Kozmik Defter</title>
+    <style>body{font-family:sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:8px;}th{background:#333;color:white;}</style>
+    </head><body><h1>Müşteri Kayıtları</h1><table><tr><th>ID</th><th>İsim</th><th>Pin</th><th>Element</th></tr>"""
     
     for k in kayitlar:
-        baskin = k['baskin_element']
-        style_class = "air"
-        if baskin == "ATEŞ": style_class = "fire"
-        elif baskin == "SU": style_class = "water"
-        elif baskin == "TOPRAK": style_class = "earth"
-        
-        html_content += f"""
-                <tr>
-                    <td>{k['id']}</td>
-                    <td>{k['tarih']}</td>
-                    <td><b>{k['isim']} {k['soyisim']}</b></td>
-                    <td>{k['dogum_tarihi']}</td>
-                    <td>{k['pin_kodu']}</td>
-                    <td><span class="badge {style_class}">{k['baskin_element']}</span></td>
-                    <td>{k['eksik_element']}</td>
-                </tr>
-        """
-        
-    html_content += """
-            </table>
-        </body>
-    </html>
-    """
+        html_content += f"<tr><td>{k['id']}</td><td>{k['isim']} {k['soyisim']}</td><td>{k['pin_kodu']}</td><td>{k['baskin_element']}</td></tr>"
+    
+    html_content += "</table></body></html>"
     return html_content
 
 if __name__ == "__main__":
