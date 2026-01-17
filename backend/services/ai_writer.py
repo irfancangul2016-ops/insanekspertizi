@@ -106,56 +106,54 @@
 #             return f"Yapay zeka bağlantı hatası: {str(e)}. Lütfen API Key'inizi kontrol edin."
         
 import os
-import sys
-
-# Google Kütüphane Kontrolü
-try:
-    import google.generativeai as genai
-    GOOGLE_AVAILABLE = True
-except ImportError:
-    GOOGLE_AVAILABLE = False
+import google.generativeai as genai
 
 class AIWriter:
     @staticmethod
     def generate_human_report(analysis_data: dict) -> str:
         """
-        Gemini AI kullanarak rapor yazar.
-        Anahtarı SADECE ortam değişkenlerinden (Environment Variable) okur.
+        Gemini AI kullanarak kişiye özel, derinlemesine ve uzun bir rapor yazar.
         """
-        if not GOOGLE_AVAILABLE:
-            return "Yapay Zeka modülü yüklü değil."
-
-        # 1. KASADAN ANAHTARI İSTE (Environment Variable)
         api_key = os.getenv("GOOGLE_API_KEY")
-
-        # 2. Anahtar Yoksa Hata Ver
+        
         if not api_key:
-            print("UYARI: GOOGLE_API_KEY ortam değişkeni bulunamadı!")
-            return "Sistemde API anahtarı tanımlanmamış. Lütfen yönetici ile iletişime geçin."
+            return "API Anahtarı bulunamadı. Lütfen sistem yöneticisi ile görüşün."
 
         try:
-            # 3. Bağlantıyı Kur
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-pro')
+            
+            # --- KRİTİK DEĞİŞİKLİK BURADA: Model İsmi Güncellendi ---
+            # 'gemini-pro' eskidi. Artık 'gemini-1.5-flash' kullanıyoruz (Hızlı ve Güncel).
+            model = genai.GenerativeModel('gemini-1.5-flash')
 
-            # 4. İsteği Gönder
+            # --- PROMPT (YAPAY ZEKA EMRİ) GÜNCELLEMESİ ---
+            # Ona uzun yazmasını özellikle tembihliyoruz.
             prompt = f"""
-            Sen mistik, bilge ve derinlemesine analiz yapan bir mentörsün.
-            Aşağıdaki verilere göre bu kişiye kısa, vurucu, edebi bir analiz mektubu yaz.
-            
-            İsim: {analysis_data.get('tam_isim')}
-            Baskın Element: {analysis_data.get('baskin_element')}
-            Eksik Element: {analysis_data.get('eksik_element')}
-            Çakra Durumu: {analysis_data.get('baskin_cakra_val')}. Çakra aktif.
-            
-            Kurallar:
-            - Asla "Merhaba" deme. Direkt derin bir sözle gir.
-            - Kısa tut (Maksimum 3 paragraf).
-            - Kişiye özel tavsiye ver.
+            Sen mistik konularda uzmanlaşmış, derin bilgiye sahip, bilge bir yaşam koçusun.
+            Aşağıdaki teknik analiz verilerini kullanarak, danışanına (müşteriye) okuduğunda
+            etkileneceği, motive olacağı ve kendini özel hissedeceği DETAYLI BİR MEKTUP yaz.
+
+            KİŞİ BİLGİLERİ:
+            - İsim: {analysis_data.get('tam_isim')}
+            - Pin Kodu: {analysis_data.get('pin')} (Bu kişinin hayattaki ana arketipi)
+            - Baskın Element: {analysis_data.get('baskin_element')} (Güçlü yanı)
+            - Eksik Element: {analysis_data.get('eksik_element')} (Geliştirmesi gereken yanı)
+            - Çakra Durumu: {analysis_data.get('baskin_cakra_val')}. çakra çok aktif, {analysis_data.get('zayif_cakra_val')}. çakra blokajlı.
+            - Bu Yılın Teması (Kişisel Yıl): {analysis_data.get('personal_year')}. yıl döngüsünde.
+
+            KURALLAR:
+            1. ASLA kısa kesme. En az 3-4 dolgun paragraf yaz.
+            2. "Senin elementin Su" deyip geçme. "Su elementi baskın olduğu için duygusal derinliğin okyanuslar kadar engin..." gibi edebi betimlemeler yap.
+            3. Eksik olan elementini nasıl tamamlayacağına dair somut ve uzun tavsiyeler ver.
+            4. Pin kodunun (Arketipin) ona kattığı süper güçleri anlat.
+            5. Yılın temasına göre onu nelerin beklediğini detaylandır (Aşk, iş, sağlık).
+            6. Konuşma dilin samimi, bilge ve akıcı olsun. Robotik olma.
+
+            Lütfen bu kişi için hayat yolculuğuna ışık tutacak o uzun rehberlik yazısını şimdi oluştur:
             """
             
             response = model.generate_content(prompt)
             return response.text
 
         except Exception as e:
-            return f"Yapay zeka bağlantısında sorun oluştu. (Hata: {str(e)})"
+            return f"Yapay zeka servisine ulaşırken bir hata oluştu: {str(e)}. Lütfen internet bağlantınızı veya API kotanızı kontrol edin."
