@@ -105,36 +105,73 @@
 #         except Exception as e:
 #             return f"Yapay zeka bağlantı hatası: {str(e)}. Lütfen API Key'inizi kontrol edin."
         
-from google import genai
 import os
+import sys
 
-# API anahtarını çevresel değişkenden al (Doğru yöntem budur!)
-MY_API_KEY = "AIzaSyDOvRY2l4SdPemUJloYQjeBvwM-OFhqZJo" 
+# Hata Önleyici Import: Eğer kütüphane yoksa sunucu çökmesin
+try:
+    import google.generativeai as genai
+    GOOGLE_AVAILABLE = True
+except ImportError:
+    GOOGLE_AVAILABLE = False
+    print("UYARI: Google AI kütüphanesi yüklü değil. AI raporları çalışmayacak.")
+
+from core.constants import *
 
 class AIWriter:
     @staticmethod
-    def generate_human_report(analiz_verisi: dict) -> str:
-        if not MY_API_KEY or "BURAYA" in MY_API_KEY:
-            return "HATA: API Key eksik."
+    def generate_human_report(analysis_data: dict) -> str:
+        """
+        Gemini AI kullanarak kişiye özel, edebi ve akıcı bir rapor metni yazar.
+        """
+        if not GOOGLE_AVAILABLE:
+            return "Yapay Zeka modülü şu an aktif değil. Lütfen teknik raporu inceleyiniz."
 
+        # API Anahtarını al
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            # Constants içinde var mı diye bak (Yedek)
+            try:
+                from core.constants import GOOGLE_API_KEY
+                api_key = GOOGLE_API_KEY
+            except ImportError:
+                return "API Anahtarı bulunamadı."
+
+        if not api_key or api_key == "BURAYA_GEMINI_API_KEY_YAZ":
+            return "Sistemde API anahtarı tanımlanmamış."
+
+        # Model Ayarları
         try:
-            # Yeni SDK kullanımı
-            client = genai.Client(api_key=MY_API_KEY)
-            
-            # Model isminden emin ol. En güncel stabil sürüm:
-            target_model = "gemini-1.5-flash" 
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-pro')
 
-            prompt = f"GÖREV: Teknik verileri edebi bir dille yorumla...\nVERİLER: {analiz_verisi}"
-
-            # Tek bir temiz çağrı
-            response = client.models.generate_content(
-                model=target_model,
-                contents=prompt
-            )
+            # Prompt Hazırlığı (Müşterinin anlayacağı dilden)
+            prompt = f"""
+            Sen mistik, bilge ve derinlemesine analiz yapan bir "İnsan Sarrafı"sın.
+            Aşağıdaki teknik verileri kullanarak, bu kişiye özel, edebi ve etkileyici bir mektup yaz.
             
+            KİŞİ BİLGİLERİ:
+            - İsim: {analysis_data.get('tam_isim')}
+            - Arketip: {analysis_data.get('pin')} (Pin Kodu)
+            - Baskın Element: {analysis_data.get('baskin_element')}
+            - Eksik Element: {analysis_data.get('eksik_element')}
+            - Çakra Durumu: {analysis_data.get('baskin_cakra_val')}. Çakra çok aktif, {analysis_data.get('zayif_cakra_val')}. Çakra blokajlı.
+            - Bu Yılın Teması: {analysis_data.get('personal_year')}. Yıl
+            - Esma-ül Hüsna: {analysis_data.get('isim_esma_idx')} (Ebced değeri)
+            
+            KURALLAR:
+            1. Asla "Merhaba", "Sayın" gibi klişe başlıklar kullanma. Direkt konuya, derin bir aforizma ile gir.
+            2. "Senin ateş elementin eksik" deme; "İçindeki kıvılcım sönmeye yüz tutmuş, onu harlaman gerek" de.
+            3. Teknik terimleri (Pin kodu, çakra vs.) çok az kullan, daha çok hislerden ve potansiyelden bahset.
+            4. Ona bir "Kahraman" gibi hitap et. Bu hayat yolculuğunda bir görevi olduğunu hissettir.
+            5. Yazıyı 3 kısa paragraf halinde tut. Uzun olmasın.
+            6. Son cümlem vurucu ve motive edici olsun.
+            
+            Lütfen mektubu şimdi yaz:
+            """
+            
+            response = model.generate_content(prompt)
             return response.text
 
         except Exception as e:
-            # Hatayı gizleme, ne olduğunu gör!
-            print(f"DEBUG HATASI: {e}") 
-            return f"Sistem hatası: {str(e)}"
+            return f"Kozmik bağlantıda geçici bir parazit var. (Hata: {str(e)})"
