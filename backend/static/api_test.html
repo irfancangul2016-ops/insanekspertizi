@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>API Test Laboratuvarı</title>
+    <style>
+        body { font-family: monospace; background: #222; color: #0f0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { border-bottom: 2px solid #0f0; padding-bottom: 10px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: inline-block; width: 150px; }
+        input { background: #333; border: 1px solid #0f0; color: white; padding: 5px; }
+        button { background: #0f0; color: black; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        button:hover { background: #fff; }
+        #sonuc-ekrani { 
+            background: #000; border: 1px solid #555; 
+            padding: 15px; margin-top: 20px; 
+            white-space: pre-wrap; height: 300px; overflow-y: scroll;
+            color: #ff0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📟 KOZMİK API TEST PANELİ</h1>
+        <p>Burası mobil uygulamanın simülasyonudur. Veriler JSON formatında gider ve gelir.</p>
+
+        <div class="input-group"><label>İsim:</label><input type="text" id="isim" value="Test"></div>
+        <div class="input-group"><label>Soyisim:</label><input type="text" id="soyisim" value="Kullanıcısı"></div>
+        <div class="input-group"><label>Anne Adı:</label><input type="text" id="anne_adi" value="Havva"></div>
+        <div class="input-group"><label>Doğum Günü:</label><input type="number" id="gun" value="1"></div>
+        <div class="input-group"><label>Doğum Ayı:</label><input type="number" id="ay" value="1"></div>
+        <div class="input-group"><label>Doğum Yılı:</label><input type="number" id="yil" value="1990"></div>
+
+        <button onclick="apiyiTestEt()">📡 SİNYAL GÖNDER (POST JSON)</button>
+
+        <h3>📥 SUNUCUDAN GELEN CEVAP:</h3>
+        <div id="sonuc-ekrani">Bekleniyor...</div>
+    </div>
+
+    <script>
+        async function apiyiTestEt() {
+            const ekran = document.getElementById("sonuc-ekrani");
+            ekran.innerText = "Sinyal gönderiliyor...";
+
+            // 1. Mobil uygulama gibi veriyi hazırla (JSON)
+            const veriPaketi = {
+                isim: document.getElementById("isim").value,
+                soyisim: document.getElementById("soyisim").value,
+                anne_adi: document.getElementById("anne_adi").value,
+                dogum_gun: parseInt(document.getElementById("gun").value),
+                dogum_ay: parseInt(document.getElementById("ay").value),
+                dogum_yil: parseInt(document.getElementById("yil").value)
+            };
+
+            try {
+                // 2. Sunucunun /api/analiz-yap kapısını çal
+                const cevap = await fetch("/api/analiz-yap", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json" // Biz form değil, JSON konuşuyoruz
+                    },
+                    body: JSON.stringify(veriPaketi)
+                });
+
+                // 3. Gelen cevabı oku
+                const sonucJson = await cevap.json();
+                
+                // 4. Ekrana bas
+                ekran.innerText = JSON.stringify(sonucJson, null, 4); // Okunaklı format
+                
+            } catch (hata) {
+                ekran.innerText = "HATA OLUŞTU:\n" + hata;
+            }
+        }
+    </script>
+</body>
+</html>
