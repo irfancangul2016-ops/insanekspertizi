@@ -1,123 +1,163 @@
-/* KOZMİK TASARIM SİSTEMİ */
 :root {
-    --bg-color: #0f172a; /* Derin Uzay Mavisi */
-    --glass-bg: rgba(30, 41, 59, 0.7); /* Yarı Saydam Cam */
+    --primary: #1e293b; /* Koyu Lacivert */
     --accent: #d4af37; /* Altın Sarısı */
-    --text-main: #f8fafc;
-    --text-dim: #94a3b8;
+    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    --text: #f8fafc;
+    --card-bg: rgba(255, 255, 255, 0.05);
 }
 
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-    margin: 0;
-    padding: 0;
-    background-color: var(--bg-color);
-    background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 70%);
-    color: var(--text-main);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Raleway', sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text);
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    padding: 20px;
 }
 
 .container {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     width: 100%;
     max-width: 450px;
     text-align: center;
 }
 
+/* HEADER */
+.header { margin-bottom: 30px; }
+.logo-circle {
+    width: 80px; height: 80px;
+    background: rgba(212, 175, 55, 0.1);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 40px;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+}
 h1 {
+    font-family: 'Cinzel', serif;
     color: var(--accent);
-    font-weight: 300;
+    font-size: 28px;
     letter-spacing: 2px;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
+}
+.subtitle {
+    font-size: 14px;
+    opacity: 0.8;
+    letter-spacing: 1px;
     text-transform: uppercase;
 }
 
-.slogan {
-    color: var(--text-dim);
-    font-size: 0.9em;
-    margin-bottom: 30px;
-    font-style: italic;
+/* CARD */
+.card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-.input-group {
-    margin-bottom: 15px;
+.intro-text {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    color: #cbd5e1;
+}
+
+/* FORM */
+.input-group, .date-group {
+    margin-bottom: 20px;
     text-align: left;
 }
 
 label {
     display: block;
-    color: var(--text-dim);
-    font-size: 0.8em;
-    margin-bottom: 5px;
-    margin-left: 5px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
 }
 
-input {
+input, select {
     width: 100%;
     padding: 12px 15px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    border-radius: 8px;
     color: white;
+    font-family: inherit;
     font-size: 16px;
-    box-sizing: border-box; /* Taşmayı engeller */
-    transition: all 0.3s ease;
+    transition: 0.3s;
 }
 
-input:focus {
+input:focus, select:focus {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
 }
 
-.row {
+.date-inputs {
     display: flex;
     gap: 10px;
 }
+.date-inputs select { flex: 1; }
+.date-inputs input { flex: 1; }
 
-button {
+/* BUTTON */
+.cta-button {
     width: 100%;
-    padding: 15px;
-    margin-top: 20px;
-    background: linear-gradient(45deg, #d4af37, #f3e5ab);
-    color: #1a1a1a;
+    padding: 16px;
+    background: linear-gradient(45deg, #d4af37, #fcd34d);
     border: none;
     border-radius: 10px;
-    font-weight: bold;
+    color: #1e293b;
     font-size: 16px;
+    font-weight: bold;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: 0.3s;
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 }
 
-button:hover {
+.cta-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
 }
 
-button:disabled {
-    background: #475569;
-    cursor: wait;
-    transform: none;
-}
-
-.loading {
-    display: none;
+.footer-note {
     margin-top: 20px;
-    font-size: 0.9em;
-    color: var(--accent);
+    font-size: 11px;
+    opacity: 0.5;
 }
 
-.footer {
-    margin-top: 30px;
-    font-size: 0.7em;
-    color: #475569;
+/* WHATSAPP */
+.whatsapp-btn {
+    position: fixed;
+    bottom: 20px; right: 20px;
+    background-color: #25d366;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: 0.3s;
+    z-index: 999;
 }
+.whatsapp-btn:hover { transform: scale(1.1); }
+.whatsapp-btn img { width: 35px; }
 
+/* MOBİL UYUM */
+@media (max-width: 480px) {
+    .container { padding: 0 10px; }
+    .card { padding: 20px; }
+    h1 { font-size: 24px; }
+}

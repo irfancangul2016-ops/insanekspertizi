@@ -3,110 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İnsan Ekspertizi | Kozmik Analiz</title>
+    <title>Kozmik İnsan Ekspertizi</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <div class="container">
-        <h1>İNSAN EKSPERTİZİ</h1>
-        <p class="slogan">"Kendini Tanı, Hayatını Yönet"</p>
-
-        <form id="analizForm">
-            <div class="input-group">
-                <label>Adınız</label>
-                <input type="text" id="isim" placeholder="Örn: Yahya" required>
+        <div class="header">
+            <div class="logo-circle">
+                <span>🌟</span>
             </div>
-            
-            <div class="input-group">
-                <label>Soyadınız</label>
-                <input type="text" id="soyisim" placeholder="Örn: Gül" required>
-            </div>
-
-            <div class="input-group">
-                <label>Anne Adı</label>
-                <input type="text" id="anne" placeholder="Analiz için gerekli" required>
-            </div>
-
-            <label>Doğum Tarihi</label>
-            <div class="row">
-                <input type="number" id="gun" placeholder="Gün" min="1" max="31" required>
-                <input type="number" id="ay" placeholder="Ay" min="1" max="12" required>
-                <input type="number" id="yil" placeholder="Yıl" min="1920" max="2025" required>
-            </div>
-
-            <button type="submit" id="btnAnaliz">ÜCRETSİZ ANALİZİ BAŞLAT</button>
-        </form>
-
-        <div class="loading" id="loadingDiv">
-            ✨ Kozmik veriler hesaplanıyor...<br>
-            <small>Yapay Zeka raporunu yazıyor, lütfen bekleyin.</small>
+            <h1>İNSAN EKSPERTİZİ</h1>
+            <p class="subtitle">Ruhsal Kimlik & Potansiyel Analizi</p>
         </div>
 
-        <div class="footer">
-            © 2026 İnsan Ekspertizi - Gizli İlimler ve Teknoloji
+        <div class="card">
+            <p class="intro-text">
+                İsim ve doğum tarihiniz, kaderinizin şifrelerini taşır. 
+                Gerçek potansiyelinizi keşfetmek için bilgileri eksiksiz girin.
+            </p>
+
+            <form action="/rapor-olustur" method="post" class="analysis-form">
+                
+                <div class="input-group">
+                    <label>Tam Adınız</label>
+                    <input type="text" name="isim" placeholder="Örn: Ahmet" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Soyadınız</label>
+                    <input type="text" name="soyisim" placeholder="Örn: Yılmaz" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Anne Adı</label>
+                    <input type="text" name="anne_adi" placeholder="Örn: Fatma" required>
+                </div>
+
+                <div class="date-group">
+                    <label>Doğum Tarihi</label>
+                    <div class="date-inputs">
+                        <select name="dogum_gun" required>
+                            <option value="" disabled selected>Gün</option>
+                            <script>
+                                for(let i=1; i<=31; i++) document.write(`<option value="${i}">${i}</option>`);
+                            </script>
+                        </select>
+                        <select name="dogum_ay" required>
+                            <option value="" disabled selected>Ay</option>
+                            <option value="1">Ocak</option>
+                            <option value="2">Şubat</option>
+                            <option value="3">Mart</option>
+                            <option value="4">Nisan</option>
+                            <option value="5">Mayıs</option>
+                            <option value="6">Haziran</option>
+                            <option value="7">Temmuz</option>
+                            <option value="8">Ağustos</option>
+                            <option value="9">Eylül</option>
+                            <option value="10">Ekim</option>
+                            <option value="11">Kasım</option>
+                            <option value="12">Aralık</option>
+                        </select>
+                        <input type="number" name="dogum_yil" placeholder="Yıl (Örn: 1990)" min="1920" max="2024" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="cta-button">
+                    <span>ANALİZİ BAŞLAT</span>
+                    <span class="icon">✨</span>
+                </button>
+            </form>
+            
+            <div class="footer-note">
+                <p>🔒 Bilgileriniz 256-bit şifreleme ile korunmaktadır ve 3. şahıslarla paylaşılmaz.</p>
+            </div>
         </div>
     </div>
 
-    <script>
-        document.getElementById('analizForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            // Butonu kilitle ve yükleniyor animasyonunu aç
-            const btn = document.getElementById('btnAnaliz');
-            const loading = document.getElementById('loadingDiv');
-            
-            btn.disabled = true;
-            btn.innerHTML = "⏳ Analiz Yapılıyor...";
-            loading.style.display = "block";
-
-            const veri = {
-                isim: document.getElementById('isim').value,
-                soyisim: document.getElementById('soyisim').value,
-                anne_adi: document.getElementById('anne').value,
-                dogum_gunu: parseInt(document.getElementById('gun').value),
-                dogum_ayi: parseInt(document.getElementById('ay').value),
-                dogum_yili: parseInt(document.getElementById('yil').value),
-                mevcut_yil: new Date().getFullYear()
-            };
-
-            try {
-                const response = await fetch('/rapor-olustur', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(veri)
-                });
-
-                if (!response.ok) {
-                    // Sunucudan gelen gerçek hata mesajını oku
-                    const hataVerisi = await response.json();
-                    throw new Error(hataVerisi.error || "Bilinmeyen Sunucu Hatası");
-                }
-
-                // ... (PDF indirme kodları aynı kalsın) ...
-
-                // PDF İndirme İşlemi
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Analiz_${veri.isim}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-
-                btn.innerHTML = "✅ Analiz İndirildi!";
-                
-            } catch (error) {
-                alert("Hata: " + error.message);
-                btn.innerHTML = "Tekrar Dene";
-            } finally {
-                btn.disabled = false;
-                loading.style.display = "none";
-                setTimeout(() => { btn.innerHTML = "ÜCRETSİZ ANALİZİ BAŞLAT"; }, 5000);
-            }
-        });
-    </script>
+    <a href="https://wa.me/905xxxxxxxxx" class="whatsapp-btn" target="_blank">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+    </a>
 
 </body>
 </html>
