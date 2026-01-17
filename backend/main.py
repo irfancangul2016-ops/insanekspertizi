@@ -387,17 +387,19 @@
 # --- BU KISIMDAKİ IMPORTLARDA HATA ALIRSAN TERMİNAL SANA SÖYLEYECEK ---
 
 
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 import os
 import sys
 
-# Servislerimizi çağırıyoruz
-# (Python'un modülleri bulabilmesi için yolu ekliyoruz)
+# YOL AYARLARI
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 from services.calculator import EbcedCalculator
 from services.interpreter import Interpreter
@@ -408,17 +410,17 @@ from services.database import Database
 
 app = FastAPI()
 
-# --- YOL AYARLARI (NAVİGASYON) ---
-# Şu anki dosyanın (main.py) olduğu klasörü bul:
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Static klasörünün tam yolunu oluştur:
-STATIC_DIR = os.path.join(BASE_DIR, "static")
+# 1. MOBİL UYGULAMA İÇİN CORS (KAPIYI AÇIYORUZ)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Statik dosyaları bağla (Artık hata veremez)
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-else:
-    print(f"UYARI: Static klasörü bulunamadı: {STATIC_DIR}")
 
 class AnalizIstegi(BaseModel):
     isim: str
@@ -430,143 +432,129 @@ class AnalizIstegi(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def ana_sayfa():
-    # Index dosyasının tam yolunu bul
+    # Web arayüzü
     index_path = os.path.join(STATIC_DIR, "index.html")
-    try:
+    if os.path.exists(index_path):
         with open(index_path, "r", encoding="utf-8") as f:
             return f.read()
-    except FileNotFoundError:
-        return f"Hata: index.html dosyası bulunamadı. Aranan yer: {index_path}"
+    return "Sistem Aktif (Arayüz Bulunamadı)"
 
-@app.post("/rapor-olustur")
-async def rapor_olustur(
-    isim: str = Form(...),
-    soyisim: str = Form(...),
-    dogum_gun: int = Form(...),
-    dogum_ay: int = Form(...),
-    dogum_yil: int = Form(...),
-    anne_adi: str = Form(...)
-):
-    print(f"--> Analiz İsteği Geldi: {isim} {soyisim}")
-    
-    istek = AnalizIstegi(
-        isim=isim, soyisim=soyisim, 
-        dogum_gun=dogum_gun, dogum_ay=dogum_ay, dogum_yil=dogum_yil, 
-        anne_adi=anne_adi
-    )
-
+# --- MOBİL UYGULAMA İÇİN ÖZEL API ENDPOINT ---
+@app.post("/api/analiz-yap")
+async def api_analiz(istek: AnalizIstegi):
+    """
+    Mobil uygulamalar buraya JSON gönderir, cevap olarak JSON alır.
+    PDF ile uğraşmaz, veriyi ekranda göstermek içindir.
+    """
     try:
-        # 1. HESAPLAMALAR
+        # Hesaplamalar
         pin = EbcedCalculator.calculate_pin_code(istek.isim, istek.soyisim, istek.anne_adi)
-        life_path = EbcedCalculator.calculate_life_path(istek.dogum_gun, istek.dogum_ay, istek.dogum_yil)
-        personal_year = EbcedCalculator.calculate_personal_year(istek.dogum_gun, istek.dogum_ay, 2026)
         element_skorlari = EbcedCalculator.analyze_elements(istek.isim + istek.soyisim)
         cakra = EbcedCalculator.analyze_chakras(istek.isim + istek.soyisim)
-        esma_idx = EbcedCalculator.calculate_name_esma_index(istek.isim)
         
-        # 2. YORUMLAMA
-        analiz_sonucu = {
-            "isim": istek.isim,
-            "soyisim": istek.soyisim,
-            "pin": pin,
-            "life_path": life_path,
-            "personal_year": personal_year,
-            "element_skorlari": element_skorlari,
-            "cakra_analizi": cakra,
-            "mevcut_yil": 2026,
-            "isim_esma_idx": esma_idx,
+        # Sonuç Hazırla
+        sonuc = {
+            "ad_soyad": f"{istek.isim} {istek.soyisim}",
+            "pin_kodu": pin,
+            "elementler": element_skorlari,
             "baskin_element": max(element_skorlari, key=element_skorlari.get),
             "eksik_element": min(element_skorlari, key=element_skorlari.get),
-            "frekans_durumu": EbcedCalculator.detect_element_imbalance(element_skorlari),
-            "zayif_cakra_val": sorted(cakra["raw_counts"].items(), key=lambda x: x[1])[0][0],
-            "baskin_cakra_val": sorted(cakra["raw_counts"].items(), key=lambda x: x[1], reverse=True)[0][0]
+            "cakra_analizi": cakra["raw_counts"]
         }
-        tam_isim = f"{istek.isim} {istek.soyisim}"
-
-        # 3. GRAFİKLER
-        viz = Visualizer()
-        dosya_eki = f"{istek.isim}_{istek.soyisim}".replace(" ", "_")
-        SENIN_LINKIN = "https://www.instagram.com/insanekspertizi/" 
         
-        try:
-            # Grafikleri reports klasörüne değil, static/reports klasörüne kaydedelim ki erişilebilsin
-            # Visualizer içinde de ayar gerekebilir ama şimdilik varsayılan çalışırsa devam.
-            c1 = viz.create_element_chart(element_skorlari, filename_prefix=dosya_eki)
-            c2 = viz.create_chakra_radar(cakra["raw_counts"], filename_prefix=dosya_eki)
-            qr_kod = viz.create_qr(SENIN_LINKIN, filename_prefix=dosya_eki)
-        except Exception as viz_err:
-            print(f"Grafik Hatası: {viz_err}")
-            c1, c2, qr_kod = None, None, None
-
-        # 4. AI RAPORU
-        analiz_sonucu["tam_isim"] = tam_isim
-        ai_raporu = AIWriter.generate_human_report(analiz_sonucu)
-
-        # 5. PDF OLUŞTURMA
-        pdf_verisi = Interpreter.generate_full_report_text(analiz_sonucu)
-        pdf_verisi["recete"]["yasakli_davranislar"] = ai_raporu
-        pdf_verisi["danisan_bilgisi"] = tam_isim
-        if c1: pdf_verisi["tespit"]["element_chart_path"] = c1
-        if c2: pdf_verisi["tespit"]["chakra_chart_path"] = c2
-        if qr_kod: pdf_verisi["recete"]["qr_code_path"] = qr_kod
-
-        # PDF'i statik klasöre kaydet
-        pdf_dosya_adi = f"Analiz_{dosya_eki}.pdf"
-        # Raporların kaydedileceği yer:
-        rapor_klasoru = os.path.join(STATIC_DIR, "reports")
-        if not os.path.exists(rapor_klasoru):
-            os.makedirs(rapor_klasoru)
-            
-        pdf_tam_yol = os.path.join(rapor_klasoru, pdf_dosya_adi)
-
-        generator = PDFGenerator(filename=pdf_tam_yol)
-        pdf_yolu = generator.create_report(pdf_verisi)
-
-        # 6. VERİTABANI KAYIT
+        # Veritabanına Kaydet
         try:
             db = Database()
-            kayit_verisi = {
-                "isim": istek.isim,
-                "soyisim": istek.soyisim,
-                "gun": istek.dogum_gun,
-                "ay": istek.dogum_ay,
-                "yil": istek.dogum_yil,
-                "pin": analiz_sonucu.get("pin"),
-                "baskin_element": analiz_sonucu.get("baskin_element"),
-                "eksik_element": analiz_sonucu.get("eksik_element")
-            }
-            db.kayit_ekle(kayit_verisi)
-        except Exception as e:
-            print(f"Veritabanı Kayıt Hatası: {e}")
+            db.kayit_ekle({
+                "isim": istek.isim, "soyisim": istek.soyisim,
+                "gun": istek.dogum_gun, "ay": istek.dogum_ay, "yil": istek.dogum_yil,
+                "pin": pin,
+                "baskin_element": sonuc["baskin_element"],
+                "eksik_element": sonuc["eksik_element"]
+            })
+        except Exception as db_err:
+            print(f"DB Hatası: {db_err}")
 
-        # 7. İNDİRME
-        if pdf_yolu and os.path.exists(pdf_yolu):
-            return FileResponse(pdf_yolu, media_type='application/pdf', filename=pdf_dosya_adi)
-        else:
-            return {"hata": "PDF oluşturulamadı."}
+        return JSONResponse(content=sonuc)
 
     except Exception as e:
-        print(f"Genel Hata: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return {"hata": f"Bir şeyler ters gitti: {str(e)}"}
+        return JSONResponse(content={"hata": str(e)}, status_code=500)
 
-# --- PATRON KAPISI ---
+# --- MEVCUT WEB PDF OLUŞTURUCU ---
+@app.post("/rapor-olustur")
+async def rapor_olustur(
+    isim: str = Form(...), soyisim: str = Form(...),
+    dogum_gun: int = Form(...), dogum_ay: int = Form(...), dogum_yil: int = Form(...),
+    anne_adi: str = Form(...)
+):
+    istek = AnalizIstegi(isim=isim, soyisim=soyisim, dogum_gun=dogum_gun, dogum_ay=dogum_ay, dogum_yil=dogum_yil, anne_adi=anne_adi)
+    
+    # 1. Hesaplamalar
+    pin = EbcedCalculator.calculate_pin_code(istek.isim, istek.soyisim, istek.anne_adi)
+    life_path = EbcedCalculator.calculate_life_path(istek.dogum_gun, istek.dogum_ay, istek.dogum_yil)
+    personal_year = EbcedCalculator.calculate_personal_year(istek.dogum_gun, istek.dogum_ay, 2026)
+    element_skorlari = EbcedCalculator.analyze_elements(istek.isim + istek.soyisim)
+    cakra = EbcedCalculator.analyze_chakras(istek.isim + istek.soyisim)
+    esma_idx = EbcedCalculator.calculate_name_esma_index(istek.isim)
+
+    analiz_sonucu = {
+        "isim": istek.isim, "soyisim": istek.soyisim, "pin": pin,
+        "life_path": life_path, "personal_year": personal_year,
+        "element_skorlari": element_skorlari, "cakra_analizi": cakra,
+        "mevcut_yil": 2026, "isim_esma_idx": esma_idx,
+        "baskin_element": max(element_skorlari, key=element_skorlari.get),
+        "eksik_element": min(element_skorlari, key=element_skorlari.get),
+        "frekans_durumu": EbcedCalculator.detect_element_imbalance(element_skorlari),
+        "zayif_cakra_val": sorted(cakra["raw_counts"].items(), key=lambda x: x[1])[0][0],
+        "baskin_cakra_val": sorted(cakra["raw_counts"].items(), key=lambda x: x[1], reverse=True)[0][0]
+    }
+    
+    tam_isim = f"{istek.isim} {istek.soyisim}"
+    analiz_sonucu["tam_isim"] = tam_isim
+    
+    # 2. Görseller & AI
+    viz = Visualizer()
+    dosya_eki = f"{istek.isim}_{istek.soyisim}".replace(" ", "_")
+    try:
+        c1 = viz.create_element_chart(element_skorlari, filename_prefix=dosya_eki)
+        c2 = viz.create_chakra_radar(cakra["raw_counts"], filename_prefix=dosya_eki)
+        qr = viz.create_qr("https://instagram.com/insanekspertizi", filename_prefix=dosya_eki)
+    except: c1, c2, qr = None, None, None
+
+    ai_raporu = AIWriter.generate_human_report(analiz_sonucu)
+
+    # 3. PDF
+    pdf_verisi = Interpreter.generate_full_report_text(analiz_sonucu)
+    pdf_verisi["recete"]["yasakli_davranislar"] = ai_raporu
+    pdf_verisi["danisan_bilgisi"] = tam_isim
+    if c1: pdf_verisi["tespit"]["element_chart_path"] = c1
+    if c2: pdf_verisi["tespit"]["chakra_chart_path"] = c2
+    if qr: pdf_verisi["recete"]["qr_code_path"] = qr
+
+    reports_dir = os.path.join(STATIC_DIR, "reports")
+    if not os.path.exists(reports_dir): os.makedirs(reports_dir)
+    pdf_path = os.path.join(reports_dir, f"Analiz_{dosya_eki}.pdf")
+
+    generator = PDFGenerator(filename=pdf_path)
+    final_pdf = generator.create_report(pdf_verisi)
+
+    # 4. Veritabanı
+    try:
+        db = Database()
+        db.kayit_ekle({
+            "isim": istek.isim, "soyisim": istek.soyisim, "gun": istek.dogum_gun, "ay": istek.dogum_ay, "yil": istek.dogum_yil,
+            "pin": pin, "baskin_element": analiz_sonucu["baskin_element"], "eksik_element": analiz_sonucu["eksik_element"]
+        })
+    except: pass
+
+    return FileResponse(final_pdf, filename=f"Analiz_{dosya_eki}.pdf")
+
+# Admin Paneli
 @app.get("/patron/musteri-listesi", response_class=HTMLResponse)
 async def admin_paneli():
     db = Database()
     kayitlar = db.tum_kayitlari_getir()
-    
-    html_content = """
-    <html><head><title>Kozmik Defter</title>
-    <style>body{font-family:sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:8px;}th{background:#333;color:white;}</style>
-    </head><body><h1>Müşteri Kayıtları</h1><table><tr><th>ID</th><th>İsim</th><th>Pin</th><th>Element</th></tr>"""
-    
-    for k in kayitlar:
-        html_content += f"<tr><td>{k['id']}</td><td>{k['isim']} {k['soyisim']}</td><td>{k['pin_kodu']}</td><td>{k['baskin_element']}</td></tr>"
-    
-    html_content += "</table></body></html>"
-    return html_content
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    html = "<html><body><h1>Müşteriler</h1><ul>"
+    for k in kayitlar: html += f"<li>{k['isim']} - Pin: {k['pin_kodu']}</li>"
+    html += "</ul></body></html>"
+    return html
