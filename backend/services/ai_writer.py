@@ -108,70 +108,54 @@
 import os
 import sys
 
-# Hata Önleyici Import: Eğer kütüphane yoksa sunucu çökmesin
+# Google Kütüphane Kontrolü
 try:
     import google.generativeai as genai
     GOOGLE_AVAILABLE = True
 except ImportError:
     GOOGLE_AVAILABLE = False
-    print("UYARI: Google AI kütüphanesi yüklü değil. AI raporları çalışmayacak.")
-
-from core.constants import *
 
 class AIWriter:
     @staticmethod
     def generate_human_report(analysis_data: dict) -> str:
         """
-        Gemini AI kullanarak kişiye özel, edebi ve akıcı bir rapor metni yazar.
+        Gemini AI kullanarak rapor yazar.
+        Anahtarı SADECE ortam değişkenlerinden (Environment Variable) okur.
         """
         if not GOOGLE_AVAILABLE:
-            return "Yapay Zeka modülü şu an aktif değil. Lütfen teknik raporu inceleyiniz."
+            return "Yapay Zeka modülü yüklü değil."
 
-        # API Anahtarını al
+        # 1. KASADAN ANAHTARI İSTE (Environment Variable)
         api_key = os.getenv("GOOGLE_API_KEY")
+
+        # 2. Anahtar Yoksa Hata Ver
         if not api_key:
-            # Constants içinde var mı diye bak (Yedek)
-            try:
-                from core.constants import GOOGLE_API_KEY
-                api_key = GOOGLE_API_KEY
-            except ImportError:
-                return "API Anahtarı bulunamadı."
+            print("UYARI: GOOGLE_API_KEY ortam değişkeni bulunamadı!")
+            return "Sistemde API anahtarı tanımlanmamış. Lütfen yönetici ile iletişime geçin."
 
-        if not api_key or api_key == "BURAYA_GEMINI_API_KEY_YAZ":
-            return "Sistemde API anahtarı tanımlanmamış."
-
-        # Model Ayarları
         try:
+            # 3. Bağlantıyı Kur
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-pro')
 
-            # Prompt Hazırlığı (Müşterinin anlayacağı dilden)
+            # 4. İsteği Gönder
             prompt = f"""
-            Sen mistik, bilge ve derinlemesine analiz yapan bir "İnsan Sarrafı"sın.
-            Aşağıdaki teknik verileri kullanarak, bu kişiye özel, edebi ve etkileyici bir mektup yaz.
+            Sen mistik, bilge ve derinlemesine analiz yapan bir mentörsün.
+            Aşağıdaki verilere göre bu kişiye kısa, vurucu, edebi bir analiz mektubu yaz.
             
-            KİŞİ BİLGİLERİ:
-            - İsim: {analysis_data.get('tam_isim')}
-            - Arketip: {analysis_data.get('pin')} (Pin Kodu)
-            - Baskın Element: {analysis_data.get('baskin_element')}
-            - Eksik Element: {analysis_data.get('eksik_element')}
-            - Çakra Durumu: {analysis_data.get('baskin_cakra_val')}. Çakra çok aktif, {analysis_data.get('zayif_cakra_val')}. Çakra blokajlı.
-            - Bu Yılın Teması: {analysis_data.get('personal_year')}. Yıl
-            - Esma-ül Hüsna: {analysis_data.get('isim_esma_idx')} (Ebced değeri)
+            İsim: {analysis_data.get('tam_isim')}
+            Baskın Element: {analysis_data.get('baskin_element')}
+            Eksik Element: {analysis_data.get('eksik_element')}
+            Çakra Durumu: {analysis_data.get('baskin_cakra_val')}. Çakra aktif.
             
-            KURALLAR:
-            1. Asla "Merhaba", "Sayın" gibi klişe başlıklar kullanma. Direkt konuya, derin bir aforizma ile gir.
-            2. "Senin ateş elementin eksik" deme; "İçindeki kıvılcım sönmeye yüz tutmuş, onu harlaman gerek" de.
-            3. Teknik terimleri (Pin kodu, çakra vs.) çok az kullan, daha çok hislerden ve potansiyelden bahset.
-            4. Ona bir "Kahraman" gibi hitap et. Bu hayat yolculuğunda bir görevi olduğunu hissettir.
-            5. Yazıyı 3 kısa paragraf halinde tut. Uzun olmasın.
-            6. Son cümlem vurucu ve motive edici olsun.
-            
-            Lütfen mektubu şimdi yaz:
+            Kurallar:
+            - Asla "Merhaba" deme. Direkt derin bir sözle gir.
+            - Kısa tut (Maksimum 3 paragraf).
+            - Kişiye özel tavsiye ver.
             """
             
             response = model.generate_content(prompt)
             return response.text
 
         except Exception as e:
-            return f"Kozmik bağlantıda geçici bir parazit var. (Hata: {str(e)})"
+            return f"Yapay zeka bağlantısında sorun oluştu. (Hata: {str(e)})"
