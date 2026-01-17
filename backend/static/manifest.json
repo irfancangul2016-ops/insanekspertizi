@@ -1,10 +1,12 @@
 {
-  "name": "Kozmik İnsan Ekspertizi",
-  "short_name": "İnsan Eksperi",
+  "name": "İnsan Ekspertizi",
+  "short_name": "Ekspertiz",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#1e293b",
   "theme_color": "#d4af37",
+  "description": "Kişilik ve Potansiyel Analizi",
   "orientation": "portrait",
   "icons": [
     {

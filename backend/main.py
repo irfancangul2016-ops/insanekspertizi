@@ -409,7 +409,19 @@ from services.ai_writer import AIWriter
 from services.database import Database
 
 app = FastAPI()
+# --- PWA İÇİN ÖZEL YOLLAR (Kritik Düzeltme) ---
+@app.get("/manifest.json")
+async def get_manifest():
+    return FileResponse(os.path.join(STATIC_DIR, "manifest.json"), media_type="application/json")
 
+@app.get("/sw.js")
+async def get_sw():
+    # Service Worker'ı "application/javascript" olarak sunmak zorundayız
+    return FileResponse(os.path.join(STATIC_DIR, "sw.js"), media_type="application/javascript")
+
+@app.get("/offline.html")
+async def get_offline():
+    return FileResponse(os.path.join(STATIC_DIR, "index.html")) # İnternet yoksa da ana sayfayı dene
 # 1. MOBİL UYGULAMA İÇİN CORS (KAPIYI AÇIYORUZ)
 app.add_middleware(
     CORSMiddleware,
