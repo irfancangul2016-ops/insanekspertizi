@@ -106,46 +106,87 @@
 #             return f"Yapay zeka bağlantı hatası: {str(e)}. Lütfen API Key'inizi kontrol edin."
         
 import os
-import google.generativeai as genai
+from google import genai
 
 class AIWriter:
     @staticmethod
-    def generate_name_analysis_rag(isim: str, pdf_icerigi: str) -> str:
+    def _get_client():
         """
-        RAG YÖNTEMİ: Yüklenen kitabın içeriğine göre isme özel yorum yapar.
+        Google GenAI istemcisini güvenli bir şekilde oluşturur.
         """
         api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key: return "API Key Yok."
-        
+        if not api_key:
+            return None
+        return genai.Client(api_key=api_key)
+
+    @staticmethod
+    def generate_human_report(analysis_data: dict) -> str:
+        """
+        Eski PDF Raporu için: Kişisel Yıl, Element vb. yorumlayan fonksiyon.
+        """
+        client = AIWriter._get_client()
+        if not client:
+            return "HATA: Google API Anahtarı bulunamadı (Render Environment Ayarlarını kontrol edin)."
+
         try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            
-            # --- RAG PROMPT (GÖREV EMRİ) ---
+            # --- PROMPT HAZIRLIĞI ---
             prompt = f"""
-            GÖREV: Sen uzman bir İsim Analisti'sin.
-            Elimizde "İsim Analizi" ile ilgili şu KİTAP BİLGİSİ (CONTEXT) var:
+            Sen mistik konularda uzman, bilge bir yaşam koçusun.
+            Aşağıdaki teknik analiz verilerini kullanarak, bu kişiye özel, motive edici ve
+            edebi bir dille yazılmış DETAYLI BİR MEKTUP (en az 3 paragraf) oluştur.
+
+            KİŞİ BİLGİLERİ:
+            - İsim: {analysis_data.get('tam_isim')}
+            - Pin Kodu: {analysis_data.get('pin')}
+            - Baskın Element: {analysis_data.get('baskin_element')}
+            - Eksik Element: {analysis_data.get('eksik_element')}
+            - Çakra Durumu: {analysis_data.get('baskin_cakra_val')} aktif, {analysis_data.get('zayif_cakra_val')} blokajlı.
+
+            Lütfen kısa kesme. Ona potansiyelini anlat, zayıf yönlerini nasıl güçlendireceğini söyle.
+            """
+
+            # --- YENİ KÜTÜPHANE ÇAĞRISI ---
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=prompt
+            )
+            return response.text
+
+        except Exception as e:
+            return f"Yapay Zeka Hatası: {str(e)}"
+
+    @staticmethod
+    def generate_name_analysis_rag(isim: str, pdf_icerigi: str) -> str:
+        """
+        RAG SİSTEMİ: İsim Analizi PDF'ini okuyup yorumlayan fonksiyon.
+        """
+        client = AIWriter._get_client()
+        if not client:
+            return "HATA: Google API Anahtarı bulunamadı."
+
+        try:
+            # --- RAG PROMPT ---
+            prompt = f"""
+            Sen uzman bir İsim Analisti'sin.
+            Elimizde şu KİTAP BİLGİSİ (CONTEXT) var:
             
-            --- KİTAP BAŞLANGICI ---
-            {pdf_icerigi[:50000]} 
-            --- KİTAP BİTİŞİ ---
-            (Not: Kitap çok uzunsa başından bir kısmı verildi)
+            --- BAŞLANGIÇ ---
+            {pdf_icerigi[:40000]} 
+            --- BİTİŞ ---
             
             ANALİZ EDİLECEK KİŞİ: {isim}
             
-            TALİMATLAR:
-            1. Yukarıdaki KİTAP BİLGİSİNİ kullanarak, "{isim}" isminin harf harf analizini yap.
-            2. Kitapta bu harfler veya isim hakkında ne yazıyorsa onu temel al.
-            3. Eğer kitapta harflerin anlamları varsa (Örn: A harfi liderliktir), ismin içindeki harfleri buna göre yorumla.
-            4. Asla kitaptaki bilgilerle çelişme.
-            5. Çıktıyı "Başlıklar" halinde, düzenli ve profesyonel bir rapor formatında ver.
-            6. Müşteriye "Kitapta şöyle yazıyor" deme, doğrudan uzman gibi konuş.
-            
-            Raporu şimdi yaz:
+            GÖREV:
+            Yukarıdaki KİTAP BİLGİSİNİ temel alarak, bu ismin harf analizini ve genel enerjisini yorumla.
+            Kitapta yazmayan bir şeyi uydurma. Çıktıyı başlıklar halinde, profesyonelce ver.
             """
-            
-            response = model.generate_content(prompt)
-            return response.text.strip()
-            
+
+            # --- YENİ KÜTÜPHANE ÇAĞRISI ---
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=prompt
+            )
+            return response.text
+
         except Exception as e:
-            return f"AI Hatası: {e}"
+            return f"AI RAG Hatası: {str(e)}"

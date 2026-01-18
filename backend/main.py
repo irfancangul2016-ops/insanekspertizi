@@ -386,7 +386,6 @@
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
 # --- BU KISIMDAKİ IMPORTLARDA HATA ALIRSAN TERMİNAL SANA SÖYLEYECEK ---
 
-from services.knowledge_reader import KnowledgeReader # <--- YENİ
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
@@ -396,10 +395,8 @@ import uvicorn
 import os
 import sys
 
-# YOL AYARLARI
+# Kendi servislerimizi ekliyoruz
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 from services.calculator import EbcedCalculator
 from services.interpreter import Interpreter
@@ -407,22 +404,11 @@ from services.visualizer import Visualizer
 from services.pdf_generator import PDFGenerator
 from services.ai_writer import AIWriter
 from services.database import Database
+from services.knowledge_reader import KnowledgeReader # <--- PDF Okuyucumuz
 
 app = FastAPI()
-# --- PWA İÇİN ÖZEL YOLLAR (Kritik Düzeltme) ---
-@app.get("/manifest.json")
-async def get_manifest():
-    return FileResponse(os.path.join(STATIC_DIR, "manifest.json"), media_type="application/json")
 
-@app.get("/sw.js")
-async def get_sw():
-    # Service Worker'ı "application/javascript" olarak sunmak zorundayız
-    return FileResponse(os.path.join(STATIC_DIR, "sw.js"), media_type="application/javascript")
-
-@app.get("/offline.html")
-async def get_offline():
-    return FileResponse(os.path.join(STATIC_DIR, "index.html")) # İnternet yoksa da ana sayfayı dene
-# 1. MOBİL UYGULAMA İÇİN CORS (KAPIYI AÇIYORUZ)
+# --- 1. CORS AYARLARI (Mobil ve Web İçin) ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -431,9 +417,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- 2. DOSYA YOLLARI ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+# Statik klasörü bağla (Resimler, HTML, CSS buradan sunulur)
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+# --- 3. MODELLER (Veri Tipleri) ---
 class AnalizIstegi(BaseModel):
     isim: str
     soyisim: str
@@ -442,17 +434,26 @@ class AnalizIstegi(BaseModel):
     dogum_yil: int
     anne_adi: str
 
+# --- 4. ANA SAYFA VE PWA ---
 @app.get("/", response_class=HTMLResponse)
 async def ana_sayfa():
-    # Web arayüzü
     index_path = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(index_path):
         with open(index_path, "r", encoding="utf-8") as f:
             return f.read()
     return "Sistem Aktif (Arayüz Bulunamadı)"
 
-# --- MOBİL UYGULAMA İÇİN ÖZEL API ENDPOINT ---
-@app.post("/api/analiz-yap")
+@app.get("/manifest.json")
+async def get_manifest():
+    return FileResponse(os.path.join(STATIC_DIR, "manifest.json"), media_type="application/json")
+
+@app.get("/sw.js")
+async def get_sw():
+    return FileResponse(os.path.join(STATIC_DIR, "sw.js"), media_type="application/javascript")
+
+# --- 5. İSİM ANALİZİ SERVİSİ (RAG - PDF TABANLI) ---
+# İşte kayıp olan kapı burası! En dışta, girintisiz durmalı.
+@app.post("/api/isim-analizi-yap")
 async def isim_analizi_servisi(
     isim: str = Form(...),
     soyisim: str = Form(...)
@@ -460,15 +461,15 @@ async def isim_analizi_servisi(
     try:
         tam_isim = f"{isim} {soyisim}".upper()
         
-        # 1. Kitabı Oku (RAG Hazırlığı)
+        # 1. Kitabı Oku
         kitap_bilgisi = KnowledgeReader.get_isim_analizi_context()
         
-        # 2. Kitap Boş mu Kontrol Et
-        if len(kitap_bilgisi) < 100:
-            return JSONResponse({"hata": "Sisteme henüz İsim Analizi kitabı yüklenmemiş veya okunamadı."}, status_code=500)
-            
-        # 3. Yapay Zekaya Gönder (RAG İşlemi)
-        # Sadece ismi gönderiyoruz, harf analizini AI kitaba bakıp yapacak.
+        # 2. Kitap Hatası Kontrolü
+        if "HATA" in kitap_bilgisi and len(kitap_bilgisi) < 200:
+             # Eğer okuyucu hata döndürdüyse bunu kullanıcıya söyle
+            return JSONResponse({"hata": kitap_bilgisi}, status_code=500)
+
+        # 3. Yapay Zekaya Gönder
         analiz_metni = AIWriter.generate_name_analysis_rag(tam_isim, kitap_bilgisi)
         
         return JSONResponse({
@@ -478,146 +479,32 @@ async def isim_analizi_servisi(
         })
         
     except Exception as e:
-        return JSONResponse({"hata": str(e)}, status_code=500)
+        print(f"HATA OLUŞTU: {str(e)}") # Loglara yaz
+        return JSONResponse({"hata": f"Sunucu Hatası: {str(e)}"}, status_code=500)
 
-
+# --- 6. EBCED API (Mobil İçin) ---
+@app.post("/api/analiz-yap")
 async def api_analiz(istek: AnalizIstegi):
-    """
-    Mobil uygulamalar buraya JSON gönderir, cevap olarak JSON alır.
-    PDF ile uğraşmaz, veriyi ekranda göstermek içindir.
-    """
     try:
-        # Hesaplamalar
         pin = EbcedCalculator.calculate_pin_code(istek.isim, istek.soyisim, istek.anne_adi)
         element_skorlari = EbcedCalculator.analyze_elements(istek.isim + istek.soyisim)
-        cakra = EbcedCalculator.analyze_chakras(istek.isim + istek.soyisim)
-        
-        # Sonuç Hazırla
         sonuc = {
             "ad_soyad": f"{istek.isim} {istek.soyisim}",
             "pin_kodu": pin,
-            "elementler": element_skorlari,
-            "baskin_element": max(element_skorlari, key=element_skorlari.get),
-            "eksik_element": min(element_skorlari, key=element_skorlari.get),
-            "cakra_analizi": cakra["raw_counts"]
+            "elementler": element_skorlari
         }
-        
-        # Veritabanına Kaydet
-        try:
-            db = Database()
-            db.kayit_ekle({
-                "isim": istek.isim, "soyisim": istek.soyisim,
-                "gun": istek.dogum_gun, "ay": istek.dogum_ay, "yil": istek.dogum_yil,
-                "pin": pin,
-                "baskin_element": sonuc["baskin_element"],
-                "eksik_element": sonuc["eksik_element"]
-            })
-        except Exception as db_err:
-            print(f"DB Hatası: {db_err}")
-
         return JSONResponse(content=sonuc)
-
     except Exception as e:
         return JSONResponse(content={"hata": str(e)}, status_code=500)
 
-# --- MEVCUT WEB PDF OLUŞTURUCU ---
-@app.post("/rapor-olustur")
-async def rapor_olustur(
-    isim: str = Form(...), soyisim: str = Form(...),
-    dogum_gun: int = Form(...), dogum_ay: int = Form(...), dogum_yil: int = Form(...),
-    anne_adi: str = Form(...)
-):
-    istek = AnalizIstegi(isim=isim, soyisim=soyisim, dogum_gun=dogum_gun, dogum_ay=dogum_ay, dogum_yil=dogum_yil, anne_adi=anne_adi)
-    
-    # 1. Hesaplamalar
-    pin = EbcedCalculator.calculate_pin_code(istek.isim, istek.soyisim, istek.anne_adi)
-    life_path = EbcedCalculator.calculate_life_path(istek.dogum_gun, istek.dogum_ay, istek.dogum_yil)
-    personal_year = EbcedCalculator.calculate_personal_year(istek.dogum_gun, istek.dogum_ay, 2026)
-    element_skorlari = EbcedCalculator.analyze_elements(istek.isim + istek.soyisim)
-    cakra = EbcedCalculator.analyze_chakras(istek.isim + istek.soyisim)
-    esma_idx = EbcedCalculator.calculate_name_esma_index(istek.isim)
-
-    analiz_sonucu = {
-        "isim": istek.isim, "soyisim": istek.soyisim, "pin": pin,
-        "life_path": life_path, "personal_year": personal_year,
-        "element_skorlari": element_skorlari, "cakra_analizi": cakra,
-        "mevcut_yil": 2026, "isim_esma_idx": esma_idx,
-        "baskin_element": max(element_skorlari, key=element_skorlari.get),
-        "eksik_element": min(element_skorlari, key=element_skorlari.get),
-        "frekans_durumu": EbcedCalculator.detect_element_imbalance(element_skorlari),
-        "zayif_cakra_val": sorted(cakra["raw_counts"].items(), key=lambda x: x[1])[0][0],
-        "baskin_cakra_val": sorted(cakra["raw_counts"].items(), key=lambda x: x[1], reverse=True)[0][0]
-    }
-    
-    tam_isim = f"{istek.isim} {istek.soyisim}"
-    analiz_sonucu["tam_isim"] = tam_isim
-    
-    # 2. Görseller & AI
-    viz = Visualizer()
-    dosya_eki = f"{istek.isim}_{istek.soyisim}".replace(" ", "_")
-    try:
-        c1 = viz.create_element_chart(element_skorlari, filename_prefix=dosya_eki)
-        c2 = viz.create_chakra_radar(cakra["raw_counts"], filename_prefix=dosya_eki)
-        qr = viz.create_qr("https://instagram.com/insanekspertizi", filename_prefix=dosya_eki)
-    except: c1, c2, qr = None, None, None
-
-    ai_raporu = AIWriter.generate_human_report(analiz_sonucu)
-
-    # 3. PDF
-    pdf_verisi = Interpreter.generate_full_report_text(analiz_sonucu)
-    pdf_verisi["recete"]["yasakli_davranislar"] = ai_raporu
-    pdf_verisi["danisan_bilgisi"] = tam_isim
-    if c1: pdf_verisi["tespit"]["element_chart_path"] = c1
-    if c2: pdf_verisi["tespit"]["chakra_chart_path"] = c2
-    if qr: pdf_verisi["recete"]["qr_code_path"] = qr
-
-    reports_dir = os.path.join(STATIC_DIR, "reports")
-    if not os.path.exists(reports_dir): os.makedirs(reports_dir)
-    pdf_path = os.path.join(reports_dir, f"Analiz_{dosya_eki}.pdf")
-
-    generator = PDFGenerator(filename=pdf_path)
-    final_pdf = generator.create_report(pdf_verisi)
-
-    # 4. Veritabanı
-    try:
-        db = Database()
-        db.kayit_ekle({
-            "isim": istek.isim, "soyisim": istek.soyisim, "gun": istek.dogum_gun, "ay": istek.dogum_ay, "yil": istek.dogum_yil,
-            "pin": pin, "baskin_element": analiz_sonucu["baskin_element"], "eksik_element": analiz_sonucu["eksik_element"]
-        })
-    except: pass
-
-    return FileResponse(final_pdf, filename=f"Analiz_{dosya_eki}.pdf")
-
-# Admin Paneli
-@app.get("/patron/musteri-listesi", response_class=HTMLResponse)
-async def admin_paneli():
-    db = Database()
-    kayitlar = db.tum_kayitlari_getir()
-    html = "<html><body><h1>Müşteriler</h1><ul>"
-    for k in kayitlar: html += f"<li>{k['isim']} - Pin: {k['pin_kodu']}</li>"
-    html += "</ul></body></html>"
-    return html
-
-# --- AJAN KODU (DOSYA KONTROLÜ) ---
+# --- 7. AJAN KODU (Dosya Kontrolü İçin Kalsın) ---
 @app.get("/ajan/dosyalari-goster")
 async def dosya_kontrol():
-    import os
-    
-    # Hedef klasör
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    hedef_klasor = os.path.join(base_dir, "knowledge_base", "isim_analizi")
-    
-    bilgi = {
-        "neredeyim": base_dir,
-        "hedef_klasor": hedef_klasor,
-        "klasor_var_mi": os.path.exists(hedef_klasor),
-        "icerik": []
-    }
-    
-    if os.path.exists(hedef_klasor):
-        bilgi["icerik"] = os.listdir(hedef_klasor)
-    else:
-        bilgi["hata"] = "KLASÖR HİÇ YOK! Git push yaparken dosya gelmemiş."
-        
-    return bilgi
+    import glob
+    hedef = os.path.join(BASE_DIR, "knowledge_base", "isim_analizi")
+    if os.path.exists(hedef):
+        return {"durum": "Klasör var", "dosyalar": os.listdir(hedef)}
+    return {"durum": "Klasör YOK", "yol": hedef}
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
