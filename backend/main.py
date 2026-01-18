@@ -505,6 +505,40 @@ async def dosya_kontrol():
     if os.path.exists(hedef):
         return {"durum": "Klasör var", "dosyalar": os.listdir(hedef)}
     return {"durum": "Klasör YOK", "yol": hedef}
+# --- MODEL DEDEKTİFİ (Kritik Tanı Aracı) ---
+@app.get("/ajan/model-test")
+async def model_test():
+    """
+    Google'a 'Elinizde hangi modeller var?' diye sorar ve listeyi ekrana basar.
+    Böylece ezbere isim yazmaktan kurtuluruz.
+    """
+    import os
+    from google import genai
+
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        return {"durum": "HATA", "mesaj": "API Key bulunamadı"}
+
+    try:
+        client = genai.Client(api_key=api_key)
+        # Google'dan model listesini iste
+        tum_modeller = client.models.list()
+        
+        # Sadece işimize yarayan (generateContent destekleyen) modelleri filtrele
+        kullanilabilir = []
+        for m in tum_modeller:
+            # Model isimlerini al (örn: models/gemini-1.5-flash)
+            if "generateContent" in m.supported_generation_methods:
+                kullanilabilir.append(m.name)
+        
+        return {
+            "durum": "BAŞARILI", 
+            "senin_anahtarinla_calisan_modeller": kullanilabilir,
+            "mesaj": "Lütfen bu listedeki isimlerden birini kopyalayıp ai_writer.py dosyasına yapıştırın."
+        }
+            
+    except Exception as e:
+        return {"durum": "KRİTİK HATA", "mesaj": str(e)}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
