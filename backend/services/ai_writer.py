@@ -110,31 +110,42 @@ import google.generativeai as genai
 
 class AIWriter:
     @staticmethod
-    def generate_human_report(analysis_data: dict) -> str:
-        # API Key Kontrolü
+    def generate_name_analysis_rag(isim: str, pdf_icerigi: str) -> str:
+        """
+        RAG YÖNTEMİ: Yüklenen kitabın içeriğine göre isme özel yorum yapar.
+        """
         api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            return "UYARI: Google API Anahtarı bulunamadı."
-
+        if not api_key: return "API Key Yok."
+        
         try:
             genai.configure(api_key=api_key)
-            
-            # --- MODEL İSMİ GÜNCELLEMESİ ---
-            # 'gemini-pro' yerine 'gemini-1.5-flash' kullanıyoruz.
             model = genai.GenerativeModel('gemini-1.5-flash')
-
-            prompt = f"""
-            Sen mistik, bilge bir yaşam koçusun.
-            Bu kişi için uzun, detaylı ve motive edici bir analiz mektubu yaz.
-            Teknik terimleri (Pin kodu: {analysis_data.get('pin')}, Element: {analysis_data.get('baskin_element')}) yorumla.
             
-            Lütfen en az 3 paragraf, akıcı ve edebi bir dille yaz.
-            Türkçe karakter kullanmaktan çekinme.
+            # --- RAG PROMPT (GÖREV EMRİ) ---
+            prompt = f"""
+            GÖREV: Sen uzman bir İsim Analisti'sin.
+            Elimizde "İsim Analizi" ile ilgili şu KİTAP BİLGİSİ (CONTEXT) var:
+            
+            --- KİTAP BAŞLANGICI ---
+            {pdf_icerigi[:50000]} 
+            --- KİTAP BİTİŞİ ---
+            (Not: Kitap çok uzunsa başından bir kısmı verildi)
+            
+            ANALİZ EDİLECEK KİŞİ: {isim}
+            
+            TALİMATLAR:
+            1. Yukarıdaki KİTAP BİLGİSİNİ kullanarak, "{isim}" isminin harf harf analizini yap.
+            2. Kitapta bu harfler veya isim hakkında ne yazıyorsa onu temel al.
+            3. Eğer kitapta harflerin anlamları varsa (Örn: A harfi liderliktir), ismin içindeki harfleri buna göre yorumla.
+            4. Asla kitaptaki bilgilerle çelişme.
+            5. Çıktıyı "Başlıklar" halinde, düzenli ve profesyonel bir rapor formatında ver.
+            6. Müşteriye "Kitapta şöyle yazıyor" deme, doğrudan uzman gibi konuş.
+            
+            Raporu şimdi yaz:
             """
             
             response = model.generate_content(prompt)
             return response.text.strip()
-
+            
         except Exception as e:
-            # Hatanın ne olduğunu PDF'e bas ki görelim
-            return f"Yapay Zeka Hatası: {str(e)}"
+            return f"AI Hatası: {e}"

@@ -386,7 +386,7 @@
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
 # --- BU KISIMDAKİ IMPORTLARDA HATA ALIRSAN TERMİNAL SANA SÖYLEYECEK ---
 
-
+from services.knowledge_reader import KnowledgeReader # <--- YENİ
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
@@ -453,6 +453,34 @@ async def ana_sayfa():
 
 # --- MOBİL UYGULAMA İÇİN ÖZEL API ENDPOINT ---
 @app.post("/api/analiz-yap")
+async def isim_analizi_servisi(
+    isim: str = Form(...),
+    soyisim: str = Form(...)
+):
+    try:
+        tam_isim = f"{isim} {soyisim}".upper()
+        
+        # 1. Kitabı Oku (RAG Hazırlığı)
+        kitap_bilgisi = KnowledgeReader.get_isim_analizi_context()
+        
+        # 2. Kitap Boş mu Kontrol Et
+        if len(kitap_bilgisi) < 100:
+            return JSONResponse({"hata": "Sisteme henüz İsim Analizi kitabı yüklenmemiş veya okunamadı."}, status_code=500)
+            
+        # 3. Yapay Zekaya Gönder (RAG İşlemi)
+        # Sadece ismi gönderiyoruz, harf analizini AI kitaba bakıp yapacak.
+        analiz_metni = AIWriter.generate_name_analysis_rag(tam_isim, kitap_bilgisi)
+        
+        return JSONResponse({
+            "kisi": tam_isim,
+            "analiz_sonucu": analiz_metni,
+            "kaynak": "Özel İsim Analizi Arşivi"
+        })
+        
+    except Exception as e:
+        return JSONResponse({"hata": str(e)}, status_code=500)
+
+
 async def api_analiz(istek: AnalizIstegi):
     """
     Mobil uygulamalar buraya JSON gönderir, cevap olarak JSON alır.
