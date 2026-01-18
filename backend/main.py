@@ -598,3 +598,26 @@ async def admin_paneli():
     for k in kayitlar: html += f"<li>{k['isim']} - Pin: {k['pin_kodu']}</li>"
     html += "</ul></body></html>"
     return html
+
+# --- AJAN KODU (DOSYA KONTROLÜ) ---
+@app.get("/ajan/dosyalari-goster")
+async def dosya_kontrol():
+    import os
+    
+    # Hedef klasör
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    hedef_klasor = os.path.join(base_dir, "knowledge_base", "isim_analizi")
+    
+    bilgi = {
+        "neredeyim": base_dir,
+        "hedef_klasor": hedef_klasor,
+        "klasor_var_mi": os.path.exists(hedef_klasor),
+        "icerik": []
+    }
+    
+    if os.path.exists(hedef_klasor):
+        bilgi["icerik"] = os.listdir(hedef_klasor)
+    else:
+        bilgi["hata"] = "KLASÖR HİÇ YOK! Git push yaparken dosya gelmemiş."
+        
+    return bilgi
