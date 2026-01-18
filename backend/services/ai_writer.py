@@ -107,86 +107,77 @@
         
 import os
 from google import genai
+from google.genai import types
 
 class AIWriter:
     @staticmethod
     def _get_client():
-        """
-        Google GenAI istemcisini güvenli bir şekilde oluşturur.
-        """
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             return None
         return genai.Client(api_key=api_key)
 
     @staticmethod
-    def generate_human_report(analysis_data: dict) -> str:
+    def _generate(prompt_text: str):
         """
-        Eski PDF Raporu için: Kişisel Yıl, Element vb. yorumlayan fonksiyon.
-        """
-        client = AIWriter._get_client()
-        if not client:
-            return "HATA: Google API Anahtarı bulunamadı (Render Environment Ayarlarını kontrol edin)."
-
-        try:
-            # --- PROMPT HAZIRLIĞI ---
-            prompt = f"""
-            Sen mistik konularda uzman, bilge bir yaşam koçusun.
-            Aşağıdaki teknik analiz verilerini kullanarak, bu kişiye özel, motive edici ve
-            edebi bir dille yazılmış DETAYLI BİR MEKTUP (en az 3 paragraf) oluştur.
-
-            KİŞİ BİLGİLERİ:
-            - İsim: {analysis_data.get('tam_isim')}
-            - Pin Kodu: {analysis_data.get('pin')}
-            - Baskın Element: {analysis_data.get('baskin_element')}
-            - Eksik Element: {analysis_data.get('eksik_element')}
-            - Çakra Durumu: {analysis_data.get('baskin_cakra_val')} aktif, {analysis_data.get('zayif_cakra_val')} blokajlı.
-
-            Lütfen kısa kesme. Ona potansiyelini anlat, zayıf yönlerini nasıl güçlendireceğini söyle.
-            """
-
-            # --- YENİ KÜTÜPHANE ÇAĞRISI ---
-            response = client.models.generate_content(
-                model='gemini-1.5-flash',
-                contents=prompt
-            )
-            return response.text
-
-        except Exception as e:
-            return f"Yapay Zeka Hatası: {str(e)}"
-
-    @staticmethod
-    def generate_name_analysis_rag(isim: str, pdf_icerigi: str) -> str:
-        """
-        RAG SİSTEMİ: İsim Analizi PDF'ini okuyup yorumlayan fonksiyon.
+        Modelleri sırayla deneyen akıllı fonksiyon.
         """
         client = AIWriter._get_client()
         if not client:
             return "HATA: Google API Anahtarı bulunamadı."
 
-        try:
-            # --- RAG PROMPT ---
-            prompt = f"""
-            Sen uzman bir İsim Analisti'sin.
-            Elimizde şu KİTAP BİLGİSİ (CONTEXT) var:
-            
-            --- BAŞLANGIÇ ---
-            {pdf_icerigi[:40000]} 
-            --- BİTİŞ ---
-            
-            ANALİZ EDİLECEK KİŞİ: {isim}
-            
-            GÖREV:
-            Yukarıdaki KİTAP BİLGİSİNİ temel alarak, bu ismin harf analizini ve genel enerjisini yorumla.
-            Kitapta yazmayan bir şeyi uydurma. Çıktıyı başlıklar halinde, profesyonelce ver.
-            """
+        # Denenecek Modeller Listesi (Sırayla)
+        models_to_try = [
+            'gemini-1.5-flash-001',  # En hızlı ve stabil
+            'gemini-1.5-flash',      # Kısa isim
+            'gemini-1.5-pro-001',    # Daha zeki (Yedek)
+            'gemini-1.0-pro'         # Eski toprak (Son çare)
+        ]
 
-            # --- YENİ KÜTÜPHANE ÇAĞRISI ---
-            response = client.models.generate_content(
-                model='gemini-1.5-flash',
-                contents=prompt
-            )
-            return response.text
+        last_error = ""
 
-        except Exception as e:
-            return f"AI RAG Hatası: {str(e)}"
+        for model_name in models_to_try:
+            try:
+                # Modeli dene
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt_text
+                )
+                # Cevap geldiyse hemen döndür
+                if response.text:
+                    return response.text
+            except Exception as e:
+                # Hata aldıysan not et ve bir sonraki modeli dene
+                last_error = str(e)
+                print(f"Model {model_name} başarısız oldu: {e}")
+                continue
+        
+        # Hiçbiri çalışmadıysa hatayı ver
+        return f"Yapay Zeka Hatası (Tüm modeller denendi): {last_error}"
+
+    @staticmethod
+    def generate_human_report(analysis_data: dict) -> str:
+        prompt = f"""
+        Sen mistik konularda uzman, bilge bir yaşam koçusun.
+        Aşağıdaki verilere göre motive edici, edebi bir mektup yaz (En az 3 paragraf).
+
+        KİŞİ: {analysis_data.get('tam_isim')}
+        PIN: {analysis_data.get('pin')}
+        ELEMENT: {analysis_data.get('baskin_element')}
+        ÇAKRA: {analysis_data.get('baskin_cakra_val')} aktif.
+        """
+        return AIWriter._generate(prompt)
+
+    @staticmethod
+    def generate_name_analysis_rag(isim: str, pdf_icerigi: str) -> str:
+        prompt = f"""
+        Sen uzman bir İsim Analisti'sin.
+        Şu KİTAP BİLGİSİNİ (CONTEXT) kullanarak "{isim}" ismini analiz et:
+        
+        --- KİTAP ---
+        {pdf_icerigi[:40000]}
+        --- SON ---
+        
+        GÖREV: Sadece kitaptaki bilgilere dayanarak profesyonel bir yorum yap.
+        """
+        return AIWriter._generate(prompt)
