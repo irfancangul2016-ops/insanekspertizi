@@ -111,21 +111,52 @@ import json
 
 class AIWriter:
     @staticmethod
+    def _find_active_model(api_key):
+        """
+        Google'a 'Elinizde hangi modeller var?' diye sorar.
+        İlk bulduğu çalışan modeli seçer.
+        Böylece 404 hatası alma şansı kalmaz.
+        """
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+            response = requests.get(url)
+            
+            if response.status_code != 200:
+                print(f"Model Listesi Alınamadı: {response.text}")
+                return None
+
+            data = response.json()
+            # Listeyi tara ve generateContent (Metin üretme) özelliği olan İLK modeli bul
+            if 'models' in data:
+                for model in data['models']:
+                    # Desteklenen metodlara bak
+                    methods = model.get('supportedGenerationMethods', [])
+                    if 'generateContent' in methods:
+                        print(f"--> BULUNAN ÇALIŞAN MODEL: {model['name']}")
+                        return model['name'] # Örn: 'models/gemini-1.5-flash'
+            
+            return None
+        except Exception as e:
+            print(f"Model arama hatası: {e}")
+            return None
+
+    @staticmethod
     def _send_request(prompt_text):
-        """
-        Google Kütüphanesini BYPASS eder.
-        Doğrudan Google sunucusuna HTTP isteği atar.
-        Kütüphane hatası verme ihtimali %0'dır.
-        """
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             return "HATA: API Key bulunamadı."
 
-        # 1. HEDEF ADRES (Doğrudan Google'ın REST API adresi)
-        # Burası değişmez, sabittir. Kütüphane sürümü vs. etkilemez.
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        # ADIM 1: Rastgele isim deneme, git Google'a sor!
+        active_model = AIWriter._find_active_model(api_key)
+        
+        if not active_model:
+            # Eğer liste boş dönüyorsa, API Key yetkisizdir.
+            return "HATA: API Key geçerli ama Google 'Hiçbir model kullanamazsın' diyor. (Google Cloud Console'dan Generative Language API'nin ENABLE olduğundan emin ol)."
 
-        # 2. PAKETİ HAZIRLA
+        # ADIM 2: Bulunan modeli kullan
+        # active_model zaten 'models/gemini-...' formatında gelir.
+        url = f"https://generativelanguage.googleapis.com/v1beta/{active_model}:generateContent?key={api_key}"
+
         headers = {'Content-Type': 'application/json'}
         payload = {
             "contents": [{
@@ -134,20 +165,16 @@ class AIWriter:
         }
 
         try:
-            # 3. İSTEĞİ GÖNDER (requests kütüphanesi ile)
-            response = requests.post(url, headers=headers, json=payload)
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
             
-            # 4. CEVABI KONTROL ET
             if response.status_code == 200:
-                # Başarılı! İçinden metni cımbızla al.
                 data = response.json()
                 try:
                     return data['candidates'][0]['content']['parts'][0]['text']
                 except:
-                    return "Cevap geldi ama metin bulunamadı. Ham cevap: " + str(data)
+                    return "Model cevap verdi ama metin boş. Ham cevap: " + str(data)
             else:
-                # Google hata verdi (Açıkça ne olduğunu yazar)
-                return f"Google Hata Verdi (Kod {response.status_code}): {response.text}"
+                return f"Google Hatası ({response.status_code}): {response.text}"
 
         except Exception as e:
             return f"Bağlantı Hatası: {str(e)}"
@@ -158,7 +185,6 @@ class AIWriter:
         Sen mistik bir yaşam koçusun. Şu verilere göre kişiye özel motive edici bir mektup yaz:
         İsim: {analysis_data.get('tam_isim')}
         Pin: {analysis_data.get('pin')}
-        Element: {analysis_data.get('baskin_element')}
         """
         return AIWriter._send_request(prompt)
 
@@ -166,13 +192,12 @@ class AIWriter:
     def generate_name_analysis_rag(isim: str, pdf_icerigi: str) -> str:
         prompt = f"""
         Sen bir İsim Analistisin. Aşağıdaki KİTAP BİLGİSİNE dayanarak yorum yap.
-        Kafandan uydurma, sadece kitaba bak.
         
         KİTAP BİLGİSİ:
         {pdf_icerigi[:30000]}
         
         ANALİZ EDİLECEK KİŞİ: {isim}
         
-        Yorumun profesyonel ve başlıklar halinde olsun.
+        Lütfen profesyonel bir dille, kitapta yazanlara göre ismin analizini yap.
         """
         return AIWriter._send_request(prompt)
