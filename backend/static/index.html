@@ -1,106 +1,116 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#d4af37">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3063/3063835.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kozmik İnsan Ekspertizi</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <title>İnsan Ekspertizi</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/static/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0f172a; --accent: #d4af37; --text: #f8fafc; --card-bg: rgba(255,255,255,0.05); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: linear-gradient(135deg, #000 0%, #1e293b 100%); color: var(--text); font-family: 'Raleway', sans-serif; min-height: 100vh; padding-bottom: 70px; }
+        
+        /* ÜST BİLGİ */
+        .header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .user-welcome { font-size: 14px; color: var(--accent); margin-bottom: 5px; }
+        h1 { font-family: 'Cinzel', serif; font-size: 24px; }
+
+        /* GÜNLÜK MESAJ KARTI */
+        .daily-message {
+            background: linear-gradient(45deg, #d4af37, #fcd34d);
+            color: #1e293b; padding: 20px; margin: 20px;
+            border-radius: 15px; box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+            text-align: center; position: relative; overflow: hidden;
+        }
+        .daily-message h3 { font-family: 'Cinzel', serif; margin-bottom: 10px; }
+        .daily-message p { font-weight: 600; font-size: 15px; }
+        
+        /* GRID MENÜ (SEKMELER) */
+        .dashboard-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px;
+        }
+        .menu-item {
+            background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px; padding: 20px; text-align: center;
+            transition: 0.3s; cursor: pointer; aspect-ratio: 1;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .menu-item:hover { border-color: var(--accent); transform: translateY(-5px); background: rgba(255,255,255,0.1); }
+        .icon { font-size: 30px; margin-bottom: 10px; display: block; }
+        .label { font-size: 14px; font-weight: bold; letter-spacing: 1px; }
+
+        /* ALT NAVİGASYON */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; background: #0f172a;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex; justify-content: space-around; padding: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .nav-item { color: #64748b; text-decoration: none; font-size: 24px; }
+        .nav-item.active { color: var(--accent); }
+
+    </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="header">
-            <div class="logo-circle">
-                <span>🌟</span>
-            </div>
-            <h1>İNSAN EKSPERTİZİ</h1>
-            <p class="subtitle">Ruhsal Kimlik & Potansiyel Analizi</p>
+    <div class="header">
+        <div class="user-welcome">Hoş geldin, Yolcu</div>
+        <h1>İNSAN EKSPERTİZİ</h1>
+    </div>
+
+    <div class="daily-message">
+        <h3>✨ Günün Enerjisi</h3>
+        <p>"Bugün, ektiğin tohumların yeşermesi için sabretmen gereken bir gün. Acele etme."</p>
+    </div>
+
+    <div class="dashboard-grid">
+        
+        <div class="menu-item" onclick="alert('Burası sadece Ebced Değeri hesaplayacak (PDF 1)')">
+            <span class="icon">🧮</span>
+            <span class="label">EBCED HESABI</span>
         </div>
 
-        <div class="card">
-            <p class="intro-text">
-                İsim ve doğum tarihiniz, kaderinizin şifrelerini taşır. 
-                Gerçek potansiyelinizi keşfetmek için bilgileri eksiksiz girin.
-            </p>
+        <div class="menu-item" onclick="alert('Burası İsim Karakter Analizi yapacak (PDF 2)')">
+            <span class="icon">📜</span>
+            <span class="label">İSİM ANALİZİ</span>
+        </div>
 
-            <form action="/rapor-olustur" method="post" class="analysis-form">
-                
-                <div class="input-group">
-                    <label>Tam Adınız</label>
-                    <input type="text" name="isim" placeholder="Örn: Ahmet" required>
-                </div>
+        <div class="menu-item" onclick="alert('Yakında: Rüya Veritabanı')">
+            <span class="icon">🌙</span>
+            <span class="label">RÜYA TABİRİ</span>
+        </div>
 
-                <div class="input-group">
-                    <label>Soyadınız</label>
-                    <input type="text" name="soyisim" placeholder="Örn: Yılmaz" required>
-                </div>
+        <div class="menu-item" onclick="alert('Yakında: Yıldızname')">
+            <span class="icon">🪐</span>
+            <span class="label">ASTROLOJİ</span>
+        </div>
 
-                <div class="input-group">
-                    <label>Anne Adı</label>
-                    <input type="text" name="anne_adi" placeholder="Örn: Fatma" required>
-                </div>
+        <div class="menu-item" onclick="alert('Yakında: Fizyonomi')">
+            <span class="icon">👀</span>
+            <span class="label">BEDEN DİLİ</span>
+        </div>
 
-                <div class="date-group">
-                    <label>Doğum Tarihi</label>
-                    <div class="date-inputs">
-                        <select name="dogum_gun" required>
-                            <option value="" disabled selected>Gün</option>
-                            <script>
-                                for(let i=1; i<=31; i++) document.write(`<option value="${i}">${i}</option>`);
-                            </script>
-                        </select>
-                        <select name="dogum_ay" required>
-                            <option value="" disabled selected>Ay</option>
-                            <option value="1">Ocak</option>
-                            <option value="2">Şubat</option>
-                            <option value="3">Mart</option>
-                            <option value="4">Nisan</option>
-                            <option value="5">Mayıs</option>
-                            <option value="6">Haziran</option>
-                            <option value="7">Temmuz</option>
-                            <option value="8">Ağustos</option>
-                            <option value="9">Eylül</option>
-                            <option value="10">Ekim</option>
-                            <option value="11">Kasım</option>
-                            <option value="12">Aralık</option>
-                        </select>
-                        <input type="number" name="dogum_yil" placeholder="Yıl (Örn: 1990)" min="1920" max="2024" required>
-                    </div>
-                </div>
-
-                <button type="submit" class="cta-button">
-                    <span>ANALİZİ BAŞLAT</span>
-                    <span class="icon">✨</span>
-                </button>
-            </form>
-            
-            <div class="footer-note">
-                <p>🔒 Bilgileriniz 256-bit şifreleme ile korunmaktadır ve 3. şahıslarla paylaşılmaz.</p>
-            </div>
+        <div class="menu-item" onclick="alert('Profil Ayarları')">
+            <span class="icon">⚙️</span>
+            <span class="label">AYARLAR</span>
         </div>
     </div>
 
-    <a href="https://wa.me/905xxxxxxxxx" class="whatsapp-btn" target="_blank">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
-    </a>
-<script>
+    <div class="bottom-nav">
+        <a href="#" class="nav-item active">🏠</a>
+        <a href="#" class="nav-item">💬</a>
+        <a href="#" class="nav-item">👤</a>
+    </div>
+
+    <script>
+        // PWA Service Worker Başlatıcı
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                nnavigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('Uygulama Hazır: ', registration.scope);
-                    }, err => {
-                        console.log('Hata: ', err);
-                    });
+                navigator.serviceWorker.register('/sw.js');
             });
         }
-</script>
-
+    </script>
 </body>
 </html>
