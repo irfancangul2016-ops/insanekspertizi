@@ -106,78 +106,73 @@
 #             return f"Yapay zeka bağlantı hatası: {str(e)}. Lütfen API Key'inizi kontrol edin."
         
 import os
-from google import genai
-from google.genai import types
+import requests
+import json
 
 class AIWriter:
     @staticmethod
-    def _get_client():
+    def _send_request(prompt_text):
+        """
+        Google Kütüphanesini BYPASS eder.
+        Doğrudan Google sunucusuna HTTP isteği atar.
+        Kütüphane hatası verme ihtimali %0'dır.
+        """
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
-            return None
-        return genai.Client(api_key=api_key)
+            return "HATA: API Key bulunamadı."
 
-    @staticmethod
-    def _generate(prompt_text: str):
-        """
-        Modelleri sırayla deneyen akıllı fonksiyon.
-        """
-        client = AIWriter._get_client()
-        if not client:
-            return "HATA: Google API Anahtarı bulunamadı."
+        # 1. HEDEF ADRES (Doğrudan Google'ın REST API adresi)
+        # Burası değişmez, sabittir. Kütüphane sürümü vs. etkilemez.
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
 
-        # Denenecek Modeller Listesi (Sırayla)
-        models_to_try = [
-            'gemini-1.5-flash-001',  # En hızlı ve stabil
-            'gemini-1.5-flash',      # Kısa isim
-            'gemini-1.5-pro-001',    # Daha zeki (Yedek)
-            'gemini-1.0-pro'         # Eski toprak (Son çare)
-        ]
+        # 2. PAKETİ HAZIRLA
+        headers = {'Content-Type': 'application/json'}
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt_text}]
+            }]
+        }
 
-        last_error = ""
+        try:
+            # 3. İSTEĞİ GÖNDER (requests kütüphanesi ile)
+            response = requests.post(url, headers=headers, json=payload)
+            
+            # 4. CEVABI KONTROL ET
+            if response.status_code == 200:
+                # Başarılı! İçinden metni cımbızla al.
+                data = response.json()
+                try:
+                    return data['candidates'][0]['content']['parts'][0]['text']
+                except:
+                    return "Cevap geldi ama metin bulunamadı. Ham cevap: " + str(data)
+            else:
+                # Google hata verdi (Açıkça ne olduğunu yazar)
+                return f"Google Hata Verdi (Kod {response.status_code}): {response.text}"
 
-        for model_name in models_to_try:
-            try:
-                # Modeli dene
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt_text
-                )
-                # Cevap geldiyse hemen döndür
-                if response.text:
-                    return response.text
-            except Exception as e:
-                # Hata aldıysan not et ve bir sonraki modeli dene
-                last_error = str(e)
-                print(f"Model {model_name} başarısız oldu: {e}")
-                continue
-        
-        # Hiçbiri çalışmadıysa hatayı ver
-        return f"Yapay Zeka Hatası (Tüm modeller denendi): {last_error}"
+        except Exception as e:
+            return f"Bağlantı Hatası: {str(e)}"
 
     @staticmethod
     def generate_human_report(analysis_data: dict) -> str:
         prompt = f"""
-        Sen mistik konularda uzman, bilge bir yaşam koçusun.
-        Aşağıdaki verilere göre motive edici, edebi bir mektup yaz (En az 3 paragraf).
-
-        KİŞİ: {analysis_data.get('tam_isim')}
-        PIN: {analysis_data.get('pin')}
-        ELEMENT: {analysis_data.get('baskin_element')}
-        ÇAKRA: {analysis_data.get('baskin_cakra_val')} aktif.
+        Sen mistik bir yaşam koçusun. Şu verilere göre kişiye özel motive edici bir mektup yaz:
+        İsim: {analysis_data.get('tam_isim')}
+        Pin: {analysis_data.get('pin')}
+        Element: {analysis_data.get('baskin_element')}
         """
-        return AIWriter._generate(prompt)
+        return AIWriter._send_request(prompt)
 
     @staticmethod
     def generate_name_analysis_rag(isim: str, pdf_icerigi: str) -> str:
         prompt = f"""
-        Sen uzman bir İsim Analisti'sin.
-        Şu KİTAP BİLGİSİNİ (CONTEXT) kullanarak "{isim}" ismini analiz et:
+        Sen bir İsim Analistisin. Aşağıdaki KİTAP BİLGİSİNE dayanarak yorum yap.
+        Kafandan uydurma, sadece kitaba bak.
         
-        --- KİTAP ---
-        {pdf_icerigi[:40000]}
-        --- SON ---
+        KİTAP BİLGİSİ:
+        {pdf_icerigi[:30000]}
         
-        GÖREV: Sadece kitaptaki bilgilere dayanarak profesyonel bir yorum yap.
+        ANALİZ EDİLECEK KİŞİ: {isim}
+        
+        Yorumun profesyonel ve başlıklar halinde olsun.
         """
-        return AIWriter._generate(prompt)
+        return AIWriter._send_request(prompt)
