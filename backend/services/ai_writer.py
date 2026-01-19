@@ -105,38 +105,15 @@
 #         except Exception as e:
 #             return f"Yapay zeka bağlantı hatası: {str(e)}. Lütfen API Key'inizi kontrol edin."
 import os
-import sys
 import requests
 import json
 
-# --- IMPORT HATASI ÇÖZÜCÜ (YENİ ADRES) ---
-# Şu anki dosyanın (ai_writer.py) olduğu klasörü bulur: .../backend/services
-current_dir = os.path.dirname(os.path.abspath(__file__))
-# Bir üst klasöre (Root) çıkar: .../backend
-backend_root = os.path.dirname(current_dir)
-
-# Python'un arama yollarına 'backend' ana klasörünü ekleriz.
-# Böylece 'knowledge_base' klasörünü görebilir.
-if backend_root not in sys.path:
-    sys.path.append(backend_root)
-
+# ARTIK DOSYA YANIMIZDA OLDUĞU İÇİN BU KADAR BASİT:
 try:
-    # ARTIK YENİ ADRESTEN VERİ ÇEKİYORUZ:
-    # Klasör: knowledge_base -> isim_analizi
-    # Dosya: isim_analizi.py
-    from knowledge_base.isim_analizi.isim_analizi import (
-        HARF_DETAYLARI,
-        OZEL_UYARILAR,
-        OZEL_ISIM_ANALIZLERI,
-        ISIM_VERME_KURALLARI
-    )
-except ImportError as e:
-    print(f"KRİTİK HATA: Veritabanı dosyası yeni yerinde bulunamadı! Hata: {e}")
-    # Kodun tamamen çökmemesi için boş sözlükler tanımlıyoruz (Geçici önlem)
-    HARF_DETAYLARI = {}
-    OZEL_UYARILAR = {}
-    OZEL_ISIM_ANALIZLERI = {}
-    ISIM_VERME_KURALLARI = {}
+    from .name_data import HARF_DETAYLARI, OZEL_UYARILAR, OZEL_ISIM_ANALIZLERI, ISIM_VERME_KURALLARI
+except ImportError:
+    # Yerel bilgisayarda veya farklı çalışma ortamlarında yedek plan
+    from services.name_data import HARF_DETAYLARI, OZEL_UYARILAR, OZEL_ISIM_ANALIZLERI, ISIM_VERME_KURALLARI
 
 class AIWriter:
     @staticmethod
@@ -181,7 +158,7 @@ class AIWriter:
     @staticmethod
     def veri_madenciligi(isim: str):
         """
-        knowledge_base/isim_analizi/isim_analizi.py dosyasını tarar.
+        name_data.py dosyasını tarar.
         """
         isim = isim.upper().strip()
         ham_veri = []
@@ -205,22 +182,9 @@ class AIWriter:
             ham_veri.append(f"⚠️ RİSKLİ EK TESPİTİ (LA): {OZEL_UYARILAR.get('LA_EKI', {}).get('aciklama', 'La eki uyarısı')}")
 
         # Özel Yasaklı İsimler
-        yasakli_map = {
-            "ELİF": "ELIF_ISMI", "ELIF": "ELIF_ISMI",
-            "İREM": "IREM_ISMI", "IREM": "IREM_ISMI",
-            "ESRA": "ESRA_ISMI",
-            "ALEYNA": "ALEYNA_ISMI",
-            "KÜBRA": "KUBRA_ISMI", "KUBRA": "KUBRA_ISMI",
-            "SÜMEYYE": "SUMEYYE_ISMI", "SUMEYYE": "SUMEYYE_ISMI",
-            "MERVE": "MERVE_ISMI",
-            "KEZBAN": "KEZBAN",
-            "GÜL": "GUL", "GUL": "GUL"
-        }
-        
-        if isim in yasakli_map:
-            key = yasakli_map[isim]
-            if key in OZEL_UYARILAR:
-                ham_veri.append(f"🛑 KRİTİK İSİM UYARISI ({isim}): {OZEL_UYARILAR[key]['aciklama']}")
+        # (Yasaklı listeni buraya genişleterek yazabilirsin, şimdilik name_data'daki anahtarlarla eşleşmeli)
+        if "ELİF" in isim or "ELIF" in isim:
+             ham_veri.append(f"⚠️ İSİM UYARISI: {OZEL_UYARILAR.get('ELIF_ISMI', {}).get('aciklama', '')}")
 
         # 3. HARF HARF ANALİZ
         ham_veri.append(f"\n--- HARF ENERJİLERİ ({isim}) ---")
@@ -246,6 +210,9 @@ class AIWriter:
                 
                 if harf_sayilari[harf] > 1:
                     ham_veri.append(f"   🔥 DİKKAT: Bu harften isimde {harf_sayilari[harf]} tane var! Etkisi katlanarak artar.")
+            else:
+                # Eğer harf veritabanında yoksa (Örn: X, Q, W vb. eksikse)
+                ham_veri.append(f"► {harf} HARFİ: Bu harf için özel veri bulunamadı.")
 
         return "\n".join(ham_veri)
 
@@ -253,6 +220,10 @@ class AIWriter:
     def generate_name_analysis_rag(isim: str, pdf_icerigi=None):
         teknik_veri = AIWriter.veri_madenciligi(isim)
         
+        # Eğer teknik veri boş geldiyse (Hala bir sorun varsa) AI'yı uyarmayalım, hata dönelim.
+        if "HARF ENERJİLERİ" not in teknik_veri:
+             return "SİSTEM HATASI: Veritabanı okunamadı. Lütfen yöneticiye başvurun."
+
         prompt = f"""
         Sen "İnsan Ekspertizi" projesinin baş analistisin.
         Aşağıda "{isim}" ismi için veritabanımızdan çekilen KESİN ve DEĞİŞMEZ teknik veriler bulunmaktadır.
