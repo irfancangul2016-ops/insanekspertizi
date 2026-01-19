@@ -105,15 +105,45 @@
 #         except Exception as e:
 #             return f"Yapay zeka bağlantı hatası: {str(e)}. Lütfen API Key'inizi kontrol edin."
 import os
+import sys
 import requests
 import json
+import importlib.util
 
-# ARTIK DOSYA YANIMIZDA OLDUĞU İÇİN BU KADAR BASİT:
-try:
-    from .name_data import HARF_DETAYLARI, OZEL_UYARILAR, OZEL_ISIM_ANALIZLERI, ISIM_VERME_KURALLARI
-except ImportError:
-    # Yerel bilgisayarda veya farklı çalışma ortamlarında yedek plan
-    from services.name_data import HARF_DETAYLARI, OZEL_UYARILAR, OZEL_ISIM_ANALIZLERI, ISIM_VERME_KURALLARI
+# --- GARANTİLİ MODÜL YÜKLEME ---
+# Bu yöntem, dosya yolunu bulur ve modülü doğrudan kaynağından yükler.
+# ImportError hatasını bypass eder.
+
+def load_name_data():
+    """name_data.py dosyasını dinamik olarak yükler."""
+    try:
+        # 1. Önce standart yolu dene
+        from services import name_data
+        return name_data
+    except ImportError:
+        try:
+            # 2. Aynı klasörde mi diye bak (Local/Render farkı için)
+            import name_data
+            return name_data
+        except ImportError:
+            # 3. Manuel dosya yolu ile yükle (En garantisi)
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            file_path = os.path.join(current_dir, "name_data.py")
+            
+            spec = importlib.util.spec_from_file_location("name_data", file_path)
+            foo = importlib.util.module_from_spec(spec)
+            sys.modules["name_data"] = foo
+            spec.loader.exec_module(foo)
+            return foo
+
+# Veri tabanını yükle
+ND = load_name_data()
+
+# Değişkenleri güvenli bir şekilde çek (Hata verirse boş sözlük ata)
+HARF_DETAYLARI = getattr(ND, "HARF_DETAYLARI", {})
+OZEL_UYARILAR = getattr(ND, "OZEL_UYARILAR", {})
+OZEL_ISIM_ANALIZLERI = getattr(ND, "OZEL_ISIM_ANALIZLERI", {})
+ISIM_VERME_KURALLARI = getattr(ND, "ISIM_VERME_KURALLARI", {})
 
 class AIWriter:
     @staticmethod
@@ -158,11 +188,15 @@ class AIWriter:
     @staticmethod
     def veri_madenciligi(isim: str):
         """
-        name_data.py dosyasını tarar.
+        name_data.py verisini işler.
         """
         isim = isim.upper().strip()
         ham_veri = []
         
+        # Veritabanı boş geldiyse uyarı ver (Debug için)
+        if not HARF_DETAYLARI:
+            return "SİSTEM UYARISI: Veritabanı dosyası yüklendi ancak içi boş görünüyor. Lütfen name_data.py dosyasını kontrol edin."
+
         # 1. ÖZEL İSİM ANALİZİ
         if isim in OZEL_ISIM_ANALIZLERI:
             bilgi = OZEL_ISIM_ANALIZLERI[isim]
@@ -182,9 +216,23 @@ class AIWriter:
             ham_veri.append(f"⚠️ RİSKLİ EK TESPİTİ (LA): {OZEL_UYARILAR.get('LA_EKI', {}).get('aciklama', 'La eki uyarısı')}")
 
         # Özel Yasaklı İsimler
-        # (Yasaklı listeni buraya genişleterek yazabilirsin, şimdilik name_data'daki anahtarlarla eşleşmeli)
-        if "ELİF" in isim or "ELIF" in isim:
-             ham_veri.append(f"⚠️ İSİM UYARISI: {OZEL_UYARILAR.get('ELIF_ISMI', {}).get('aciklama', '')}")
+        yasakli_map = {
+            "ELİF": "ELIF_ISMI", "ELIF": "ELIF_ISMI",
+            "İREM": "IREM_ISMI", "IREM": "IREM_ISMI",
+            "ESRA": "ESRA_ISMI",
+            "ALEYNA": "ALEYNA_ISMI",
+            "KÜBRA": "KUBRA_ISMI", "KUBRA": "KUBRA_ISMI",
+            "SÜMEYYE": "SUMEYYE_ISMI", "SUMEYYE": "SUMEYYE_ISMI",
+            "MERVE": "MERVE_ISMI",
+            "KEZBAN": "KEZBAN",
+            "GÜL": "GUL", "GUL": "GUL"
+        }
+        
+        if isim in yasakli_map:
+            key = yasakli_map[isim]
+            # Key veritabanında var mı kontrol et
+            if key in OZEL_UYARILAR:
+                ham_veri.append(f"🛑 KRİTİK İSİM UYARISI ({isim}): {OZEL_UYARILAR[key]['aciklama']}")
 
         # 3. HARF HARF ANALİZ
         ham_veri.append(f"\n--- HARF ENERJİLERİ ({isim}) ---")
@@ -210,9 +258,6 @@ class AIWriter:
                 
                 if harf_sayilari[harf] > 1:
                     ham_veri.append(f"   🔥 DİKKAT: Bu harften isimde {harf_sayilari[harf]} tane var! Etkisi katlanarak artar.")
-            else:
-                # Eğer harf veritabanında yoksa (Örn: X, Q, W vb. eksikse)
-                ham_veri.append(f"► {harf} HARFİ: Bu harf için özel veri bulunamadı.")
 
         return "\n".join(ham_veri)
 
@@ -220,10 +265,6 @@ class AIWriter:
     def generate_name_analysis_rag(isim: str, pdf_icerigi=None):
         teknik_veri = AIWriter.veri_madenciligi(isim)
         
-        # Eğer teknik veri boş geldiyse (Hala bir sorun varsa) AI'yı uyarmayalım, hata dönelim.
-        if "HARF ENERJİLERİ" not in teknik_veri:
-             return "SİSTEM HATASI: Veritabanı okunamadı. Lütfen yöneticiye başvurun."
-
         prompt = f"""
         Sen "İnsan Ekspertizi" projesinin baş analistisin.
         Aşağıda "{isim}" ismi için veritabanımızdan çekilen KESİN ve DEĞİŞMEZ teknik veriler bulunmaktadır.
