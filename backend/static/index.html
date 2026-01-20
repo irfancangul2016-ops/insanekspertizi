@@ -67,7 +67,57 @@
             <span class="label">İSİM ANALİZİ</span>
         </div>
 
-        <div class="menu-item" onclick="alert('Yakında...')"><span class="icon">🌙</span><span class="label">RÜYA</span></div>
+        <div id="ruya-analizi-container" class="analysis-section">
+    <h3>🌙 RÜYA TABİRLERİ VE BİLİNÇALTI ANALİZİ</h3>
+    <p>Rüyanı anlat, kadim semboller ve yapay zeka ile şifresini çözelim.</p>
+    
+    <textarea id="ruyaMetni" rows="5" placeholder="Örn: Rüyamda kaza yapmış bir araba gördüm ve yerden altın topluyordum..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc;"></textarea>
+    
+    <button onclick="ruyaAnaliziYap()" style="margin-top: 10px; padding: 10px 20px; background-color: #4a00e0; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+        🔮 RÜYAMI YORUMLA
+    </button>
+
+    <div id="ruyaSonuc" style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-left: 5px solid #4a00e0; display: none; white-space: pre-wrap;">
+        </div>
+</div>
+
+<script>
+async function ruyaAnaliziYap() {
+    const metin = document.getElementById("ruyaMetni").value;
+    const sonucKutusu = document.getElementById("ruyaSonuc");
+    
+    if (metin.length < 5) {
+        alert("Lütfen rüyanızı detaylı anlatın.");
+        return;
+    }
+
+    // Yükleniyor efekti
+    sonucKutusu.style.display = "block";
+    sonucKutusu.innerHTML = "⏳ Kadim arşivler taranıyor, bilinçaltına iniliyor...";
+
+    const formData = new FormData();
+    formData.append("ruya_metni", metin);
+
+    try {
+        const response = await fetch("/api/ruya-analizi", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+        
+        if (data.analiz) {
+            // Gelen metni güzelce formatla
+            sonucKutusu.innerHTML = data.analiz;
+        } else {
+            sonucKutusu.innerHTML = "❌ Bir hata oluştu: " + (data.hata || "Bilinmeyen hata");
+        }
+    } catch (error) {
+        sonucKutusu.innerHTML = "❌ Bağlantı hatası! Sunucu çalışıyor mu?";
+        console.error("Hata:", error);
+    }
+}
+</script>
         <div class="menu-item" onclick="alert('Yakında...')"><span class="icon">🪐</span><span class="label">ASTROLOJİ</span></div>
     </div>
 
