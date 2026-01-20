@@ -1,7 +1,14 @@
-# backend/schemas.py
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+
+# --- TOKEN (GİRİŞ) ŞEMALARI ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
 
 # --- ANALİZ ŞEMALARI ---
 class AnalysisBase(BaseModel):
@@ -14,11 +21,12 @@ class AnalysisCreate(AnalysisBase):
 
 class Analysis(AnalysisBase):
     id: int
-    user_id: int
+    user_id: Optional[int] = None # Misafirler için boş olabilir
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        # Pydantic V2 uyumu için (ORM nesnelerini okuyabilmesi için)
+        from_attributes = True
 
 # --- KULLANICI ŞEMALARI ---
 class UserBase(BaseModel):
@@ -34,12 +42,4 @@ class User(UserBase):
     analyses: List[Analysis] = [] # Kullanıcının geçmiş analizleri
 
     class Config:
-        orm_mode = True
-
-# --- TOKEN (Giriş) ŞEMASI ---
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
-    email: Optional[str] = None
+        from_attributes = True
