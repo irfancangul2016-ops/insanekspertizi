@@ -505,6 +505,22 @@ async def dosya_kontrol():
     if os.path.exists(hedef):
         return {"durum": "Klasör var", "dosyalar": os.listdir(hedef)}
     return {"durum": "Klasör YOK", "yol": hedef}
+@app.post("/api/ruya-analizi")
+async def ruya_analizi_servisi(ruya_metni: str = Form(...)):
+    try:
+        if len(ruya_metni.strip()) < 5:
+            return JSONResponse({"analiz": "Lütfen rüyanızı biraz daha detaylı anlatın."})
+
+        # Doğrudan AIWriter'ı çağırıyoruz
+        analiz_sonucu = AIWriter.ruya_tabiri_motoru(ruya_metni)
+        
+        return JSONResponse({
+            "analiz": analiz_sonucu
+        })
+        
+    except Exception as e:
+        # Hata olursa ekrana basıyoruz
+        return JSONResponse({"analiz": f"SUNUCU HATASI: {str(e)} \nLütfen ruya_data.py dosyasını kontrol edin."})
 # --- MODEL DEDEKTİFİ (Kritik Tanı Aracı) ---
 @app.get("/ajan/model-test")
 async def model_test():
