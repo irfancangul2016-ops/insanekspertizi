@@ -345,7 +345,10 @@ except Exception:
 class AIWriter:
     @staticmethod
     def _find_active_model(api_key):
-        """Aktif Google modellerini bulur (Pro öncelikli)."""
+        """
+        Aktif Google modellerini bulur.
+        ÖNCELİK: GEMINI FLASH (Hız ve Maliyet İçin)
+        """
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
             response = requests.get(url)
@@ -355,14 +358,21 @@ class AIWriter:
             if 'models' in data:
                 valid_models = [m for m in data['models'] if 'generateContent' in m.get('supportedGenerationMethods', [])]
                 
-                # Model Öncelik Sıralaması
-                for model in valid_models:
-                    if "gemini-1.5-pro" in model['name']: return model['name']
-                for model in valid_models:
-                    if "gemini-pro" in model['name']: return model['name']
+                # --- MODEL ÖNCELİK SIRALAMASI (DEĞİŞTİ: FLASH İLK SIRADA) ---
+                
+                # 1. Tercih: Gemini 1.5 Flash (En Hızlı)
                 for model in valid_models:
                     if "gemini-1.5-flash" in model['name']: return model['name']
                 
+                # 2. Tercih: Gemini 1.5 Pro (Yedek - Kalite)
+                for model in valid_models:
+                    if "gemini-1.5-pro" in model['name']: return model['name']
+                
+                # 3. Tercih: Eski Pro
+                for model in valid_models:
+                    if "gemini-pro" in model['name']: return model['name']
+                
+                # Hiçbiri yoksa ne varsa onu al
                 if valid_models: return valid_models[0]['name']
             return None
         except:
@@ -389,8 +399,6 @@ class AIWriter:
         except Exception as e:
             return f"Bağlantı Hatası: {str(e)}"
 
-    # --- EKSİK OLAN KISIM BURASIYDI: İSİM ANALİZİ MOTORU ---
-    
     @staticmethod
     def veri_madenciligi(isim: str):
         """İsim hakkında elimizdeki teknik verileri toplar."""
@@ -400,43 +408,69 @@ class AIWriter:
         # 1. Özel İsim Veritabanı Kontrolü
         if isim in OZEL_ISIM_ANALIZLERI:
             bilgi = OZEL_ISIM_ANALIZLERI[isim]
-            ham_veri.append(f"⚠️ ÖZEL İSİM ANALİZİ: {isim}\nDerece: {bilgi.get('derece')}\nAçıklama: {bilgi.get('aciklama')}\n" + "-"*30)
+            ham_veri.append(f"⚠️ KRİTİK VERİTABANI BİLGİSİ: {isim}\nDerece: {bilgi.get('derece')}\nAçıklama: {bilgi.get('aciklama')}\n" + "-"*30)
 
         # 2. Ek Kontrolleri
-        if isim.endswith("NUR"): ham_veri.append(f"⚠️ NUR EKI: {OZEL_UYARILAR.get('NUR_EKI', {}).get('aciklama', 'Nur eki ağır bir enerji verir.')}")
-        if isim.endswith("CAN"): ham_veri.append(f"⚠️ CAN EKI: {OZEL_UYARILAR.get('CAN_EKI', {}).get('aciklama', 'Can eki fedakarlık gerektirir.')}")
+        if isim.endswith("NUR"): ham_veri.append(f"⚠️ NUR EKI: {OZEL_UYARILAR.get('NUR_EKI', {}).get('aciklama')}")
+        if isim.endswith("CAN"): ham_veri.append(f"⚠️ CAN EKI: {OZEL_UYARILAR.get('CAN_EKI', {}).get('aciklama')}")
+        if isim.endswith("HAN"): ham_veri.append("⚠️ HAN EKI: Yönetici ve liderlik vasfı katar ama egoyu yükseltebilir.")
 
-        # 3. Harf Analizi
-        ham_veri.append(f"\n--- HARF ENERJİLERİ ({isim}) ---")
+        # 3. Harf Analizi (Daha Detaylı)
+        ham_veri.append(f"\n--- HARF FREKANSLARI VE ETKİLERİ ({isim}) ---")
         harf_sayilari = {h: isim.count(h) for h in isim}
         
         for index, harf in enumerate(isim):
             if harf == " ": continue
             if harf in HARF_DETAYLARI:
                 detay = HARF_DETAYLARI[harf]
-                # Sadece genel özelliğini alalım, çok uzatmayalım
-                ham_veri.append(f"► {harf}: {detay.get('genel', 'Özellik bulunamadı')}")
-                if harf_sayilari[harf] > 1: ham_veri.append(f"   🔥 {harf} harfinden {harf_sayilari[harf]} tane var! Etki katlanır.")
+                konum = "BAŞLANGIÇ HARFİ (En güçlü etki)" if index == 0 else ("SON HARF (Kalıcı etki)" if index == len(isim)-1 else "ARA HARF (Destekleyici)")
+                
+                ham_veri.append(f"► {harf} ({konum}):")
+                ham_veri.append(f"   - Anlam: {detay.get('genel')}")
+                
+                if harf_sayilari[harf] > 1: 
+                    ham_veri.append(f"   🔥 UYARI: Bu harften {harf_sayilari[harf]} tane var! Bu özellik kişinin kaderine HAKİM olur.")
         
         return "\n".join(ham_veri)
 
     @staticmethod
     def generate_name_analysis_rag(isim: str):
-        """Main.py'nin çağırdığı ana fonksiyon."""
+        """
+        DERİN ANALİZ MOTORU
+        """
         teknik_veri = AIWriter.veri_madenciligi(isim)
         
         prompt = f"""
-        Sen "İnsan Ekspertizi" projesinin baş analistisin.
-        Görev: "{isim}" ismini analiz et.
+        Rolün: Sen "İnsan Ekspertizi" projesinin ACIMASIZ, DOBRA ve MİSTİK baş analistisin.
+        Asla "yapay zeka" gibi konuşma. Kadim bir bilge gibi konuş.
+        
+        ANALİZ EDİLECEK KİŞİ: "{isim}"
 
-        ELİMİZDEKİ TEKNİK VERİLER (BUNLARI KULLAN):
+        ELİMİZDEKİ TEKNİK İSTİHBARAT:
         {teknik_veri}
 
-        ANALİZ KURALLARI:
-        1. Eşya veya bitki ismiyse (Kaya, Deniz, Gül, Yağmur vb.) sert bir dille uyar. "İnsana eşya ismi konmaz, enerjisi ağır gelir" de.
-        2. "Ters Enerji" kuralını unutma: İsmi "Mutlu" olan mutsuz olabilir, "Gül" olan gülemeyebilir. Bunu belirt.
-        3. Çok uhrevi isimler (Aleyna, Ecrin, Muhammed vb.) için "Bu isim ağırdır, taşıması zordur" uyarısı yap.
-        4. Analizi maddeler halinde, akıcı ve gizemli bir dille yaz. Sıkıcı olma. Mentör gibi konuş.
+        GÖREVİN:
+        Bu teknik verileri al ve birleştirerek kişinin karakter röntgenini çek.
+        Sadece verileri listeleme! Onları yorumla. Örneğin "A harfi liderliktir" deme; "Adın A ile başladığı için emir almaktan nefret edersin, kendi kurallarını koymak istersin" de.
+
+        ANALİZ FORMATI (BU BAŞLIKLARI KULLAN):
+        
+        1. 🎭 GENEL KARAKTER VE AURA
+        (Kişinin dışarıdan nasıl göründüğü ve iç dünyası. Maskeleri indir.)
+
+        2. 💼 KARİYER VE PARA POTANSİYELİ
+        (Hangi işlere yatkın? Parayı tutar mı saçar mı? Lider mi köle mi?)
+
+        3. ❤️ AŞK VE İLİŞKİ DİNAMİĞİ
+        (Kıskanç mı? Sadık mı? Nasıl bir eş arar? "Zor sever" mi?)
+
+        4. ⚠️ KADERSEL UYARILAR VE ZAYIF NOKTALAR
+        (Eşya ismiyse -Gül, Deniz vb.- sertçe uyar. "İnsan eşya değildir" de. Ters enerji kuralını uygula: Mutlu ise mutsuz olabilir. Nur/Can ekleri varsa yüklerinden bahset.)
+
+        TONLAMA:
+        - Kısa, net ve vurucu cümleler kur.
+        - "Olabilir, edebilir" gibi yuvarlak laflar etme. "Böylesin" de.
+        - Okuyucuyu sars. Gerçekleri yüzüne vur.
         """
         
         return AIWriter._send_request(prompt)
@@ -455,28 +489,23 @@ class AIWriter:
             if anahtar in ruya_temiz and anahtar not in bulunan_anahtarlar:
                 bulunan_anahtarlar.add(anahtar)
                 detay_str = "\n".join([f"- {d}" for d in bilgi.get('detaylar', [])])
-                bulunan_bilgiler.append(f"📖 SEMBOL: {anahtar}\nGenel: {bilgi.get('genel')}\n{detay_str}")
+                uyari_str = f"⚠️ DİKKAT: {bilgi.get('uyari')}" if bilgi.get('uyari') else ""
+                bulunan_bilgiler.append(f"📖 {anahtar}: {bilgi.get('genel')}\n{detay_str}\n{uyari_str}")
 
-        # Kelime bazlı tarama
-        for kelime in ruya_kelimeler:
-            if kelime in ANAHTAR_KELIMELER:
-                asil_anahtar = ANAHTAR_KELIMELER[kelime]
-                if asil_anahtar in RUYA_SOZLUGU and asil_anahtar not in bulunan_anahtarlar:
-                    bulunan_anahtarlar.add(asil_anahtar)
-                    bilgi = RUYA_SOZLUGU[asil_anahtar]
-                    bulunan_bilgiler.append(f"📖 SEMBOL: {asil_anahtar}\nGenel: {bilgi.get('genel')}")
-
-        kaynak_metni = "\n".join(bulunan_bilgiler) if bulunan_bilgiler else "Veritabanında eşleşme yok. Genel sembolizm kullan."
+        kaynak_metni = "\n".join(bulunan_bilgiler) if bulunan_bilgiler else "Veritabanında net eşleşme yok. Genel sembolizm kullan."
 
         prompt = f"""
-        Sen Rüya Alimisin.
+        Sen Rüya Alimisin. Bilinçaltının şifrelerini çözen bir üst akılsın.
+        
         RÜYA: "{ruya_metni}"
         
-        ARŞİV BİLGİLERİ (KESİN GERÇEKLER):
+        ARŞİV KAYITLARI:
         {kaynak_metni}
         
         GÖREV:
-        Arşiv bilgilerini temel alarak mistik bir yorum yap. Arşivde yoksa genel sembolizm bilgini kullan.
+        1. Yukarıdaki ARŞİV KAYITLARINI mutlaka analizine yedir.
+        2. Mistik, gizemli ve yol gösterici bir dille yorumla.
+        3. Rüyanın sahibine bir "Uyarı" veya "Müjde" vererek bitir.
         """
         
         return AIWriter._send_request(prompt)
