@@ -385,30 +385,40 @@
 #     import uvicorn
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
 # --- BU KISIMDAKİ IMPORTLARDA HATA ALIRSAN TERMİNAL SANA SÖYLEYECEK ---
-
-from fastapi import FastAPI, Form, HTTPException
+# backend/main.py
+from fastapi import FastAPI, Depends, HTTPException, status, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from datetime import timedelta
 from pydantic import BaseModel
 import uvicorn
 import os
 import sys
 
-# Kendi servislerimizi ekliyoruz
+# --- MODÜL YOLLARI ---
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from services.calculator import EbcedCalculator
-from services.interpreter import Interpreter
-from services.visualizer import Visualizer
-from services.pdf_generator import PDFGenerator
+# --- KENDİ MODÜLLERİMİZ ---
+from database import engine, get_db
+import models
+import schemas
+from services.auth import AuthService
 from services.ai_writer import AIWriter
-from services.database import Database
-from services.knowledge_reader import KnowledgeReader # <--- PDF Okuyucumuz
+from services.calculator import EbcedCalculator
+# interpreter, visualizer vb. şu an kullanılmıyorsa import etmeye gerek yok, sade tutalım.
 
-app = FastAPI()
+# --- VERİTABANI OLUŞTURMA ---
+models.Base.metadata.create_all(bind=engine)
 
-# --- 1. CORS AYARLARI (Mobil ve Web İçin) ---
+app = FastAPI(title="İnsan Ekspertizi API", version="2.0")
+
+# --- GÜVENLİK ---
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
+
+# --- 1. CORS AYARLARI ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -420,12 +430,130 @@ app.add_middleware(
 # --- 2. DOSYA YOLLARI ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
-
-# Statik klasörü bağla (Resimler, HTML, CSS buradan sunulur)
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# --- 3. MODELLER (Veri Tipleri) ---
+# --- 3. YARDIMCI FONKSİYONLAR ---
+
+# Kullanıcıyı Token'dan Tanıma
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Giriş bilgileri doğrulanamadı",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        from services.auth import SECRET_KEY, ALGORITHM
+        from jose import jwt
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except Exception:
+        raise credentials_exception
+    
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+# Analizi Veritabanına Kaydetme
+def analiz_kaydet(db: Session, tip: str, girdi: str, sonuc: str, user_id: int = None):
+    try:
+        yeni_analiz = models.Analysis(
+            user_id=user_id, # Giriş yapmamışsa None olur
+            analysis_type=tip,
+            input_text=girdi,
+            result_text=sonuc
+        )
+        db.add(yeni_analiz)
+        db.commit()
+        print(f"✅ Analiz veritabanına kaydedildi: {tip}")
+    except Exception as e:
+        print(f"❌ Kayıt Hatası: {str(e)}")
+
+# --- 4. AUTH (ÜYELİK) ENDPOINTLERİ ---
+
+@app.post("/api/register", response_model=schemas.User)
+def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Bu e-posta zaten kayıtlı.")
+    
+    hashed_password = AuthService.get_password_hash(user.password)
+    new_user = models.User(email=user.email, hashed_password=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+@app.post("/api/token", response_model=schemas.Token)
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    if not user or not AuthService.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="E-posta veya şifre hatalı",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=3000)
+    access_token = AuthService.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/api/users/me", response_model=schemas.User)
+def read_users_me(current_user: models.User = Depends(get_current_user)):
+    # Bu endpoint çağrıldığında, schemas.User modelindeki 'analyses' alanı sayesinde
+    # kullanıcının geçmiş analizleri de otomatik olarak dönecek.
+    return current_user
+
+# --- 5. ANALİZ ENDPOINTLERİ (KAYIT ÖZELLİKLİ) ---
+
+@app.post("/api/isim-analizi-yap")
+async def isim_analizi_servisi(
+    isim: str = Form(...),
+    soyisim: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    try:
+        tam_isim = f"{isim} {soyisim}".upper()
+        
+        # Yapay Zeka Motorunu Çalıştır (PDF/RAG yok, name_data.py var)
+        analiz_metni = AIWriter.generate_name_analysis_rag(tam_isim)
+        
+        # Veritabanına Kaydet (Şimdilik User ID None - Misafir)
+        analiz_kaydet(db, "ISIM", tam_isim, analiz_metni, user_id=None)
+        
+        return JSONResponse({
+            "kisi": tam_isim,
+            "analiz_sonucu": analiz_metni,
+            "kaynak": "İnsan Ekspertizi Arşivi"
+        })
+    except Exception as e:
+        return JSONResponse({"hata": f"Sunucu Hatası: {str(e)}"}, status_code=500)
+
+@app.post("/api/ruya-analizi")
+async def ruya_analizi_servisi(
+    ruya_metni: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    try:
+        if len(ruya_metni.strip()) < 5:
+            return JSONResponse({"analiz": "Lütfen rüyanızı detaylı anlatın."})
+
+        # Yapay Zeka Motoru
+        analiz_sonucu = AIWriter.ruya_tabiri_motoru(ruya_metni)
+        
+        # Veritabanına Kaydet
+        analiz_kaydet(db, "RUYA", ruya_metni, analiz_sonucu, user_id=None)
+        
+        return JSONResponse({"analiz": analiz_sonucu})
+    except Exception as e:
+        return JSONResponse({"analiz": f"Hata: {str(e)}"}, status_code=500)
+
+# --- 6. DİĞER API'LER (Mobil/Ebced) ---
 class AnalizIstegi(BaseModel):
     isim: str
     soyisim: str
@@ -434,7 +562,20 @@ class AnalizIstegi(BaseModel):
     dogum_yil: int
     anne_adi: str
 
-# --- 4. ANA SAYFA VE PWA ---
+@app.post("/api/analiz-yap")
+async def api_analiz(istek: AnalizIstegi):
+    try:
+        pin = EbcedCalculator.calculate_pin_code(istek.isim, istek.soyisim, istek.anne_adi)
+        element_skorlari = EbcedCalculator.analyze_elements(istek.isim + istek.soyisim)
+        return JSONResponse({
+            "ad_soyad": f"{istek.isim} {istek.soyisim}",
+            "pin_kodu": pin,
+            "elementler": element_skorlari
+        })
+    except Exception as e:
+        return JSONResponse(content={"hata": str(e)}, status_code=500)
+
+# --- 7. STATİK SAYFALAR ---
 @app.get("/", response_class=HTMLResponse)
 async def ana_sayfa():
     index_path = os.path.join(STATIC_DIR, "index.html")
@@ -451,110 +592,17 @@ async def get_manifest():
 async def get_sw():
     return FileResponse(os.path.join(STATIC_DIR, "sw.js"), media_type="application/javascript")
 
-# --- 5. İSİM ANALİZİ SERVİSİ (RAG - PDF TABANLI) ---
-# İşte kayıp olan kapı burası! En dışta, girintisiz durmalı.
-@app.post("/api/isim-analizi-yap")
-async def isim_analizi_servisi(
-    isim: str = Form(...),
-    soyisim: str = Form(...)
-):
-    try:
-        tam_isim = f"{isim} {soyisim}".upper()
-        
-        # 1. Kitabı Oku
-        kitap_bilgisi = KnowledgeReader.get_isim_analizi_context()
-        
-        # 2. Kitap Hatası Kontrolü
-        if "HATA" in kitap_bilgisi and len(kitap_bilgisi) < 200:
-             # Eğer okuyucu hata döndürdüyse bunu kullanıcıya söyle
-            return JSONResponse({"hata": kitap_bilgisi}, status_code=500)
-
-        # 3. Yapay Zekaya Gönder
-        analiz_metni = AIWriter.generate_name_analysis_rag(tam_isim, kitap_bilgisi)
-        
-        return JSONResponse({
-            "kisi": tam_isim,
-            "analiz_sonucu": analiz_metni,
-            "kaynak": "Özel İsim Analizi Arşivi"
-        })
-        
-    except Exception as e:
-        print(f"HATA OLUŞTU: {str(e)}") # Loglara yaz
-        return JSONResponse({"hata": f"Sunucu Hatası: {str(e)}"}, status_code=500)
-
-# --- 6. EBCED API (Mobil İçin) ---
-@app.post("/api/analiz-yap")
-async def api_analiz(istek: AnalizIstegi):
-    try:
-        pin = EbcedCalculator.calculate_pin_code(istek.isim, istek.soyisim, istek.anne_adi)
-        element_skorlari = EbcedCalculator.analyze_elements(istek.isim + istek.soyisim)
-        sonuc = {
-            "ad_soyad": f"{istek.isim} {istek.soyisim}",
-            "pin_kodu": pin,
-            "elementler": element_skorlari
-        }
-        return JSONResponse(content=sonuc)
-    except Exception as e:
-        return JSONResponse(content={"hata": str(e)}, status_code=500)
-
-# --- 7. AJAN KODU (Dosya Kontrolü İçin Kalsın) ---
-@app.get("/ajan/dosyalari-goster")
-async def dosya_kontrol():
-    import glob
-    hedef = os.path.join(BASE_DIR, "knowledge_base", "isim_analizi")
-    if os.path.exists(hedef):
-        return {"durum": "Klasör var", "dosyalar": os.listdir(hedef)}
-    return {"durum": "Klasör YOK", "yol": hedef}
-@app.post("/api/ruya-analizi")
-async def ruya_analizi_servisi(ruya_metni: str = Form(...)):
-    try:
-        if len(ruya_metni.strip()) < 5:
-            return JSONResponse({"analiz": "Lütfen rüyanızı biraz daha detaylı anlatın."})
-
-        # Doğrudan AIWriter'ı çağırıyoruz
-        analiz_sonucu = AIWriter.ruya_tabiri_motoru(ruya_metni)
-        
-        return JSONResponse({
-            "analiz": analiz_sonucu
-        })
-        
-    except Exception as e:
-        # Hata olursa ekrana basıyoruz
-        return JSONResponse({"analiz": f"SUNUCU HATASI: {str(e)} \nLütfen ruya_data.py dosyasını kontrol edin."})
-# --- MODEL DEDEKTİFİ (Kritik Tanı Aracı) ---
+# --- DEBUG & BAŞLATMA ---
 @app.get("/ajan/model-test")
 async def model_test():
-    """
-    Google'a 'Elinizde hangi modeller var?' diye sorar ve listeyi ekrana basar.
-    Böylece ezbere isim yazmaktan kurtuluruz.
-    """
     import os
     from google import genai
-
     api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        return {"durum": "HATA", "mesaj": "API Key bulunamadı"}
-
     try:
         client = genai.Client(api_key=api_key)
-        # Google'dan model listesini iste
-        tum_modeller = client.models.list()
-        
-        # Sadece işimize yarayan (generateContent destekleyen) modelleri filtrele
-        kullanilabilir = []
-        for m in tum_modeller:
-            # Model isimlerini al (örn: models/gemini-1.5-flash)
-            if "generateContent" in m.supported_generation_methods:
-                kullanilabilir.append(m.name)
-        
-        return {
-            "durum": "BAŞARILI", 
-            "senin_anahtarinla_calisan_modeller": kullanilabilir,
-            "mesaj": "Lütfen bu listedeki isimlerden birini kopyalayıp ai_writer.py dosyasına yapıştırın."
-        }
-            
+        return {"durum": "BAŞARILI", "mesaj": "API Key çalışıyor"}
     except Exception as e:
-        return {"durum": "KRİTİK HATA", "mesaj": str(e)}
+        return {"durum": "HATA", "mesaj": str(e)}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

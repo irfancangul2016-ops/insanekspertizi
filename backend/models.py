@@ -1,25 +1,29 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
-from core.database import Base
+# backend/models.py
+from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
 from datetime import datetime
+from .database import Base
 
-class AnalizKaydi(Base):
-    __tablename__ = "analizler"
+class User(Base):
+    __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    
-    # Kişisel Bilgiler
-    isim_soyisim = Column(String, index=True)
-    dogum_tarihi = Column(String)
-    analiz_tarihi = Column(DateTime, default=datetime.utcnow)
-    
-    # Teknik Sonuçlar
-    pin_kodu = Column(Integer)
-    yasam_yolu = Column(Integer)
-    baskin_element = Column(String)
-    eksik_element = Column(String)
-    
-    # Yapay Zeka Çıktısı (Uzun metin olduğu için Text tipi)
-    ai_raporu = Column(Text)
-    
-    # PDF Dosya Yolu (İleride tekrar indirmek isterse)
-    pdf_yolu = Column(String)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False) # Admin paneli için kritik
+
+    # Kullanıcının analizleri ile ilişki kuruyoruz
+    analyses = relationship("Analysis", back_populates="owner")
+
+class Analysis(Base):
+    __tablename__ = "analyses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id")) # Hangi kullanıcıya ait?
+    analysis_type = Column(String) # "ISIM" veya "RUYA"
+    input_text = Column(Text)      # Kullanıcının girdiği (Rüya veya İsim)
+    result_text = Column(Text)     # Yapay Zekanın cevabı
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    owner = relationship("User", back_populates="analyses")
