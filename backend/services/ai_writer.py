@@ -308,30 +308,40 @@ import sys
 import requests
 import json
 import importlib.util
+import re
 
-# --- GARANTİLİ MODÜL YÜKLEME (Değişmedi - Sağlam) ---
-def load_name_data():
+# --- MODÜL YÜKLEME SİSTEMİ (Standart) ---
+def load_module(module_name):
     try:
-        from services import name_data
-        return name_data
+        # 1. Standart yol
+        return importlib.import_module(f"services.{module_name}")
     except ImportError:
         try:
-            import name_data
-            return name_data
+            # 2. Aynı dizin
+            return importlib.import_module(module_name)
         except ImportError:
+            # 3. Manuel yol
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            file_path = os.path.join(current_dir, "name_data.py")
-            spec = importlib.util.spec_from_file_location("name_data", file_path)
-            foo = importlib.util.module_from_spec(spec)
-            sys.modules["name_data"] = foo
-            spec.loader.exec_module(foo)
-            return foo
+            file_path = os.path.join(current_dir, f"{module_name}.py")
+            if os.path.exists(file_path):
+                spec = importlib.util.spec_from_file_location(module_name, file_path)
+                foo = importlib.util.module_from_spec(spec)
+                sys.modules[module_name] = foo
+                spec.loader.exec_module(foo)
+                return foo
+            return None
 
-ND = load_name_data()
+# Veritabanlarını Yükle
+ND = load_module("name_data")
+RD = load_module("ruya_data")
+
+# İsim Verileri
 HARF_DETAYLARI = getattr(ND, "HARF_DETAYLARI", {})
 OZEL_UYARILAR = getattr(ND, "OZEL_UYARILAR", {})
 OZEL_ISIM_ANALIZLERI = getattr(ND, "OZEL_ISIM_ANALIZLERI", {})
-ISIM_VERME_KURALLARI = getattr(ND, "ISIM_VERME_KURALLARI", {})
+
+# Rüya Verileri (Devasa Sözlük)
+RUYA_SOZLUGU = getattr(RD, "RUYA_SOZLUGU", {})
 
 class AIWriter:
     @staticmethod
@@ -371,116 +381,143 @@ class AIWriter:
         except Exception as e:
             return f"Bağlantı Hatası: {str(e)}"
 
+    # --- İSİM ANALİZİ MOTORU (Aynı Kaldı) ---
     @staticmethod
     def veri_madenciligi(isim: str):
-        """
-        name_data.py verisini işler.
-        """
         isim = isim.upper().strip()
         ham_veri = []
         
-        if not HARF_DETAYLARI:
-            return "SİSTEM UYARISI: Veritabanı boş."
+        if not HARF_DETAYLARI: return "SİSTEM UYARISI: İsim veritabanı boş."
 
-        # 1. ÖZEL İSİM ANALİZİ
         if isim in OZEL_ISIM_ANALIZLERI:
             bilgi = OZEL_ISIM_ANALIZLERI[isim]
-            ham_veri.append(f"⚠️ ÖZEL İSİM ANALİZİ TESPİT EDİLDİ: {isim}")
-            ham_veri.append(f"Derece: {bilgi.get('derece')}")
-            ham_veri.append(f"Açıklama: {bilgi.get('aciklama')}")
-            ham_veri.append("-" * 30)
+            ham_veri.append(f"⚠️ ÖZEL İSİM ANALİZİ: {isim}\nDerece: {bilgi.get('derece')}\nAçıklama: {bilgi.get('aciklama')}\n" + "-"*30)
 
-        # 2. TEHLİKELİ EK VE İSİM KONTROLÜ
-        if isim.endswith("NUR"):
-            ham_veri.append(f"⚠️ RİSKLİ EK TESPİTİ (NUR): {OZEL_UYARILAR.get('NUR_EKI', {}).get('aciklama', 'Nur eki uyarısı')}")
-        
-        if isim.endswith("CAN"):
-            ham_veri.append(f"⚠️ RİSKLİ EK TESPİTİ (CAN): {OZEL_UYARILAR.get('CAN_EKI', {}).get('aciklama', 'Can eki uyarısı')}")
-            
-        if isim.endswith("LA"):
-            ham_veri.append(f"⚠️ RİSKLİ EK TESPİTİ (LA): {OZEL_UYARILAR.get('LA_EKI', {}).get('aciklama', 'La eki uyarısı')}")
+        if isim.endswith("NUR"): ham_veri.append(f"⚠️ NUR EKI: {OZEL_UYARILAR.get('NUR_EKI', {}).get('aciklama')}")
+        if isim.endswith("CAN"): ham_veri.append(f"⚠️ CAN EKI: {OZEL_UYARILAR.get('CAN_EKI', {}).get('aciklama')}")
+        if isim.endswith("LA"): ham_veri.append(f"⚠️ LA EKI: {OZEL_UYARILAR.get('LA_EKI', {}).get('aciklama')}")
 
-        # Özel Yasaklı İsimler (İçinde geçiyorsa yakala)
         yasakli_kelimeler = ["ELİF", "ELIF", "İREM", "IREM", "ESRA", "ALEYNA", "KÜBRA", "KUBRA", "SÜMEYYE", "SUMEYYE", "MERVE", "KEZBAN", "GÜL"]
         for yasak in yasakli_kelimeler:
             if yasak in isim:
                 key = f"{yasak}_ISMI" if yasak not in ["GÜL", "KEZBAN"] else ("GUL" if yasak == "GÜL" else "KEZBAN")
-                # Mapping düzeltmesi
                 if yasak in ["ELİF", "ELIF"]: key = "ELIF_ISMI"
                 if yasak in ["İREM", "IREM"]: key = "IREM_ISMI"
                 if yasak in ["KÜBRA", "KUBRA"]: key = "KUBRA_ISMI"
                 if yasak in ["SÜMEYYE", "SUMEYYE"]: key = "SUMEYYE_ISMI"
-                
-                if key in OZEL_UYARILAR:
-                    ham_veri.append(f"🛑 KRİTİK İSİM UYARISI ({yasak}): {OZEL_UYARILAR[key]['aciklama']}")
+                if key in OZEL_UYARILAR: ham_veri.append(f"🛑 UYARI ({yasak}): {OZEL_UYARILAR[key]['aciklama']}")
 
-        # 3. HARF HARF ANALİZ
         ham_veri.append(f"\n--- HARF ENERJİLERİ ({isim}) ---")
         harf_sayilari = {h: isim.count(h) for h in isim}
-        
         for index, harf in enumerate(isim):
             if harf == " ": continue
-            
             if harf in HARF_DETAYLARI:
                 detay = HARF_DETAYLARI[harf]
-                ham_veri.append(f"► {harf} HARFİ (Genel): {detay['genel']}")
-                
-                if index == 0:
-                    ham_veri.append(f"   ➥ İLK HARF ETKİSİ: {detay.get('ilk_harf', 'Belirtilmemiş')}")
-                elif index == len(isim) - 1:
-                    son_analiz = detay.get('sonda', 'Belirtilmemiş')
-                    if son_analiz == "Belirtilmemiş":
-                        ham_veri.append(f"   ➥ İÇ HARF ETKİSİ: {detay.get('icinde_veya_coklu', 'Belirtilmemiş')}")
-                    else:
-                        ham_veri.append(f"   ➥ SON HARF ETKİSİ: {son_analiz}")
-                else:
-                    ham_veri.append(f"   ➥ İÇ HARF ETKİSİ: {detay.get('icinde_veya_coklu', 'Belirtilmemiş')}")
-                
-                if harf_sayilari[harf] > 1:
-                    ham_veri.append(f"   🔥 DİKKAT: Bu harften isimde {harf_sayilari[harf]} tane var! Etkisi katlanarak artar.")
-
+                ham_veri.append(f"► {harf}: {detay['genel']}")
+                if index == 0: ham_veri.append(f"   ➥ BAŞTA: {detay.get('ilk_harf', '')}")
+                elif index == len(isim) - 1: ham_veri.append(f"   ➥ SONDA: {detay.get('sonda', detay.get('icinde_veya_coklu'))}")
+                else: ham_veri.append(f"   ➥ ORTADA: {detay.get('icinde_veya_coklu', '')}")
+                if harf_sayilari[harf] > 1: ham_veri.append(f"   🔥 {harf_sayilari[harf]} tane var! Etki katlanır.")
         return "\n".join(ham_veri)
 
     @staticmethod
     def generate_name_analysis_rag(isim: str, pdf_icerigi=None):
         teknik_veri = AIWriter.veri_madenciligi(isim)
-        
-        if "HARF ENERJİLERİ" not in teknik_veri:
-             return "SİSTEM HATASI: Veritabanı okunamadı. Lütfen yöneticiye başvurun."
-
-        # --- YENİ PROMPT STRATEJİSİ: ANLAM VE TERS ENERJİ ---
+        if "HARF ENERJİLERİ" not in teknik_veri: return "SİSTEM HATASI."
         prompt = f"""
-        Sen "İnsan Ekspertizi" projesinin acımasız ve bilge baş analistisin.
-        Aşağıda "{isim}" ismi için veritabanımızdan çekilen KESİN teknik veriler var.
-        
-        GÖREVİN 2 AŞAMALIDIR:
-        
-        AŞAMA 1: İSMİN KELİME ANLAMI VE TERS ENERJİ ANALİZİ (BU KISIM ÇOK ÖNEMLİ)
-        Kendi geniş bilgi hazinenden "{isim}" isminin kelime anlamını sorgula.
-        Şu kuralları "Acımasız Mentör" tonuyla uygula:
-        1. EŞYA/BİTKİ/HAYVAN KONTROLÜ: Eğer isim bir çiçek (Buket, Gül, Çiğdem), bir doğa olayı (Yağmur, Deniz, Kaya) veya bir eşya ise; "İnsan eşya değildir, bir ota veya taşa benzemez. Bu isim insana verilmemelidir." diyerek sertçe uyar. "Solmaya mahkumdur" gibi ifadeler kullan.
-        2. TERS ENERJİ PRENSİBİ: İsimlerin enerjisi tersten çalışır. 
-           - Adı "Gül" olan gülemez, çok ağlar.
-           - Adı "Mutlu" olan mutsuz olur.
-           - Adı "Savaş" olan barış bulamaz.
-           - Adı "Kaya" olan sert değil, kırılgan olur.
-           Bu prensibi ismin anlamına uygula ve kişinin yaşayacağı zıtlığı yüzüne vur.
-        
-        AŞAMA 2: HARF VE TEKNİK VERİ ANALİZİ
-        Aşağıdaki "TEKNİK ANALİZ VERİLERİ"ni kullanarak karakter analizini yap.
-        - "Nur", "Can" gibi ekler varsa "Cin/Ateş" uyarısını mutlaka yap.
-        - Verilen teknik metinleri, edebi ve akıcı bir paragrafa dök.
-        
-        --- TEKNİK ANALİZ VERİLERİ ---
-        {teknik_veri}
-        
-        RAPOR FORMATI:
-        1. İSMİN ANLAMI VE TERS ENERJİSİ (Sözlük anlamı ve ters etkisi)
-        2. HARFLERİN GİZEMİ (Teknik verilerin yorumu)
-        3. İNSAN EKSPERTİZİ SON HÜKMÜ (Net tavsiye: İsim kalmalı mı değişmeli mi?)
+        Sen "İnsan Ekspertizi" baş analistisin. "{isim}" ismini analiz et.
+        AŞAMA 1: İSMİN ANLAMI VE TERS ENERJİ
+        - Eşya/Bitki ismiyse (Gül, Kaya, Deniz) sertçe uyar. "İnsan eşya değildir" de.
+        - Ters enerji kuralını uygula: "Gül ise gülemez", "Mutlu ise mutsuz olur".
+        AŞAMA 2: HARF VE TEKNİK ANALİZ
+        - Aşağıdaki verileri kullan ve akıcı bir dille anlat.
+        VERİLER: {teknik_veri}
         """
         return AIWriter._send_request(prompt)
 
+    # --- RÜYA ANALİZİ MOTORU (GÜNCELLENDİ) ---
     @staticmethod
-    def generate_human_report(analysis_data: dict) -> str:
-        return "Bu özellik şu an bakımda."
+    def ruya_tabiri_motoru(ruya_metni: str):
+        """
+        Rüya metnini tarar ve RUYA_SOZLUGU içindeki eşleşmeleri bulur.
+        """
+        if not RUYA_SOZLUGU:
+            return "SİSTEM UYARISI: Rüya veritabanı bulunamadı veya boş."
+
+        # Rüyayı temizle ve büyük harfe çevir
+        ruya_temiz = re.sub(r'[^\w\s]', '', ruya_metni).upper()
+        ruya_kelimeler = ruya_temiz.split()
+        
+        bulunan_bilgiler = []
+        bulunan_anahtarlar = set() # Aynı şeyi tekrar eklememek için
+
+        # STRATEJİ 1: Sözlükteki Anahtarları Rüya Metninde Ara (Çok Kelimeli Semboller İçin)
+        # Örn: Sözlükte "SİYAH YILAN" varsa ve metinde geçiyorsa yakala.
+        for anahtar, bilgi in RUYA_SOZLUGU.items():
+            if anahtar in ruya_temiz and anahtar not in bulunan_anahtarlar:
+                bulunan_anahtarlar.add(anahtar)
+                
+                # Bilgiyi formatla
+                detay_str = "\n".join([f"- {d}" for d in bilgi.get('detaylar', [])])
+                uyari_str = f"⚠️ UYARI: {bilgi.get('uyari')}" if bilgi.get('uyari') else ""
+                
+                bulunan_bilgiler.append(f"""
+                📖 SEMBOL: {anahtar}
+                Genel Manası: {bilgi.get('genel', 'Belirtilmemiş')}
+                Detaylar:
+                {detay_str}
+                {uyari_str}
+                """)
+
+        # STRATEJİ 2: Rüya Kelimelerini Sözlükte Ara (Tek Kelimelik Semboller İçin)
+        # Örn: Metinde "ARABA" geçiyorsa ve yukarıda bulunmadıysa yakala.
+        for kelime in ruya_kelimeler:
+            # Basit kök bulma (Çoğul eklerini at: ARABALAR -> ARABA)
+            kok = kelime[:-3] if kelime.endswith("LAR") or kelime.endswith("LER") else kelime
+            
+            # Tam eşleşme veya kök eşleşmesi
+            hedef_anahtar = None
+            if kelime in RUYA_SOZLUGU: hedef_anahtar = kelime
+            elif kok in RUYA_SOZLUGU: hedef_anahtar = kok
+            
+            if hedef_anahtar and hedef_anahtar not in bulunan_anahtarlar:
+                bulunan_anahtarlar.add(hedef_anahtar)
+                bilgi = RUYA_SOZLUGU[hedef_anahtar]
+                
+                detay_str = "\n".join([f"- {d}" for d in bilgi.get('detaylar', [])])
+                uyari_str = f"⚠️ UYARI: {bilgi.get('uyari')}" if bilgi.get('uyari') else ""
+                
+                bulunan_bilgiler.append(f"""
+                📖 SEMBOL: {hedef_anahtar}
+                Genel Manası: {bilgi.get('genel', 'Belirtilmemiş')}
+                Detaylar:
+                {detay_str}
+                {uyari_str}
+                """)
+
+        kaynak_metni = "\n".join(bulunan_bilgiler) if bulunan_bilgiler else "Veritabanında doğrudan bir sembol eşleşmesi bulunamadı. Genel İslami rüya tabiri prensiplerini kullan."
+
+        # Prompt Hazırla
+        prompt = f"""
+        Sen "İnsan Ekspertizi" projesinin Rüya ve Bilinçaltı Alimisin. (İbn-i Sirin ve Nablusi ekolü).
+        
+        KULLANICININ RÜYASI:
+        "{ruya_metni}"
+
+        --- KADİM ARŞİVİMİZDEN BULUNANLAR (BUNLARI TEMEL AL) ---
+        {kaynak_metni}
+        ----------------------------------------------------------
+
+        ANALİZ KURALLARI:
+        1. ÖNCELİK ARŞİVDE: Yukarıdaki "KADİM ARŞİV" bölümünde bilgi varsa, yorumunu %100 ona dayandır. Asla arşivle çelişme. Arşiv "Hayırdır" diyorsa "Şerdir" deme.
+        2. BÜTÜNLÜK: Sembolleri tek tek sözlük gibi okuma. Onları birleştirip bir hikaye ve mesaj çıkar.
+        3. TONLAMA: Gizemli, net, "Acımasız Mentör" tadında. Uyarı varsa sertçe uyar. "Hayrolsun" deyip geçiştirme.
+        4. EKSİKSE TAMAMLA: Arşivde olmayan kısımları kendi geniş rüya tabiri bilginle doldur.
+
+        ÇIKTI FORMATI:
+        🌙 RÜYANIN GİZEMİ (Sembollerin analizi ve birleştirilmesi)
+        👁️ BİLİNÇALTI MESAJI (Kişinin ruh hali ve korkuları)
+        ⚡ İNSAN EKSPERTİZİ HÜKMÜ (Ne yapmalı? Sadaka mı, dikkat mi, müjde mi?)
+        """
+        
+        return AIWriter._send_request(prompt)
