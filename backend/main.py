@@ -2,8 +2,7 @@
 import os
 import sys
 
-# --- 1. SİSTEM YOLU AYARI (EN KRİTİK ADIM) ---
-# Bu satır, Python'un "backend" klasörünü bir paket gibi görmesini sağlar.
+# --- SİSTEM YOLU AYARI ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
@@ -18,10 +17,9 @@ from pydantic import BaseModel
 import uvicorn
 
 # --- KENDİ MODÜLLERİMİZ ---
-# Artık başında nokta olmadan çağırıyoruz çünkü sys.path ekledik.
 from database import engine, get_db
 import models
-import schemas
+import dto  # <--- ARTIK SCHEMAS YOK, DTO VAR
 from services.auth import AuthService
 from services.ai_writer import AIWriter
 from services.calculator import EbcedCalculator
@@ -87,8 +85,8 @@ def analiz_kaydet(db: Session, tip: str, girdi: str, sonuc: str, user_id: int = 
 
 # --- AUTH ENDPOINTLERİ ---
 
-@app.post("/api/register", response_model=schemas.User)
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+@app.post("/api/register", response_model=dto.User) # <--- DTO OLDU
+def register(user: dto.UserCreate, db: Session = Depends(get_db)): # <--- DTO OLDU
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Bu e-posta zaten kayıtlı.")
@@ -100,7 +98,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-@app.post("/api/token", response_model=schemas.Token)
+@app.post("/api/token", response_model=dto.Token) # <--- DTO OLDU
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
     if not user or not AuthService.verify_password(form_data.password, user.hashed_password):
@@ -116,7 +114,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.get("/api/users/me", response_model=schemas.User)
+@app.get("/api/users/me", response_model=dto.User) # <--- DTO OLDU
 def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user
 

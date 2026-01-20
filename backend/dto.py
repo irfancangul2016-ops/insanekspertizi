@@ -35,7 +35,6 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-# İşte main.py'nin aradığı o sınıf:
 class User(UserBase):
     id: int
     is_active: bool
