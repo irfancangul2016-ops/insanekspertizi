@@ -1,8 +1,9 @@
+# backend/dto.py
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
-# --- TOKEN (GİRİŞ) ŞEMALARI ---
+# --- TOKEN (GİRİŞ) ---
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -10,7 +11,7 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
-# --- ANALİZ ŞEMALARI ---
+# --- ANALİZ VERİLERİ ---
 class AnalysisBase(BaseModel):
     analysis_type: str
     input_text: str
@@ -21,25 +22,25 @@ class AnalysisCreate(AnalysisBase):
 
 class Analysis(AnalysisBase):
     id: int
-    user_id: Optional[int] = None # Misafirler için boş olabilir
+    user_id: Optional[int] = None
     created_at: datetime
 
     class Config:
-        # Pydantic V2 uyumu için (ORM nesnelerini okuyabilmesi için)
         from_attributes = True
 
-# --- KULLANICI ŞEMALARI ---
+# --- KULLANICI VERİLERİ ---
 class UserBase(BaseModel):
     email: str
 
 class UserCreate(UserBase):
     password: str
 
+# İşte main.py'nin aradığı o sınıf:
 class User(UserBase):
     id: int
     is_active: bool
     is_admin: bool
-    analyses: List[Analysis] = [] # Kullanıcının geçmiş analizleri
+    analyses: List[Analysis] = []
 
     class Config:
         from_attributes = True
