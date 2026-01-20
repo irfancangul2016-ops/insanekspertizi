@@ -304,63 +304,66 @@
 
 
 import os
-import sys
 import requests
-import json
-import importlib.util
 import re
-import traceback  # Hata takibi için
 
-# --- GLOBAL DEĞİŞKENLER ---
-RUYA_DATA_HATASI = None  # Eğer yüklemede hata olursa buraya yazacağız
+# --- GLOBAL DEĞİŞKENLER VE VERİ YÜKLEME ---
 RUYA_SOZLUGU = {}
 ANAHTAR_KELIMELER = {}
+HARF_DETAYLARI = {}
+OZEL_UYARILAR = {}
+OZEL_ISIM_ANALIZLERI = {}
 
-# --- MODÜL YÜKLEME (HATA GÖSTEREN VERSİYON) ---
+# 1. RÜYA VERİLERİNİ YÜKLE
 try:
-    # 1. Yöntem: Standart import
     from services import ruya_data
     RUYA_SOZLUGU = getattr(ruya_data, "RUYA_SOZLUGU", {})
     ANAHTAR_KELIMELER = getattr(ruya_data, "ANAHTAR_KELIMELER", {})
-except Exception as e1:
+except Exception:
     try:
-        # 2. Yöntem: Aynı dizin
         import ruya_data
         RUYA_SOZLUGU = getattr(ruya_data, "RUYA_SOZLUGU", {})
         ANAHTAR_KELIMELER = getattr(ruya_data, "ANAHTAR_KELIMELER", {})
-    except Exception as e2:
-        # Hata varsa kaydedelim, kullanıcıya gösterelim
-        RUYA_DATA_HATASI = f"Veritabanı Yükleme Hatası:\n1. {str(e1)}\n2. {str(e2)}"
-        print(f"KRİTİK HATA: {RUYA_DATA_HATASI}")
+    except:
+        print("UYARI: ruya_data.py bulunamadı.")
 
-# İsim verilerini yükle (Burada hata beklemiyoruz ama yine de güvenli olsun)
+# 2. İSİM VERİLERİNİ YÜKLE
 try:
     from services import name_data
     HARF_DETAYLARI = getattr(name_data, "HARF_DETAYLARI", {})
     OZEL_UYARILAR = getattr(name_data, "OZEL_UYARILAR", {})
     OZEL_ISIM_ANALIZLERI = getattr(name_data, "OZEL_ISIM_ANALIZLERI", {})
-except:
+except Exception:
     try:
         import name_data
         HARF_DETAYLARI = getattr(name_data, "HARF_DETAYLARI", {})
         OZEL_UYARILAR = getattr(name_data, "OZEL_UYARILAR", {})
         OZEL_ISIM_ANALIZLERI = getattr(name_data, "OZEL_ISIM_ANALIZLERI", {})
     except:
-        HARF_DETAYLARI = {}
+        print("UYARI: name_data.py bulunamadı.")
 
 class AIWriter:
     @staticmethod
     def _find_active_model(api_key):
+        """Aktif Google modellerini bulur (Pro öncelikli)."""
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
             response = requests.get(url)
             if response.status_code != 200: return None
             data = response.json()
+            
             if 'models' in data:
-                for model in data['models']:
-                    methods = model.get('supportedGenerationMethods', [])
-                    if 'generateContent' in methods:
-                        return model['name']
+                valid_models = [m for m in data['models'] if 'generateContent' in m.get('supportedGenerationMethods', [])]
+                
+                # Model Öncelik Sıralaması
+                for model in valid_models:
+                    if "gemini-1.5-pro" in model['name']: return model['name']
+                for model in valid_models:
+                    if "gemini-pro" in model['name']: return model['name']
+                for model in valid_models:
+                    if "gemini-1.5-flash" in model['name']: return model['name']
+                
+                if valid_models: return valid_models[0]['name']
             return None
         except:
             return None
@@ -378,7 +381,7 @@ class AIWriter:
         payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
 
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=40)
+            response = requests.post(url, headers=headers, json=payload, timeout=60)
             if response.status_code == 200:
                 return response.json()['candidates'][0]['content']['parts'][0]['text']
             else:
@@ -386,60 +389,94 @@ class AIWriter:
         except Exception as e:
             return f"Bağlantı Hatası: {str(e)}"
 
-    # ... (İsim analizi kodları aynı kalacak, buraya eklemiyorum yer kaplamasın diye) ...
-    # Buraya `veri_madenciligi` ve `generate_name_analysis_rag` fonksiyonlarını eskisi gibi koyabilirsin.
-    # Eğer silindiyseler önceki cevaptan alıp yapıştır.
+    # --- EKSİK OLAN KISIM BURASIYDI: İSİM ANALİZİ MOTORU ---
+    
+    @staticmethod
+    def veri_madenciligi(isim: str):
+        """İsim hakkında elimizdeki teknik verileri toplar."""
+        isim = isim.upper().strip()
+        ham_veri = []
+        
+        # 1. Özel İsim Veritabanı Kontrolü
+        if isim in OZEL_ISIM_ANALIZLERI:
+            bilgi = OZEL_ISIM_ANALIZLERI[isim]
+            ham_veri.append(f"⚠️ ÖZEL İSİM ANALİZİ: {isim}\nDerece: {bilgi.get('derece')}\nAçıklama: {bilgi.get('aciklama')}\n" + "-"*30)
+
+        # 2. Ek Kontrolleri
+        if isim.endswith("NUR"): ham_veri.append(f"⚠️ NUR EKI: {OZEL_UYARILAR.get('NUR_EKI', {}).get('aciklama', 'Nur eki ağır bir enerji verir.')}")
+        if isim.endswith("CAN"): ham_veri.append(f"⚠️ CAN EKI: {OZEL_UYARILAR.get('CAN_EKI', {}).get('aciklama', 'Can eki fedakarlık gerektirir.')}")
+
+        # 3. Harf Analizi
+        ham_veri.append(f"\n--- HARF ENERJİLERİ ({isim}) ---")
+        harf_sayilari = {h: isim.count(h) for h in isim}
+        
+        for index, harf in enumerate(isim):
+            if harf == " ": continue
+            if harf in HARF_DETAYLARI:
+                detay = HARF_DETAYLARI[harf]
+                # Sadece genel özelliğini alalım, çok uzatmayalım
+                ham_veri.append(f"► {harf}: {detay.get('genel', 'Özellik bulunamadı')}")
+                if harf_sayilari[harf] > 1: ham_veri.append(f"   🔥 {harf} harfinden {harf_sayilari[harf]} tane var! Etki katlanır.")
+        
+        return "\n".join(ham_veri)
 
     @staticmethod
+    def generate_name_analysis_rag(isim: str):
+        """Main.py'nin çağırdığı ana fonksiyon."""
+        teknik_veri = AIWriter.veri_madenciligi(isim)
+        
+        prompt = f"""
+        Sen "İnsan Ekspertizi" projesinin baş analistisin.
+        Görev: "{isim}" ismini analiz et.
+
+        ELİMİZDEKİ TEKNİK VERİLER (BUNLARI KULLAN):
+        {teknik_veri}
+
+        ANALİZ KURALLARI:
+        1. Eşya veya bitki ismiyse (Kaya, Deniz, Gül, Yağmur vb.) sert bir dille uyar. "İnsana eşya ismi konmaz, enerjisi ağır gelir" de.
+        2. "Ters Enerji" kuralını unutma: İsmi "Mutlu" olan mutsuz olabilir, "Gül" olan gülemeyebilir. Bunu belirt.
+        3. Çok uhrevi isimler (Aleyna, Ecrin, Muhammed vb.) için "Bu isim ağırdır, taşıması zordur" uyarısı yap.
+        4. Analizi maddeler halinde, akıcı ve gizemli bir dille yaz. Sıkıcı olma. Mentör gibi konuş.
+        """
+        
+        return AIWriter._send_request(prompt)
+
+    # --- RÜYA ANALİZİ MOTORU ---
+    @staticmethod
     def ruya_tabiri_motoru(ruya_metni: str):
-        """
-        Hata varsa direkt ekrana basar.
-        """
-        # 1. HATA KONTROLÜ: Veritabanı dosyasında sorun var mı?
-        if RUYA_DATA_HATASI:
-            return f"SİSTEM HATASI: `ruya_data.py` dosyasında kod hatası var.\n\nDetay: {RUYA_DATA_HATASI}\n\nLütfen dosyadaki virgülleri ve parantezleri kontrol edin."
-
-        if not RUYA_SOZLUGU:
-            return "UYARI: `ruya_data.py` yüklendi ama içi boş görünüyor. `RUYA_SOZLUGU` değişken ismini kontrol edin."
-
         ruya_temiz = re.sub(r'[^\w\s]', '', ruya_metni).upper()
         ruya_kelimeler = ruya_temiz.split()
         
         bulunan_bilgiler = []
         bulunan_anahtarlar = set()
 
-        # Sözlük taraması (Eski kodla aynı mantık)
+        # Veritabanı taraması
         for anahtar, bilgi in RUYA_SOZLUGU.items():
             if anahtar in ruya_temiz and anahtar not in bulunan_anahtarlar:
                 bulunan_anahtarlar.add(anahtar)
                 detay_str = "\n".join([f"- {d}" for d in bilgi.get('detaylar', [])])
-                uyari_str = f"⚠️ UYARI: {bilgi.get('uyari')}" if bilgi.get('uyari') else ""
-                bulunan_bilgiler.append(f"📖 SEMBOL: {anahtar}\nGenel: {bilgi.get('genel')}\n{detay_str}\n{uyari_str}")
+                bulunan_bilgiler.append(f"📖 SEMBOL: {anahtar}\nGenel: {bilgi.get('genel')}\n{detay_str}")
 
-        # Eğer sözlükte yoksa kelime bazlı ara
+        # Kelime bazlı tarama
         for kelime in ruya_kelimeler:
             if kelime in ANAHTAR_KELIMELER:
                 asil_anahtar = ANAHTAR_KELIMELER[kelime]
                 if asil_anahtar in RUYA_SOZLUGU and asil_anahtar not in bulunan_anahtarlar:
                     bulunan_anahtarlar.add(asil_anahtar)
                     bilgi = RUYA_SOZLUGU[asil_anahtar]
-                    detay_str = "\n".join([f"- {d}" for d in bilgi.get('detaylar', [])])
-                    bulunan_bilgiler.append(f"📖 SEMBOL: {asil_anahtar}\nGenel: {bilgi.get('genel')}\n{detay_str}")
+                    bulunan_bilgiler.append(f"📖 SEMBOL: {asil_anahtar}\nGenel: {bilgi.get('genel')}")
 
-        kaynak_metni = "\n".join(bulunan_bilgiler) if bulunan_bilgiler else "Veritabanında eşleşme yok. Genel rüya tabiri yap."
+        kaynak_metni = "\n".join(bulunan_bilgiler) if bulunan_bilgiler else "Veritabanında eşleşme yok. Genel sembolizm kullan."
 
         prompt = f"""
-        Sen "İnsan Ekspertizi" projesinin Rüya Alimisin.
-        
+        Sen Rüya Alimisin.
         RÜYA: "{ruya_metni}"
         
-        ARŞİV BİLGİLERİ:
+        ARŞİV BİLGİLERİ (KESİN GERÇEKLER):
         {kaynak_metni}
         
         GÖREV:
-        1. Arşivdeki bilgileri temel al.
-        2. Arşivde yoksa genel sembolizm bilgini kullan.
-        3. Mistik ve net bir dille yorumla.
+        Arşiv bilgilerini temel alarak mistik bir yorum yap. Arşivde yoksa genel sembolizm bilgini kullan.
         """
         
         return AIWriter._send_request(prompt)
