@@ -132,8 +132,13 @@ async def ruya_analiz(request: Request, ruya_metni: str = Form(...), db: Session
 
 @app.get("/api/blog/posts")
 def get_posts(db: Session = Depends(get_db)):
-    # En yeniden eskiye doğru getir
-    return db.query(models.BlogPost).order_by(desc(models.BlogPost.created_at)).all()
+    try:
+        # En yeniden eskiye doğru getir
+        return db.query(models.BlogPost).order_by(desc(models.BlogPost.created_at)).all()
+    except Exception as e:
+        # Hatayı gizleme, ekrana bas
+        print(f"BLOG HATASI: {e}")
+        raise HTTPException(status_code=500, detail=f"Veritabanı Hatası: {str(e)}")
 
 @app.get("/api/blog/posts/{slug}")
 def get_post_detail(slug: str, db: Session = Depends(get_db)):
@@ -245,36 +250,20 @@ def home():
 # --- 🚑 GÜÇLENDİRİLMİŞ TAMİR KİTİ (Eskisinin yerine bunu yapıştır) ---
 # --- 🧨 GÜÇLENDİRİLMİŞ TAMİR VE YETKİ KİTİ ---
 # --- 🏗️ ZORLA TABLO KURUCU (RAW SQL) ---
+# --- 🧨 BLOG TABLOSU SIFIRLAMA KİTİ ---
 @app.get("/api/db-repair")
 def repair_database(db: Session = Depends(get_db)):
     try:
-        # 1. SQL Komutuyla Tabloyu Zorla Oluştur (PostgreSQL Uyumlu)
-        # Eğer tablo yoksa oluşturur, varsa dokunmaz.
-        sql_komutu = text("""
-        CREATE TABLE IF NOT EXISTS blog_posts (
-            id SERIAL PRIMARY KEY,
-            title VARCHAR NOT NULL,
-            slug VARCHAR UNIQUE,
-            content TEXT,
-            image_url VARCHAR,
-            views INTEGER DEFAULT 0,
-            created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'utc')
-        );
-        """)
-        
-        db.execute(sql_komutu)
-        
-        # 2. Herkesi Yönetici Yap (Garanti Olsun)
-        patron_mail = "senin.mailin@gmail.com" 
-        
-        # Senin adminliğini geri verelim
-        db.execute(text(f"UPDATE users SET is_admin = true WHERE email = '{patron_mail}'"))
-        
+        # 1. Eski/Bozuk tabloyu KÖKTEN SİL
+        db.execute(text("DROP TABLE IF EXISTS blog_posts CASCADE"))
         db.commit()
         
+        # 2. SQLAlchemy'nin tabloyu nizami şekilde sıfırdan kurmasını sağla
+        models.Base.metadata.create_all(bind=engine)
+        
         return {
-            "durum": "TEMİZLENDİ", 
-            "mesaj": f"Tüm yetkiler sıfırlandı. Artık tek yönetici: {patron_mail}"}
+            "durum": "BAŞARILI", 
+            "mesaj": "Blog tablosu silindi ve kodlara uygun şekilde YENİDEN OLUŞTURULDU."
+        }
     except Exception as e:
-        # Hata verirse detayını görelim
-        return {"durum": "HATA", "mesaj": str(e)}
+        return {"durum": "KRİTİK HATA", "mesaj": str(e)}
