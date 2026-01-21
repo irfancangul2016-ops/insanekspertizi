@@ -1,10 +1,9 @@
 import os
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, ForeignKey, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from datetime import datetime
 
-# Render Ayarını Kontrol Et
+# Veritabanı Bağlantısı
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL and DATABASE_URL.startswith("postgres"):
@@ -20,13 +19,14 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # --- TABLO MODELLERİ ---
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
-    is_admin = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False) # Admin yetkisi
     
     analyses = relationship("Analysis", back_populates="owner")
 
@@ -41,18 +41,16 @@ class Analysis(Base):
     
     owner = relationship("User", back_populates="analyses")
 
-# --- YENİ EKLENEN: BLOG TABLOSU ---
+# 👇 İŞTE BU EKSİK OLABİLİR, BUNUN BURADA OLDUĞUNDAN EMİN OL 👇
 class BlogPost(Base):
     __tablename__ = "blog_posts"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
-    slug = Column(String, unique=True, index=True) # Link yapısı (ornek: ruyada-ucmak)
+    slug = Column(String, unique=True, index=True)
     content = Column(Text)
     image_url = Column(String)
     views = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
-
-Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
