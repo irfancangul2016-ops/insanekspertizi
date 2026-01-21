@@ -114,50 +114,85 @@
 
     <script>
         async function loadData() {
+            const loadingDiv = document.getElementById("loading");
             const token = localStorage.getItem("token");
+            
             if (!token) {
-                alert("Önce giriş yapmalısınız!");
+                alert("Güvenlik Uyarısı: Önce giriş yapmalısınız!");
                 window.location.href = "/";
                 return;
             }
 
             try {
+                // API'ye istek atıyoruz
                 const res = await fetch("/api/admin/stats", {
                     headers: { "Authorization": `Bearer ${token}` }
                 });
 
+                // 1. Yetki Hatası (Admin değilsin)
                 if (res.status === 403) {
-                    document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:50px;'>⛔ YETKİSİZ ERİŞİM<br><span style='font-size:1rem; color:white'>Bu alan sadece yöneticiler içindir.</span></h1>";
+                    document.body.innerHTML = `
+                        <div style="text-align:center; margin-top:50px; color:#ff7675;">
+                            <i class="fa-solid fa-hand fa-3x"></i>
+                            <h1>YETKİSİZ ERİŞİM</h1>
+                            <p>Bu alan sadece yöneticiler içindir.</p>
+                            <button onclick="window.location.href='/'" style="padding:10px 20px; cursor:pointer;">Ana Sayfaya Dön</button>
+                        </div>`;
                     return;
                 }
 
+                // 2. Başarılı Cevap
                 if (res.ok) {
                     const data = await res.json();
+                    
+                    // İstatistikleri doldur
                     document.getElementById("totalUsers").innerText = data.total_users;
                     document.getElementById("totalAnalysis").innerText = data.total_analysis;
                     
+                    // Tabloyu doldur
                     const tbody = document.getElementById("activityTable");
                     tbody.innerHTML = "";
                     
-                    data.activities.forEach(item => {
-                        const badgeClass = item.type === "ISIM" ? "badge-ISIM" : "badge-RUYA";
-                        const row = `
-                            <tr>
-                                <td style="color:#64748b">#${item.id}</td>
-                                <td>${item.user}</td>
-                                <td><span class="badge ${badgeClass}">${item.type}</span></td>
-                                <td style="color:#cbd5e1">${item.input}</td>
-                                <td style="color:#94a3b8">${item.date}</td>
-                            </tr>
-                        `;
-                        tbody.innerHTML += row;
-                    });
+                    if (data.activities.length === 0) {
+                        tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:20px;'>Henüz aktivite yok.</td></tr>";
+                    } else {
+                        data.activities.forEach(item => {
+                            const badgeClass = item.type === "ISIM" ? "badge-ISIM" : "badge-RUYA";
+                            const row = `
+                                <tr>
+                                    <td style="color:#64748b">#${item.id}</td>
+                                    <td>${item.user}</td>
+                                    <td><span class="badge ${badgeClass}">${item.type}</span></td>
+                                    <td style="color:#cbd5e1">${item.input}</td>
+                                    <td style="color:#94a3b8">${item.date}</td>
+                                </tr>
+                            `;
+                            tbody.innerHTML += row;
+                        });
+                    }
 
-                    document.getElementById("loading").style.display = "none";
+                    // Yükleme ekranını kapat, paneli aç
+                    loadingDiv.style.display = "none";
                     document.getElementById("dashboard").style.display = "block";
+                } else {
+                    // 3. Diğer Hatalar (404, 500 vs.)
+                    const errData = await res.json().catch(() => ({ detail: "Bilinmeyen hata" }));
+                    throw new Error(`${res.status} ${res.statusText} - ${errData.detail || ""}`);
                 }
+
             } catch (e) {
-                alert("Veri çekme hatası: " + e);
+                // HATAYI EKRANA BAS (Konsola değil)
+                loadingDiv.innerHTML = `
+                    <div style="color:#ef4444; margin-top:20px;">
+                        <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
+                        <h3>VERİLER ALINAMADI</h3>
+                        <p style="background:#334155; padding:10px; border-radius:5px; display:inline-block; font-family:monospace;">
+                            ${e.message}
+                        </p>
+                        <br><br>
+                        <button class="btn" onclick="location.reload()">Tekrar Dene</button>
+                    </div>
+                `;
             }
         }
 
@@ -166,6 +201,7 @@
             window.location.href = "/";
         }
 
+        // Başlat
         loadData();
     </script>
 </body>
