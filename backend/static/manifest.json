@@ -4,18 +4,18 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#1e293b",
-  "theme_color": "#d4af37",
-  "description": "Kişilik ve Potansiyel Analizi",
+  "background_color": "#f8f9fd",
+  "theme_color": "#6c5ce7",
+  "description": "Yapay Zeka Destekli Karakter Analizi",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063835.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/9626/9626780.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063835.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/9626/9626780.png",
       "sizes": "512x512",
       "type": "image/png"
     }
