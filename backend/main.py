@@ -157,17 +157,7 @@ def get_stats(request: Request, db: Session = Depends(get_db)):
 # Bu linki tarayıcıdan bir kez çalıştırınca admin olursun.
 @app.get("/api/gizli-admin-ol/{email}")
 def make_admin(email: str, secret: str, db: Session = Depends(get_db)):
-    if secret != "super_gizli_sifre_123": # Burayı değiştirebilirsin
-        return {"durum": "HATA", "mesaj": "Şifre yanlış!"}
     
-    user = db.query(models.User).filter(models.User.email == email).first()
-    if not user:
-        return {"durum": "HATA", "mesaj": "Kullanıcı bulunamadı!"}
-    
-    user.is_admin = True
-    db.commit()
-    return {"durum": "BAŞARILI", "mesaj": f"{email} artık sistem YÖNETİCİSİ!"}
-
 @app.get("/admin")
 def admin_panel():
     path = os.path.join(STATIC_DIR, "admin.html")
