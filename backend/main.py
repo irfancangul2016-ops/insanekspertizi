@@ -2,6 +2,8 @@ import os
 import sys
 import time
 from collections import defaultdict
+from datetime import datetime
+
 # Modül yollarını ayarla
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -10,9 +12,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey, DateTime, desc, text
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, text
-from datetime import timedelta
 
 # Modüller
 import database as models
@@ -21,7 +22,19 @@ import dto
 from services.auth import AuthService
 from services.ai_writer import AIWriter
 
-# UYGULAMA BAŞLARKEN TABLOLARI OLUŞTUR (Garanti Yöntem)
+# --- 🛠️ BYPASS AMELİYATI: BLOG SINIFINI BURADA TANIMLIYORUZ ---
+# Veritabanı dosyası inat ettiği için tabloyu burada oluşturuyoruz.
+class BlogPost(models.Base):
+    __tablename__ = "blog_posts"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String)
+    slug = Column(String, unique=True, index=True)
+    content = Column(Text)
+    image_url = Column(String)
+    views = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+# Tabloları Garanti Oluştur
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="İnsan Ekspertizi")
@@ -119,19 +132,19 @@ async def ruya_analiz(request: Request, ruya_metni: str = Form(...), db: Session
         return {"analiz": sonuc}
     except Exception as e: return JSONResponse({"analiz": str(e)}, status_code=500)
 
-# --- BLOG API (HATA YAKALAMALI) ---
+# --- BLOG API (ARTIK LOCAL CLASS KULLANIYOR) ---
 @app.get("/api/blog/posts")
 def get_posts(db: Session = Depends(get_db)):
     try:
-        return db.query(models.BlogPost).order_by(desc(models.BlogPost.created_at)).all()
+        # models.BlogPost yerine direkt BlogPost kullanıyoruz
+        return db.query(BlogPost).order_by(desc(BlogPost.created_at)).all()
     except Exception as e:
-        # Eğer tablo yoksa hata detayını döndür
         print(f"BLOG HATASI: {e}")
         return JSONResponse(status_code=500, content={"detail": f"Veritabanı Hatası: {str(e)}"})
 
 @app.get("/api/blog/posts/{slug}")
 def get_post_detail(slug: str, db: Session = Depends(get_db)):
-    post = db.query(models.BlogPost).filter(models.BlogPost.slug == slug).first()
+    post = db.query(BlogPost).filter(BlogPost.slug == slug).first()
     if not post: raise HTTPException(status_code=404, detail="Yazı yok")
     post.views += 1
     db.commit()
@@ -145,7 +158,7 @@ def create_post(request: Request, title: str = Form(...), content: str = Form(..
     slug = title.lower().replace(" ", "-").replace("ı","i").replace("ğ","g").replace("ü","u").replace("ş","s").replace("ö","o").replace("ç","c")[:50]
     
     try:
-        new_post = models.BlogPost(title=title, content=content, image_url=image_url, slug=slug)
+        new_post = BlogPost(title=title, content=content, image_url=image_url, slug=slug)
         db.add(new_post)
         db.commit()
         return {"durum": "BAŞARILI", "slug": slug}
@@ -156,7 +169,7 @@ def create_post(request: Request, title: str = Form(...), content: str = Form(..
 def delete_post(id: int, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     if not user or not user.is_admin: raise HTTPException(status_code=403, detail="Yetkisiz")
-    db.query(models.BlogPost).filter(models.BlogPost.id == id).delete()
+    db.query(BlogPost).filter(BlogPost.id == id).delete()
     db.commit()
     return {"durum": "SİLİNDİ"}
 
@@ -170,18 +183,18 @@ def get_stats(request: Request, db: Session = Depends(get_db)):
         return {
             "total_users": db.query(models.User).count(),
             "total_analysis": db.query(models.Analysis).count(),
-            "total_posts": db.query(models.BlogPost).count(),
-            "activities": [] # Şimdilik boş liste (Hata riskini azaltmak için)
+            "total_posts": db.query(BlogPost).count(),
+            "activities": [] 
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": f"Stats Hatası: {str(e)}"})
 
-# --- DB REPAIR (KÖKTEN ÇÖZÜM) ---
+# --- DB REPAIR ---
 @app.get("/api/db-repair")
 def repair_db():
     try:
         models.Base.metadata.create_all(bind=engine)
-        return "Tablolar oluşturuldu."
+        return "Tablolar (BlogPost dahil) garantiye alındı."
     except Exception as e:
         return f"Hata: {e}"
 
