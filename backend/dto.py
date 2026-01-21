@@ -1,3 +1,4 @@
+# backend/dto.py
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
@@ -11,8 +12,8 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: int
-    is_active: bool
-    is_admin: bool
+    is_active: bool = True       # Varsayılan değer eklendi
+    is_admin: bool = False       # KRİTİK DÜZELTME: Varsayılan değer eklendi
     
     class Config:
         from_attributes = True
