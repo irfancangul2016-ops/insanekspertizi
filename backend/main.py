@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, text
 from datetime import timedelta
 from typing import List
 
@@ -115,7 +115,7 @@ async def ruya_analiz(request: Request, ruya_metni: str = Form(...), db: Session
     except Exception as e:
         return JSONResponse({"analiz": str(e)}, status_code=500)
 
-# --- 👑 ADMIN PANELI API UÇLARI (YENİ) ---
+# --- 👑 ADMIN PANELI API UÇLARI ---
 
 @app.get("/api/admin/stats")
 def get_stats(request: Request, db: Session = Depends(get_db)):
@@ -142,7 +142,7 @@ def get_stats(request: Request, db: Session = Depends(get_db)):
             "id": item.id,
             "type": item.analysis_type,
             "input": item.input_text,
-            "result": item.result_text[:50] + "...", # Sadece başını göster
+            "result": item.result_text[:50] + "...",
             "user": owner_email,
             "date": item.created_at.strftime("%d.%m.%Y %H:%M")
         })
@@ -153,11 +153,8 @@ def get_stats(request: Request, db: Session = Depends(get_db)):
         "activities": activity_list
     }
 
-# --- 🕵️‍♂️ GİZLİ GEÇİT: SENİ ADMIN YAPAR ---
-# Bu linki tarayıcıdan bir kez çalıştırınca admin olursun.
-@app.get("/api/gizli-admin-ol/{email}")
-def make_admin(email: str, secret: str, db: Session = Depends(get_db)):
-    
+# --- SAYFA YÖNLENDİRMELERİ ---
+
 @app.get("/admin")
 def admin_panel():
     path = os.path.join(STATIC_DIR, "admin.html")
@@ -169,15 +166,13 @@ def home():
     path = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(path): return FileResponse(path)
     return "Sistem Çalışıyor"
-# --- 🚑 ACİL DURUM TAMİR KİTİ (Bunu en alta ekle) ---
-from sqlalchemy import text
 
+# --- ACİL DURUM TAMİRİ (Kalıcı Olabilir) ---
 @app.get("/api/db-repair")
 def repair_database(db: Session = Depends(get_db)):
     try:
-        # Veritabanına zorla 'is_admin' sütununu ekle
         db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;"))
         db.commit()
-        return {"durum": "BAŞARILI", "mesaj": "Veritabanı tamir edildi! 'is_admin' sütunu eklendi."}
+        return {"durum": "BAŞARILI", "mesaj": "Veritabanı kontrol edildi."}
     except Exception as e:
         return {"durum": "HATA", "mesaj": str(e)}
