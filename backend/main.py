@@ -179,3 +179,15 @@ def home():
     path = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(path): return FileResponse(path)
     return "Sistem Çalışıyor"
+# --- 🚑 ACİL DURUM TAMİR KİTİ (Bunu en alta ekle) ---
+from sqlalchemy import text
+
+@app.get("/api/db-repair")
+def repair_database(db: Session = Depends(get_db)):
+    try:
+        # Veritabanına zorla 'is_admin' sütununu ekle
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;"))
+        db.commit()
+        return {"durum": "BAŞARILI", "mesaj": "Veritabanı tamir edildi! 'is_admin' sütunu eklendi."}
+    except Exception as e:
+        return {"durum": "HATA", "mesaj": str(e)}

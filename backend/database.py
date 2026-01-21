@@ -8,12 +8,10 @@ from datetime import datetime
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL and DATABASE_URL.startswith("postgres"):
-    # Render PostgreSQL Bağlantısı
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
     engine = create_engine(DATABASE_URL)
 else:
-    # Yerel SQLite Bağlantısı (Yedek)
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'yerel_hafiza.db')}"
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
@@ -28,6 +26,8 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False) # <--- İŞTE BU EKSİKTİ! GERİ GELDİ.
+    
     analyses = relationship("Analysis", back_populates="owner")
 
 class Analysis(Base):
@@ -38,9 +38,9 @@ class Analysis(Base):
     input_text = Column(Text)
     result_text = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
     owner = relationship("User", back_populates="analyses")
 
-# Tabloları Oluştur
 Base.metadata.create_all(bind=engine)
 
 def get_db():
