@@ -547,16 +547,54 @@
     </div>
 
     <script>
-        // --- 🕵️‍♂️ KULLANICI KONTROLÜ ---
+    // --- 1. YARDIMCI FONKSİYONLAR ---
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        // Butonu bul ve aktif yap (Basit seçim)
+        const btnIndex = tabId === 'login' ? 0 : 1;
+        document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
+    }
+
+    function toggleMenu() {
+        const links = document.querySelector('.nav-links');
+        links.style.display = links.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    // --- 2. GİRİŞ & KAPI KONTROLÜ (GATEKEEPER) ---
     function isLoggedIn() {
-        // Token var mı diye bakar
         return localStorage.getItem("token") !== null;
+    }
+
+    function checkLoginStatus() {
+        const token = localStorage.getItem("token");
+        const authDiv = document.getElementById("auth-actions");
+        const userDiv = document.getElementById("user-actions");
+
+        if (token) {
+            if(authDiv) authDiv.style.display = "none";
+            if(userDiv) userDiv.style.display = "flex";
+            // Eğer giriş/kayıt sayfasındaysak ana sayfaya yönlendir
+            const loginTab = document.getElementById("login");
+            if(loginTab && loginTab.classList.contains("active")) {
+                // Burada bir şey yapmaya gerek yok, kullanıcı analiz yapabilir
+            }
+        } else {
+            if(authDiv) authDiv.style.display = "flex";
+            if(userDiv) userDiv.style.display = "none";
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem("token");
+        window.location.reload();
     }
 
     function showGate() {
         const modal = document.getElementById("gate-modal");
         modal.style.display = "flex";
-        // Animasyonlu giriş
         modal.animate([{opacity:0}, {opacity:1}], {duration:300});
     }
 
@@ -567,37 +605,28 @@
     function redirectToRegister() {
         closeGate();
         // Register sekmesini aç
-        document.querySelector('.tab-btn:nth-child(2)').click(); 
-        // Sayfanın en üstüne (formlara) kaydır
-        window.scrollTo({top: 0, behavior: 'smooth'});
+        switchTab('register');
+        document.getElementById('auth-container').scrollIntoView({behavior: 'smooth'});
     }
 
     function redirectToLogin() {
         closeGate();
         // Login sekmesini aç
-        document.querySelector('.tab-btn:nth-child(1)').click();
-        window.scrollTo({top: 0, behavior: 'smooth'});
+        switchTab('login');
+        document.getElementById('auth-container').scrollIntoView({behavior: 'smooth'});
     }
 
-    // --- 🔥 YENİ ANALİZ FONKSİYONLARI ---
+    // --- 3. ANALİZ FONKSİYONLARI ---
 
     async function analyzeName() {
         const isim = document.getElementById("isim").value.trim();
         const soyisim = document.getElementById("soyisim").value.trim();
         
-        // 1. Boşluk Kontrolü
-        if (!isim || !soyisim) {
-            alert("Lütfen isim ve soyisim alanlarını doldurun."); // Burayı sonra güzelleştireceğiz
-            return;
-        }
+        if (!isim || !soyisim) { alert("Lütfen isim ve soyisim girin."); return; }
 
-        // 2. KAPICI KONTROLÜ: Üye değilse DURDUR!
-        if (!isLoggedIn()) {
-            showGate();
-            return; // Fonksiyonu burada kesiyoruz, sunucuya gitmiyor.
-        }
+        // KAPICI: Giriş yapmamışsa durdur
+        if (!isLoggedIn()) { showGate(); return; }
 
-        // 3. Üye ise devam et (Eski kodun aynısı)
         const btn = document.querySelector('button[onclick="analyzeName()"]');
         const originalText = btn.innerHTML;
         btn.disabled = true;
@@ -611,54 +640,35 @@
         formData.append("soyisim", soyisim);
 
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch("/api/isim-analizi-yap", {
+            const res = await fetch("/api/isim-analizi-yap", {
                 method: "POST",
-                headers: { "Authorization": `Bearer ${token}` }, // Token'ı ekledik
+                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
                 body: formData
             });
-
-            const data = await response.json();
+            const data = await res.json();
             
-            if (response.ok) {
+            if (res.ok) {
                 resultDiv.style.display = "block";
-                resultDiv.innerHTML = `<h3><i class="fa-solid fa-star"></i> Analiz Sonucu</h3><p>${data.analiz_sonucu.replace(/\n/g, "<br>")}</p>`;
+                resultDiv.innerHTML = `<h3>Sonuç:</h3><p>${data.analiz_sonucu.replace(/\n/g, "<br>")}</p>`;
             } else {
-                if(response.status === 401) { // Token süresi dolmuşsa
-                    localStorage.removeItem("token");
-                    showGate();
-                } else {
-                    alert("Hata: " + (data.detail || "Bilinmeyen hata"));
-                }
+                if(res.status === 401) { logout(); showGate(); }
+                else alert(data.detail || "Hata oluştu");
             }
-        } catch (error) {
-            alert("Bağlantı hatası!");
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
+        } catch (e) { alert("Sunucu hatası."); } 
+        finally { btn.disabled = false; btn.innerHTML = originalText; }
     }
 
     async function analyzeDream() {
         const ruya = document.getElementById("ruya-metni").value.trim();
-        
-        // 1. Boşluk Kontrolü
-        if (!ruya) {
-            alert("Lütfen rüyanızı yazın.");
-            return;
-        }
+        if (!ruya) { alert("Lütfen rüyanızı yazın."); return; }
 
-        // 2. KAPICI KONTROLÜ
-        if (!isLoggedIn()) {
-            showGate();
-            return;
-        }
+        // KAPICI: Giriş yapmamışsa durdur
+        if (!isLoggedIn()) { showGate(); return; }
 
-        // 3. Devam et
         const btn = document.querySelector('button[onclick="analyzeDream()"]');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-moon fa-spin"></i> Rüya Yorumlanıyor...';
+        btn.innerHTML = '<i class="fa-solid fa-moon fa-spin"></i> Yorumlanıyor...';
         
         const resultDiv = document.getElementById("ruya-sonuc");
         resultDiv.style.display = "none";
@@ -667,244 +677,69 @@
         formData.append("ruya_metni", ruya);
 
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch("/api/ruya-analizi", {
+            const res = await fetch("/api/ruya-analizi", {
                 method: "POST",
-                headers: { "Authorization": `Bearer ${token}` },
+                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
                 body: formData
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
+            const data = await res.json();
+            
+            if (res.ok) {
                 resultDiv.style.display = "block";
-                resultDiv.innerHTML = `<h3><i class="fa-solid fa-moon"></i> Rüya Tabiri</h3><p>${data.analiz.replace(/\n/g, "<br>")}</p>`;
+                resultDiv.innerHTML = `<h3>Yorum:</h3><p>${data.analiz.replace(/\n/g, "<br>")}</p>`;
             } else {
-                 if(response.status === 401) {
-                    localStorage.removeItem("token");
-                    showGate();
-                } else {
-                    alert("Hata: " + (data.detail || "Bilinmeyen hata"));
-                }
+                if(res.status === 401) { logout(); showGate(); }
+                else alert(data.detail || "Hata oluştu");
             }
-        } catch (error) {
-            alert("Bağlantı hatası!");
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
+        } catch (e) { alert("Sunucu hatası."); }
+        finally { btn.disabled = false; btn.innerHTML = originalText; }
     }
-        const BASE_URL = "/api"; 
 
-        // --- UX FONKSİYONLARI ---
-        function typeWriter(text, elementId, speed = 8) {
-            const el = document.getElementById(elementId);
-            el.innerHTML = ""; el.style.display = "block";
-            let i = 0;
-            function type() {
-                if (i < text.length) {
-                    el.innerHTML += text.charAt(i) === "\n" ? "<br>" : text.charAt(i);
-                    i++; setTimeout(type, speed);
-                }
-            }
-            type();
-        }
-
-        function showToast(msg, type='success') {
-            const area = document.getElementById('toast-area');
-            const t = document.createElement('div');
-            t.className = `toast ${type}`;
-            const icon = type==='success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>';
-            t.innerHTML = `${icon} <span>${msg}</span>`;
-            area.appendChild(t);
-            setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(100%)'; setTimeout(()=>t.remove(),300); }, 3000);
-        }
-
-        function toggleAccordion(header) {
-            header.parentElement.classList.toggle('active');
-        }
-
-        // --- AUTH ---
-        function checkAuth() {
-            if (localStorage.getItem("token")) {
-                document.getElementById("guest-nav").style.display = "none";
-                document.getElementById("user-nav").style.display = "flex";
-            } else {
-                document.getElementById("guest-nav").style.display = "flex";
-                document.getElementById("user-nav").style.display = "none";
-            }
-        }
-
-        async function requestAuth(endpoint, data) {
-            try {
-                const res = await fetch(`${BASE_URL}${endpoint}`, {
-                    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)
-                });
-                if(res.ok) return {ok:true, data: await res.json()};
-                const err = await res.json();
-                return {ok:false, msg: err.detail || "Hata"};
-            } catch(e) { return {ok:false, msg: "Sunucu hatası"}; }
-        }
-
-        async function register() {
-            const email = document.getElementById("regEmail").value;
-            const password = document.getElementById("regPass").value;
-            if(!email || !password) return showToast("Alanları doldurun", "error");
-            
-            const res = await requestAuth("/register", {email, password});
-            if(res.ok) {
-                showToast("Kayıt başarılı! Giriş yapın.");
-                closeModal("registerModal"); openModal("loginModal");
-            } else showToast(res.msg, "error");
-        }
-
-        async function login() {
-            const email = document.getElementById("loginEmail").value;
-            const password = document.getElementById("loginPass").value;
-            const fd = new FormData(); fd.append("username", email); fd.append("password", password);
-
-            try {
-                const res = await fetch(`${BASE_URL}/token`, {method:"POST", body:fd});
-                if(res.ok) {
-                    const d = await res.json();
-                    localStorage.setItem("token", d.access_token);
-                    showToast("Giriş başarılı"); checkAuth(); closeModal("loginModal");
-                } else showToast("Hatalı bilgi", "error");
-            } catch(e) { showToast("Bağlantı sorunu", "error"); }
-        }
-
-        function logout() { localStorage.removeItem("token"); location.reload(); }
-
-        // --- ANALİZ ---
-       // --- ANALİZ (GÜNCELLENMİŞ VERSİYON) ---
-        async function runAnalysis(url, fd, resId, skelId) {
-            const skel = document.getElementById(skelId);
-            const resBox = document.getElementById(resId);
-            
-            // Hazırlık: Yükleniyor'u aç, sonucu gizle, eski yazıyı sil
-            skel.style.display="block"; 
-            resBox.style.display="none"; 
-            resBox.innerHTML="";
-
-            // Temizlik: Eğer önceki analizden kalan butonlar varsa onları sil
-            if (resBox.nextElementSibling && resBox.nextElementSibling.classList.contains('share-btns')) {
-                resBox.nextElementSibling.remove();
-            }
-
-            const token = localStorage.getItem("token");
-            const headers = token ? {"Authorization": `Bearer ${token}`} : {};
-
-            try {
-                const res = await fetch(BASE_URL+url, {method:"POST", headers, body:fd});
-                const data = await res.json();
-                skel.style.display="none";
-                
-                if(data.analiz_sonucu || data.analiz) {
-                    // 1. Yazı efektini başlat
-                    const text = data.analiz_sonucu || data.analiz;
-                    typeWriter(text, resId);
-                    
-                    // 2. Paylaş butonlarını oluştur
-                    const btnDiv = document.createElement('div');
-                    btnDiv.className = 'share-btns'; // Sonra silmek için işaret koyduk
-                    btnDiv.innerHTML = `
-                        <div style="margin-top:15px; display:flex; gap:10px; animation: slideDown 0.5s;">
-                            <button onclick="shareResult('${resId}')" style="flex:1; padding:12px; border:2px solid #f1f2f6; background:white; border-radius:12px; cursor:pointer; color:#636e72; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; transition:0.2s;">
-                                <i class="fa-regular fa-copy"></i> Kopyala
-                            </button>
-                            <button onclick="shareWhatsApp('${resId}')" style="flex:1; padding:12px; border:none; background:linear-gradient(135deg, #25D366, #128C7E); color:white; border-radius:12px; cursor:pointer; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; transition:0.2s; box-shadow:0 4px 15px rgba(37, 211, 102, 0.3);">
-                                <i class="fa-brands fa-whatsapp"></i> WhatsApp
-                            </button>
-                        </div>`;
-                    
-                    // 3. Butonları sonuç kutusunun hemen altına ekle
-                    resBox.parentNode.insertBefore(btnDiv, resBox.nextSibling);
-
-                } else {
-                    showToast("Sonuç alınamadı", "error");
-                }
-            } catch(e) { 
-                skel.style.display="none"; 
-                showToast("Hata oluştu: " + e, "error"); 
-            }
-        }
-
-        function isimAnaliziYap() {
-            const i = document.getElementById("isim").value;
-            const s = document.getElementById("soyisim").value;
-            if(!i) return showToast("İsim giriniz", "error");
-            const fd = new FormData(); fd.append("isim", i); fd.append("soyisim", s);
-            runAnalysis("/isim-analizi-yap", fd, "res-isim", "skel-isim");
-        }
-
-        function ruyaAnaliziYap() {
-            const t = document.getElementById("ruyaMetni").value;
-            if(t.length<5) return showToast("Rüya çok kısa", "error");
-            const fd = new FormData(); fd.append("ruya_metni", t);
-            runAnalysis("/ruya-analizi", fd, "res-ruya", "skel-ruya");
-        }
-
-        async function openHistory() {
-            openModal('historyModal');
-            const list = document.getElementById("historyList");
-            list.innerHTML = "<p style='text-align:center; color:#999'>Yükleniyor...</p>";
-            const token = localStorage.getItem("token");
-
-            try {
-                const res = await fetch(`${BASE_URL}/users/me`, {headers:{"Authorization":`Bearer ${token}`}});
-                if(res.ok) {
-                    const data = await res.json();
-                    const arr = data.analyses ? data.analyses.reverse() : [];
-                    if(arr.length===0) { list.innerHTML="<p style='text-align:center; padding:20px'>Henüz kayıt yok</p>"; return; }
-                    
-                    let h = "";
-                    arr.forEach(x => {
-                        const date = new Date(x.created_at).toLocaleDateString("tr-TR");
-                        const cls = x.analysis_type==="ISIM"?"badge-ISIM":"badge-RUYA";
-                        const ico = x.analysis_type==="ISIM"?"fa-fingerprint":"fa-moon";
-                        h += `<div class="history-item">
-                            <div style="font-size:1.5rem; color:#ccc"><i class="fa-solid ${ico}"></i></div>
-                            <div style="flex:1">
-                                <div style="display:flex; justify-content:space-between; margin-bottom:5px">
-                                    <span class="history-badge ${cls}">${x.analysis_type}</span>
-                                    <span style="font-size:0.8rem; color:#aaa">${date}</span>
-                                </div>
-                                <div style="font-weight:600; margin-bottom:5px; color:#444">${x.input_text}</div>
-                                <div style="font-size:0.9rem; color:#666; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden">${x.result_text}</div>
-                            </div>
-                        </div>`;
-                    });
-                    list.innerHTML = h;
-                }
-            } catch(e) { list.innerHTML="Hata"; }
-        }
-
-        // --- UI UTILS ---
-        function openModal(id) { document.getElementById(id).style.display="flex"; }
-        function closeModal(id) { document.getElementById(id).style.display="none"; }
-        window.onclick = e => { if(e.target.classList.contains('modal-overlay')) e.target.style.display="none"; };
-
-        checkAuth();
-        // --- PAYLAŞIM FONKSİYONLARI (YENİ) ---
-        function shareResult(resultId) {
-            const text = document.getElementById(resultId).innerText;
-            if (!text) return;
-
-            // Panoya Kopyala
-            navigator.clipboard.writeText(text).then(() => {
-                showToast("Sonuç kopyalandı! Arkadaşına yapıştır.");
+    // --- 4. AUTH (KAYIT & GİRİŞ) ---
+    async function handleRegister(e) {
+        e.preventDefault();
+        const email = document.getElementById("reg-email").value;
+        const pass = document.getElementById("reg-pass").value;
+        
+        try {
+            const res = await fetch("/api/register", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({email: email, password: pass})
             });
-        }
+            if(res.ok) {
+                alert("Kayıt başarılı! Şimdi giriş yapabilirsiniz.");
+                switchTab('login');
+            } else {
+                const data = await res.json();
+                alert("Hata: " + (data.detail || "Kayıt olunamadı"));
+            }
+        } catch(e) { alert("Bağlantı hatası"); }
+    }
 
-        function shareWhatsApp(resultId) {
-            const text = document.getElementById(resultId).innerText;
-            if (!text) return;
-            
-            // WhatsApp Linki Oluştur
-            const url = `https://wa.me/?text=${encodeURIComponent("İnsan Ekspertizi Analizim:\n\n" + text + "\n\nSen de dene: https://insanekspertizi.org")}`;
-            window.open(url, '_blank');
-        }
-    </script>
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById("login-email").value;
+        const pass = document.getElementById("login-pass").value;
+        const formData = new FormData();
+        formData.append("username", email);
+        formData.append("password", pass);
+
+        try {
+            const res = await fetch("/api/token", { method: "POST", body: formData });
+            if(res.ok) {
+                const data = await res.json();
+                localStorage.setItem("token", data.access_token);
+                window.location.reload();
+            } else {
+                alert("Hatalı e-posta veya şifre!");
+            }
+        } catch(e) { alert("Bağlantı hatası"); }
+    }
+
+    // --- BAŞLAT ---
+    window.onload = checkLoginStatus;
+</script>
     <div id="gate-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
     <div style="background:white; padding:40px; border-radius:20px; text-align:center; max-width:400px; width:90%; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
         <button onclick="closeGate()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#999;">&times;</button>
