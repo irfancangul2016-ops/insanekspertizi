@@ -134,3 +134,30 @@ def home():
     path = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(path): return FileResponse(path)
     return "Sistem Çalışıyor (Frontend Bulunamadı)"
+# --- SİSTEM KONTROL KAPISI (Bunu en alta ekle) ---
+@app.get("/api/test-db")
+def veritabani_testi():
+    import os
+    db_url = os.getenv("DATABASE_URL")
+    
+    status = {
+        "durum": "Bilinmiyor",
+        "hafiza_tipi": "Bilinmiyor",
+        "ayar_var_mi": "HAYIR ❌"
+    }
+    
+    if db_url:
+        status["ayar_var_mi"] = "EVET ✅"
+        if "postgres" in db_url:
+            status["durum"] = "BAŞARILI 🟢"
+            status["hafiza_tipi"] = "KALICI HAFIZA (PostgreSQL) 🐘"
+            status["mesaj"] = "Verileriniz güvende, silinmeyecek."
+        else:
+            status["durum"] = "UYARI 🔴"
+            status["hafiza_tipi"] = "Bilinmeyen URL"
+    else:
+        status["durum"] = "TEHLİKE 🔴"
+        status["hafiza_tipi"] = "GEÇİCİ HAFIZA (SQLite) 📄"
+        status["mesaj"] = "Site kapanınca her şey silinir! Render ayarlarını kontrol et."
+        
+    return status
