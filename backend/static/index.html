@@ -480,15 +480,22 @@
     </section>
 
     <footer>
+        <div class="footer-links">
+            <a href="/static/legal.html">Hakkımızda</a>
+            <a href="/static/legal.html">Gizlilik Politikası</a>
+            <a href="/static/legal.html">Kullanım Şartları</a>
+            <a href="mailto:info@insanekspertizi.org">İletişim</a>
+        </div>
+        
         <div class="footer-social">
             <a href="#"><i class="fa-brands fa-instagram"></i></a>
             <a href="#"><i class="fa-brands fa-twitter"></i></a>
-            <a href="#"><i class="fa-brands fa-youtube"></i></a>
+            <a href="#"><i class="fa-brands fa-linkedin"></i></a>
         </div>
-        <div class="copyright">
-            &copy; 2026 İnsan Ekspertizi A.Ş. Tüm hakları saklıdır. <br>
-            <span style="font-size: 0.8rem; opacity: 0.7;">İstanbul, Türkiye</span>
-        </div>
+
+        <p style="margin-top:20px; color:rgba(255,255,255,0.5); font-size:0.8rem;">
+            &copy; 2026 İnsan Ekspertizi. Tüm hakları saklıdır.
+        </p>
     </footer>
 
     <div id="loginModal" class="modal-overlay">
@@ -616,10 +623,20 @@
         function logout() { localStorage.removeItem("token"); location.reload(); }
 
         // --- ANALİZ ---
+       // --- ANALİZ (GÜNCELLENMİŞ VERSİYON) ---
         async function runAnalysis(url, fd, resId, skelId) {
             const skel = document.getElementById(skelId);
             const resBox = document.getElementById(resId);
-            skel.style.display="block"; resBox.style.display="none"; resBox.innerHTML="";
+            
+            // Hazırlık: Yükleniyor'u aç, sonucu gizle, eski yazıyı sil
+            skel.style.display="block"; 
+            resBox.style.display="none"; 
+            resBox.innerHTML="";
+
+            // Temizlik: Eğer önceki analizden kalan butonlar varsa onları sil
+            if (resBox.nextElementSibling && resBox.nextElementSibling.classList.contains('share-btns')) {
+                resBox.nextElementSibling.remove();
+            }
 
             const token = localStorage.getItem("token");
             const headers = token ? {"Authorization": `Bearer ${token}`} : {};
@@ -630,9 +647,33 @@
                 skel.style.display="none";
                 
                 if(data.analiz_sonucu || data.analiz) {
-                    typeWriter(data.analiz_sonucu || data.analiz, resId);
-                } else showToast("Sonuç alınamadı", "error");
-            } catch(e) { skel.style.display="none"; showToast("Hata oluştu", "error"); }
+                    // 1. Yazı efektini başlat
+                    const text = data.analiz_sonucu || data.analiz;
+                    typeWriter(text, resId);
+                    
+                    // 2. Paylaş butonlarını oluştur
+                    const btnDiv = document.createElement('div');
+                    btnDiv.className = 'share-btns'; // Sonra silmek için işaret koyduk
+                    btnDiv.innerHTML = `
+                        <div style="margin-top:15px; display:flex; gap:10px; animation: slideDown 0.5s;">
+                            <button onclick="shareResult('${resId}')" style="flex:1; padding:12px; border:2px solid #f1f2f6; background:white; border-radius:12px; cursor:pointer; color:#636e72; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; transition:0.2s;">
+                                <i class="fa-regular fa-copy"></i> Kopyala
+                            </button>
+                            <button onclick="shareWhatsApp('${resId}')" style="flex:1; padding:12px; border:none; background:linear-gradient(135deg, #25D366, #128C7E); color:white; border-radius:12px; cursor:pointer; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; transition:0.2s; box-shadow:0 4px 15px rgba(37, 211, 102, 0.3);">
+                                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                            </button>
+                        </div>`;
+                    
+                    // 3. Butonları sonuç kutusunun hemen altına ekle
+                    resBox.parentNode.insertBefore(btnDiv, resBox.nextSibling);
+
+                } else {
+                    showToast("Sonuç alınamadı", "error");
+                }
+            } catch(e) { 
+                skel.style.display="none"; 
+                showToast("Hata oluştu: " + e, "error"); 
+            }
         }
 
         function isimAnaliziYap() {
@@ -691,6 +732,25 @@
         window.onclick = e => { if(e.target.classList.contains('modal-overlay')) e.target.style.display="none"; };
 
         checkAuth();
+        // --- PAYLAŞIM FONKSİYONLARI (YENİ) ---
+        function shareResult(resultId) {
+            const text = document.getElementById(resultId).innerText;
+            if (!text) return;
+
+            // Panoya Kopyala
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("Sonuç kopyalandı! Arkadaşına yapıştır.");
+            });
+        }
+
+        function shareWhatsApp(resultId) {
+            const text = document.getElementById(resultId).innerText;
+            if (!text) return;
+            
+            // WhatsApp Linki Oluştur
+            const url = `https://wa.me/?text=${encodeURIComponent("İnsan Ekspertizi Analizim:\n\n" + text + "\n\nSen de dene: https://insanekspertizi.org")}`;
+            window.open(url, '_blank');
+        }
     </script>
 </body>
 </html>
