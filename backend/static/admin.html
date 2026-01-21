@@ -287,15 +287,15 @@
                 });
                 if(res.ok) {
                     alert("✅ Yazı başarıyla yayınlandı!");
-                    // Formu temizle
                     document.getElementById("blogTitle").value = "";
                     document.getElementById("blogContent").value = "";
                     document.getElementById("blogImage").value = "";
-                    // Listeyi ve sayıları güncelle
                     loadPosts();
                     loadStats();
                 } else {
-                    alert("Hata oluştu.");
+                    // Hatanın detayını sunucudan alıp gösterelim
+                    const errData = await res.json();
+                    alert("HATA: " + (errData.detail || "Bilinmeyen bir sorun var."));
                 }
             } catch(e) { alert("Sunucu hatası: " + e); }
         }

@@ -243,19 +243,21 @@ def home():
     return "Sistem Çalışıyor"
 
 # --- 🚑 GÜÇLENDİRİLMİŞ TAMİR KİTİ (Eskisinin yerine bunu yapıştır) ---
+# --- 🧨 GÜÇLENDİRİLMİŞ TAMİR VE YETKİ KİTİ ---
 @app.get("/api/db-repair")
 def repair_database(db: Session = Depends(get_db)):
     try:
-        # 1. Tabloların hepsini oluştur (Eksik olan 'blog_posts' tablosunu yaratır)
+        # 1. Eksik tabloları (Blog vb.) oluştur
         models.Base.metadata.create_all(bind=engine)
         
-        # 2. 'is_admin' sütununu garantiye al
-        try:
-            db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;"))
-        except:
-            pass 
-            
+        # 2. Sistemdeki HERKESİ 'Admin' yap (Yetki sorununu kökten çöz)
+        # Bu komut veritabanındaki tüm kullanıcıların is_admin kutucuğunu işaretler.
+        etkilenen_sayisi = db.query(models.User).update({"is_admin": True})
         db.commit()
-        return {"durum": "BAŞARILI", "mesaj": "Veritabanı senkronize edildi (Blog tablosu açıldı)."}
+        
+        return {
+            "durum": "BAŞARILI", 
+            "mesaj": f"Tablolar garantiye alındı. {etkilenen_sayisi} adet kullanıcı YÖNETİCİ yapıldı."
+        }
     except Exception as e:
         return {"durum": "HATA", "mesaj": str(e)}
