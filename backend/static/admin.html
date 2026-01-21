@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yönetici Paneli | İnsan Ekspertizi</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #e2e8f0;
+            --primary: #38bdf8;
+            --accent: #f472b6;
+            --success: #22c55e;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0; padding: 20px;
+        }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #334155; padding-bottom: 20px; margin-bottom: 30px;
+        }
+        h1 { margin: 0; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;
+        }
+        .stat-card {
+            background: var(--card); padding: 20px; border-radius: 10px; border: 1px solid #334155;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .stat-num { font-size: 2.5rem; font-weight: bold; margin: 10px 0; color: var(--accent); }
+        .stat-label { color: #94a3b8; font-size: 0.9rem; }
+
+        .table-container {
+            background: var(--card); border-radius: 10px; overflow: hidden; border: 1px solid #334155;
+        }
+        .table-header {
+            padding: 20px; background: #334155; font-weight: bold; display: flex; justify-content: space-between;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #334155; font-size: 0.9rem; }
+        th { color: var(--primary); }
+        tr:hover { background: #2d3e52; }
+        
+        .badge {
+            padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;
+        }
+        .badge-ISIM { background: rgba(56, 189, 248, 0.2); color: var(--primary); }
+        .badge-RUYA { background: rgba(244, 114, 182, 0.2); color: var(--accent); }
+        
+        .btn {
+            background: #ef4444; color: white; border: none; padding: 8px 16px; 
+            cursor: pointer; border-radius: 5px; font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1><i class="fa-solid fa-terminal"></i> YÖNETİCİ KOKPİTİ</h1>
+        <button class="btn" onclick="logout()">Güvenli Çıkış</button>
+    </div>
+
+    <div id="loading" style="text-align: center; margin-top: 50px;">
+        <i class="fa-solid fa-circle-notch fa-spin fa-3x"></i>
+        <p>Veriler Şifresi Çözülerek Getiriliyor...</p>
+    </div>
+
+    <div id="dashboard" style="display: none;">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fa-solid fa-users fa-lg"></i>
+                <span class="stat-num" id="totalUsers">0</span>
+                <span class="stat-label">TOPLAM ÜYE</span>
+            </div>
+            <div class="stat-card">
+                <i class="fa-solid fa-wand-magic-sparkles fa-lg"></i>
+                <span class="stat-num" id="totalAnalysis">0</span>
+                <span class="stat-label">TOPLAM ANALİZ</span>
+            </div>
+            <div class="stat-card">
+                <i class="fa-solid fa-server fa-lg"></i>
+                <span class="stat-num" style="color:var(--success)">AKTİF</span>
+                <span class="stat-label">SUNUCU DURUMU</span>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <span><i class="fa-solid fa-list"></i> Son Aktiviteler (Canlı Akış)</span>
+                <span style="font-size: 0.8rem; opacity: 0.7;">Son 50 Kayıt</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>KULLANICI</th>
+                        <th>TÜR</th>
+                        <th>GİRDİ</th>
+                        <th>ZAMAN</th>
+                    </tr>
+                </thead>
+                <tbody id="activityTable">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Önce giriş yapmalısınız!");
+                window.location.href = "/";
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/admin/stats", {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+
+                if (res.status === 403) {
+                    document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:50px;'>⛔ YETKİSİZ ERİŞİM<br><span style='font-size:1rem; color:white'>Bu alan sadece yöneticiler içindir.</span></h1>";
+                    return;
+                }
+
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById("totalUsers").innerText = data.total_users;
+                    document.getElementById("totalAnalysis").innerText = data.total_analysis;
+                    
+                    const tbody = document.getElementById("activityTable");
+                    tbody.innerHTML = "";
+                    
+                    data.activities.forEach(item => {
+                        const badgeClass = item.type === "ISIM" ? "badge-ISIM" : "badge-RUYA";
+                        const row = `
+                            <tr>
+                                <td style="color:#64748b">#${item.id}</td>
+                                <td>${item.user}</td>
+                                <td><span class="badge ${badgeClass}">${item.type}</span></td>
+                                <td style="color:#cbd5e1">${item.input}</td>
+                                <td style="color:#94a3b8">${item.date}</td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+
+                    document.getElementById("loading").style.display = "none";
+                    document.getElementById("dashboard").style.display = "block";
+                }
+            } catch (e) {
+                alert("Veri çekme hatası: " + e);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "/";
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
