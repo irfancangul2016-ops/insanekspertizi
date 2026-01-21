@@ -3,6 +3,9 @@ import sys
 # Sistem yolunu ayarla
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+from fastapi import FastAPI, Depends, HTTPException, status, Form, Request # Request zaten vardı, kontrol et
+import time # <--- BUNU EKLE
+from collections import defaultdict # <--- BUNU EKLE
 from fastapi import FastAPI, Depends, HTTPException, status, Form, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
@@ -21,6 +24,36 @@ from services.auth import AuthService
 from services.ai_writer import AIWriter
 
 app = FastAPI(title="İnsan Ekspertizi")
+
+# --- 🛡️ GÜVENLİK: RATE LIMITING (HIZ SINIRI) ---
+# Her IP adresi için son istek zamanlarını tutar
+request_counts = defaultdict(list)
+
+LIMIT_PER_MINUTE = 5  # Bir kişi dakikada en fazla 5 analiz yapabilsin
+WINDOW_SIZE = 60      # 60 saniye (1 dakika)
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    # Sadece analiz uçlarını kontrol et (Statik dosyalar ve sayfalar serbest)
+    if request.url.path in ["/api/isim-analizi-yap", "/api/ruya-analizi"]:
+        client_ip = request.client.host
+        now = time.time()
+        
+        # Süresi dolmuş (eski) istekleri temizle
+        request_counts[client_ip] = [t for t in request_counts[client_ip] if now - t < WINDOW_SIZE]
+        
+        # Limit kontrolü
+        if len(request_counts[client_ip]) >= LIMIT_PER_MINUTE:
+            return JSONResponse(
+                status_code=429, 
+                content={"analiz": "✋ Çok hızlı gidiyorsun! Biraz nefes al, 1 dakika sonra tekrar dene.", "analiz_sonucu": "✋ Çok hızlı gidiyorsun! Biraz nefes al, 1 dakika sonra tekrar dene."}
+            )
+        
+        # Yeni isteği kaydet
+        request_counts[client_ip].append(now)
+        
+    response = await call_next(request)
+    return response
 
 # CORS
 app.add_middleware(
