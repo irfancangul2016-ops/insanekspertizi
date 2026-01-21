@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | İnsan Ekspertizi</title>
+    <meta name="description" content="Rüya tabirleri, isim analizi ve kişisel gelişim üzerine yapay zeka destekli makaleler.">
+    
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/9626/9626780.png">
+    <meta name="theme-color" content="#6c5ce7">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --dark: #2d3436;
+            --text-light: #636e72;
+            --bg-light: #f8f9fd;
+            --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-light);
+            margin: 0; color: var(--dark);
+            line-height: 1.6;
+        }
+
+        /* --- NAVİGASYON (Ana sayfayla aynı) --- */
+        nav {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            padding: 1rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .logo {
+            font-size: 1.5rem; font-weight: 800; color: var(--primary);
+            text-decoration: none; display: flex; align-items: center; gap: 10px;
+        }
+
+        /* --- CONTAINER --- */
+        .container {
+            max-width: 1000px; margin: 40px auto; padding: 0 20px; min-height: 80vh;
+        }
+
+        /* --- LISTE GÖRÜNÜMÜ --- */
+        .blog-header { text-align: center; margin-bottom: 50px; }
+        .blog-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .blog-header p { color: var(--text-light); }
+
+        .blog-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;
+        }
+
+        .blog-card {
+            background: var(--white); border-radius: 20px; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: 0.3s;
+            border: 1px solid #eee; cursor: pointer; text-decoration: none; color: inherit;
+            display: flex; flex-direction: column;
+        }
+        .blog-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(108, 92, 231, 0.15); }
+
+        .card-img {
+            width: 100%; height: 200px; object-fit: cover;
+        }
+        .card-content { padding: 25px; flex: 1; display: flex; flex-direction: column; }
+        .card-date { font-size: 0.8rem; color: #b2bec3; margin-bottom: 10px; display: block; }
+        .card-title { font-size: 1.2rem; font-weight: 700; margin: 0 0 10px; line-height: 1.4; }
+       .card-excerpt { 
+            font-size: 0.9rem; 
+            color: var(--text-light); 
+            margin-bottom: 20px; 
+            
+            /* Metni 3 satırda kesme ayarları */
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* Eski tarayıcılar için */
+            line-clamp: 3;         /* Standart (Uyarıyı çözen satır) */
+            -webkit-box-orient: vertical;
+            overflow: hidden; 
+        }
+        .read-more { margin-top: auto; color: var(--primary); font-weight: 600; font-size: 0.9rem; }
+
+        /* --- DETAY GÖRÜNÜMÜ --- */
+        .detail-view { display: none; animation: fadeIn 0.5s; background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .back-btn { 
+            display: inline-flex; align-items: center; gap: 5px; 
+            text-decoration: none; color: var(--text-light); font-weight: 600; margin-bottom: 20px; 
+        }
+        .back-btn:hover { color: var(--primary); }
+        
+        .detail-img { width: 100%; height: 400px; object-fit: cover; border-radius: 16px; margin-bottom: 30px; }
+        .detail-title { font-size: 2.5rem; margin-bottom: 10px; line-height: 1.2; }
+        .detail-meta { color: #b2bec3; font-size: 0.9rem; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        
+        .detail-content { font-size: 1.1rem; line-height: 1.8; color: #2d3436; }
+        .detail-content h2 { margin-top: 30px; color: var(--primary); }
+        .detail-content p { margin-bottom: 20px; }
+
+        /* Yükleniyor */
+        .loading { text-align: center; padding: 50px; font-size: 1.2rem; color: #ccc; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @media (max-width: 768px) {
+            .blog-header h1 { font-size: 2rem; }
+            .detail-title { font-size: 1.8rem; }
+            .detail-img { height: 250px; }
+            .container { margin: 20px auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="logo">
+            <i class="fa-solid fa-dna fa-lg"></i> İnsan Ekspertizi
+        </a>
+        <a href="/" style="text-decoration:none; color:var(--dark); font-weight:600;">Ana Sayfa</a>
+    </nav>
+
+    <div class="container">
+        
+        <div id="loading" class="loading">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Yazılar Getiriliyor...
+        </div>
+
+        <div id="list-view" style="display: none;">
+            <div class="blog-header">
+                <h1>Blog & İçgörüler</h1>
+                <p>Yapay zeka, sembolizm ve bilinçaltı üzerine keşifler.</p>
+            </div>
+            
+            <div id="posts-grid" class="blog-grid">
+                </div>
+            
+            <div id="no-posts" style="display:none; text-align:center; padding:40px; color:#999;">
+                <i class="fa-regular fa-folder-open fa-3x"></i>
+                <p>Henüz hiç yazı eklenmemiş.</p>
+            </div>
+        </div>
+
+        <div id="detail-view" class="detail-view">
+            <a href="/blog" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</a>
+            
+            <h1 id="d-title" class="detail-title"></h1>
+            <div id="d-meta" class="detail-meta"></div>
+            <img id="d-img" class="detail-img" src="" alt="Blog Görseli">
+            
+            <div id="d-content" class="detail-content"></div>
+        </div>
+
+    </div>
+
+    <script>
+        async function init() {
+            const path = window.location.pathname;
+            const loading = document.getElementById("loading");
+            
+            // Eğer URL "/blog/bir-yazi" şeklindeyse DETAY göster
+            if (path.length > 6 && path.startsWith("/blog/")) {
+                const slug = path.split("/blog/")[1];
+                await loadDetail(slug);
+            } 
+            // Yoksa LİSTE göster
+            else {
+                await loadList();
+            }
+            
+            loading.style.display = "none";
+        }
+
+        async function loadList() {
+            document.getElementById("list-view").style.display = "block";
+            const grid = document.getElementById("posts-grid");
+            
+            try {
+                const res = await fetch("/api/blog/posts");
+                if (!res.ok) throw new Error("Veri çekilemedi");
+                const posts = await res.json();
+
+                if (posts.length === 0) {
+                    document.getElementById("no-posts").style.display = "block";
+                    return;
+                }
+
+                grid.innerHTML = "";
+                posts.forEach(post => {
+                    // İçeriğin ilk 150 karakterini al
+                    const excerpt = post.content.substring(0, 150) + "...";
+                    const date = new Date(post.created_at).toLocaleDateString("tr-TR");
+                    
+                    const html = `
+                        <a href="/blog/${post.slug}" class="blog-card">
+                            <img src="${post.image_url}" class="card-img" alt="${post.title}" onerror="this.src='https://via.placeholder.com/400x200?text=Resim+Yok'">
+                            <div class="card-content">
+                                <span class="card-date"><i class="fa-regular fa-calendar"></i> ${date}</span>
+                                <h3 class="card-title">${post.title}</h3>
+                                <p class="card-excerpt">${excerpt}</p>
+                                <span class="read-more">Devamını Oku <i class="fa-solid fa-arrow-right"></i></span>
+                            </div>
+                        </a>
+                    `;
+                    grid.innerHTML += html;
+                });
+
+            } catch (e) {
+                grid.innerHTML = "<p style='color:red; text-align:center'>Yazılar yüklenirken hata oluştu.</p>";
+            }
+        }
+
+        async function loadDetail(slug) {
+            const view = document.getElementById("detail-view");
+            
+            try {
+                const res = await fetch(`/api/blog/posts/${slug}`);
+                if (res.status === 404) {
+                    view.innerHTML = "<h1 style='text-align:center; margin-top:50px'>404 - Yazı Bulunamadı</h1><p style='text-align:center'><a href='/blog'>Geri Dön</a></p>";
+                    view.style.display = "block";
+                    return;
+                }
+                
+                const post = await res.json();
+                
+                // Meta etiketlerini güncelle (SEO için title değişsin)
+                document.title = `${post.title} | İnsan Ekspertizi`;
+
+                document.getElementById("d-title").innerText = post.title;
+                document.getElementById("d-meta").innerHTML = `<i class="fa-regular fa-eye"></i> ${post.views} Okunma &nbsp;|&nbsp; <i class="fa-regular fa-calendar"></i> ${new Date(post.created_at).toLocaleDateString("tr-TR")}`;
+                document.getElementById("d-img").src = post.image_url;
+                
+                // İçerikteki satır başlarını <br> yap
+                document.getElementById("d-content").innerHTML = post.content.replace(/\n/g, "<br>");
+                
+                view.style.display = "block";
+
+            } catch (e) {
+                view.innerHTML = "<p>Yükleme hatası.</p>";
+                view.style.display = "block";
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
