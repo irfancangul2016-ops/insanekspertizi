@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import re  # <--- YENİ EKLENEN (Temizlikçi)
 from collections import defaultdict
 from datetime import datetime
 
@@ -22,8 +23,7 @@ import dto
 from services.auth import AuthService
 from services.ai_writer import AIWriter
 
-# --- 🛠️ BYPASS AMELİYATI: BLOG SINIFINI BURADA TANIMLIYORUZ ---
-# Veritabanı dosyası inat ettiği için tabloyu burada oluşturuyoruz.
+# --- BYPASS: BLOG POST MODELİ (Main İçinde) ---
 class BlogPost(models.Base):
     __tablename__ = "blog_posts"
     id = Column(Integer, primary_key=True, index=True)
@@ -34,12 +34,10 @@ class BlogPost(models.Base):
     views = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# Tabloları Garanti Oluştur
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="İnsan Ekspertizi")
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -48,7 +46,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Statik Dosyalar
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 if os.path.exists(STATIC_DIR):
@@ -132,20 +129,23 @@ async def ruya_analiz(request: Request, ruya_metni: str = Form(...), db: Session
         return {"analiz": sonuc}
     except Exception as e: return JSONResponse({"analiz": str(e)}, status_code=500)
 
-# --- BLOG API (ARTIK LOCAL CLASS KULLANIYOR) ---
+# --- BLOG API ---
 @app.get("/api/blog/posts")
 def get_posts(db: Session = Depends(get_db)):
     try:
-        # models.BlogPost yerine direkt BlogPost kullanıyoruz
         return db.query(BlogPost).order_by(desc(BlogPost.created_at)).all()
     except Exception as e:
-        print(f"BLOG HATASI: {e}")
-        return JSONResponse(status_code=500, content={"detail": f"Veritabanı Hatası: {str(e)}"})
+        print(f"BLOG LISTE HATASI: {e}")
+        return []
 
 @app.get("/api/blog/posts/{slug}")
 def get_post_detail(slug: str, db: Session = Depends(get_db)):
-    post = db.query(BlogPost).filter(BlogPost.slug == slug).first()
-    if not post: raise HTTPException(status_code=404, detail="Yazı yok")
+    # URL'den gelen slug'ı temizle (Sondaki ? işaretini vs at)
+    clean_slug = slug.strip().split("?")[0]
+    
+    post = db.query(BlogPost).filter(BlogPost.slug == clean_slug).first()
+    if not post: 
+        raise HTTPException(status_code=404, detail="Yazı bulunamadı")
     post.views += 1
     db.commit()
     return post
@@ -155,7 +155,13 @@ def create_post(request: Request, title: str = Form(...), content: str = Form(..
     user = get_current_user(request, db)
     if not user or not user.is_admin: raise HTTPException(status_code=403, detail="Yetkisiz")
     
-    slug = title.lower().replace(" ", "-").replace("ı","i").replace("ğ","g").replace("ü","u").replace("ş","s").replace("ö","o").replace("ç","c")[:50]
+    # 🧼 SLUG TEMİZLİK ROBOTU
+    # 1. Türkçe karakterleri düzelt
+    slug = title.lower().replace(" ", "-").replace("ı","i").replace("ğ","g").replace("ü","u").replace("ş","s").replace("ö","o").replace("ç","c")
+    # 2. Sadece harf, rakam ve tire (-) bırak. Soru işareti (?) dahil her şeyi sil.
+    slug = re.sub(r'[^a-z0-9-]', '', slug)
+    # 3. Fazla tireleri sil
+    slug = re.sub(r'-+', '-', slug).strip('-')
     
     try:
         new_post = BlogPost(title=title, content=content, image_url=image_url, slug=slug)
