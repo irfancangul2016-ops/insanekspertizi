@@ -547,6 +547,153 @@
     </div>
 
     <script>
+        // --- 🕵️‍♂️ KULLANICI KONTROLÜ ---
+    function isLoggedIn() {
+        // Token var mı diye bakar
+        return localStorage.getItem("token") !== null;
+    }
+
+    function showGate() {
+        const modal = document.getElementById("gate-modal");
+        modal.style.display = "flex";
+        // Animasyonlu giriş
+        modal.animate([{opacity:0}, {opacity:1}], {duration:300});
+    }
+
+    function closeGate() {
+        document.getElementById("gate-modal").style.display = "none";
+    }
+
+    function redirectToRegister() {
+        closeGate();
+        // Register sekmesini aç
+        document.querySelector('.tab-btn:nth-child(2)').click(); 
+        // Sayfanın en üstüne (formlara) kaydır
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function redirectToLogin() {
+        closeGate();
+        // Login sekmesini aç
+        document.querySelector('.tab-btn:nth-child(1)').click();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    // --- 🔥 YENİ ANALİZ FONKSİYONLARI ---
+
+    async function analyzeName() {
+        const isim = document.getElementById("isim").value.trim();
+        const soyisim = document.getElementById("soyisim").value.trim();
+        
+        // 1. Boşluk Kontrolü
+        if (!isim || !soyisim) {
+            alert("Lütfen isim ve soyisim alanlarını doldurun."); // Burayı sonra güzelleştireceğiz
+            return;
+        }
+
+        // 2. KAPICI KONTROLÜ: Üye değilse DURDUR!
+        if (!isLoggedIn()) {
+            showGate();
+            return; // Fonksiyonu burada kesiyoruz, sunucuya gitmiyor.
+        }
+
+        // 3. Üye ise devam et (Eski kodun aynısı)
+        const btn = document.querySelector('button[onclick="analyzeName()"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Analiz Ediliyor...';
+        
+        const resultDiv = document.getElementById("isim-sonuc");
+        resultDiv.style.display = "none";
+
+        const formData = new FormData();
+        formData.append("isim", isim);
+        formData.append("soyisim", soyisim);
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("/api/isim-analizi-yap", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` }, // Token'ı ekledik
+                body: formData
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                resultDiv.style.display = "block";
+                resultDiv.innerHTML = `<h3><i class="fa-solid fa-star"></i> Analiz Sonucu</h3><p>${data.analiz_sonucu.replace(/\n/g, "<br>")}</p>`;
+            } else {
+                if(response.status === 401) { // Token süresi dolmuşsa
+                    localStorage.removeItem("token");
+                    showGate();
+                } else {
+                    alert("Hata: " + (data.detail || "Bilinmeyen hata"));
+                }
+            }
+        } catch (error) {
+            alert("Bağlantı hatası!");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    async function analyzeDream() {
+        const ruya = document.getElementById("ruya-metni").value.trim();
+        
+        // 1. Boşluk Kontrolü
+        if (!ruya) {
+            alert("Lütfen rüyanızı yazın.");
+            return;
+        }
+
+        // 2. KAPICI KONTROLÜ
+        if (!isLoggedIn()) {
+            showGate();
+            return;
+        }
+
+        // 3. Devam et
+        const btn = document.querySelector('button[onclick="analyzeDream()"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-moon fa-spin"></i> Rüya Yorumlanıyor...';
+        
+        const resultDiv = document.getElementById("ruya-sonuc");
+        resultDiv.style.display = "none";
+
+        const formData = new FormData();
+        formData.append("ruya_metni", ruya);
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("/api/ruya-analizi", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                resultDiv.style.display = "block";
+                resultDiv.innerHTML = `<h3><i class="fa-solid fa-moon"></i> Rüya Tabiri</h3><p>${data.analiz.replace(/\n/g, "<br>")}</p>`;
+            } else {
+                 if(response.status === 401) {
+                    localStorage.removeItem("token");
+                    showGate();
+                } else {
+                    alert("Hata: " + (data.detail || "Bilinmeyen hata"));
+                }
+            }
+        } catch (error) {
+            alert("Bağlantı hatası!");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
         const BASE_URL = "/api"; 
 
         // --- UX FONKSİYONLARI ---
@@ -758,5 +905,24 @@
             window.open(url, '_blank');
         }
     </script>
+    <div id="gate-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:40px; border-radius:20px; text-align:center; max-width:400px; width:90%; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+        <button onclick="closeGate()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#999;">&times;</button>
+        
+        <div style="font-size:3rem; margin-bottom:20px;">🔒</div>
+        <h2 style="color:#2d3436; margin-bottom:10px;">Analiziniz Hazır!</h2>
+        <p style="color:#636e72; margin-bottom:30px; line-height:1.6;">
+            Yapay zeka analizini tamamladı. Sonuçları görmek ve detaylı raporu okumak için lütfen <strong>ücretsiz</strong> hesabınızı oluşturun veya giriş yapın.
+        </p>
+        
+        <button onclick="redirectToRegister()" style="width:100%; background:#6c5ce7; color:white; padding:15px; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer; margin-bottom:15px; transition:0.3s;">
+            <i class="fa-solid fa-user-plus"></i> Ücretsiz Hesap Oluştur
+        </button>
+        
+        <button onclick="redirectToLogin()" style="width:100%; background:#f1f2f6; color:#2d3436; padding:15px; border:none; border-radius:12px; font-weight:bold; font-size:1rem; cursor:pointer; transition:0.3s;">
+            Zaten hesabım var, Giriş Yap
+        </button>
+    </div>
+</div>
 </body>
 </html>
