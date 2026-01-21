@@ -242,10 +242,20 @@ def home():
     if os.path.exists(path): return FileResponse(path)
     return "Sistem Çalışıyor"
 
+# --- 🚑 GÜÇLENDİRİLMİŞ TAMİR KİTİ (Eskisinin yerine bunu yapıştır) ---
 @app.get("/api/db-repair")
 def repair_database(db: Session = Depends(get_db)):
     try:
-        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;"))
+        # 1. Tabloların hepsini oluştur (Eksik olan 'blog_posts' tablosunu yaratır)
+        models.Base.metadata.create_all(bind=engine)
+        
+        # 2. 'is_admin' sütununu garantiye al
+        try:
+            db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;"))
+        except:
+            pass 
+            
         db.commit()
-        return {"durum": "BAŞARILI"}
-    except Exception as e: return {"durum": "HATA", "mesaj": str(e)}
+        return {"durum": "BAŞARILI", "mesaj": "Veritabanı senkronize edildi (Blog tablosu açıldı)."}
+    except Exception as e:
+        return {"durum": "HATA", "mesaj": str(e)}
