@@ -133,22 +133,46 @@ async def ruya_analiz(request: Request, ruya_metni: str = Form(...), db: Session
 @app.get("/api/blog/posts")
 def get_posts(db: Session = Depends(get_db)):
     try:
-        return db.query(BlogPost).order_by(desc(BlogPost.created_at)).all()
+        posts = db.query(BlogPost).order_by(desc(BlogPost.created_at)).all()
+        # Otomatik çeviriciye güvenme, veriyi elle listeye dök
+        data = []
+        for p in posts:
+            data.append({
+                "id": p.id,
+                "title": p.title,
+                "slug": p.slug,
+                "content": p.content,
+                "image_url": p.image_url,
+                "created_at": p.created_at,
+                "views": p.views
+            })
+        return data
     except Exception as e:
         print(f"BLOG LISTE HATASI: {e}")
         return []
-
 @app.get("/api/blog/posts/{slug}")
 def get_post_detail(slug: str, db: Session = Depends(get_db)):
-    # URL'den gelen slug'ı temizle (Sondaki ? işaretini vs at)
     clean_slug = slug.strip().split("?")[0]
     
     post = db.query(BlogPost).filter(BlogPost.slug == clean_slug).first()
+    
     if not post: 
         raise HTTPException(status_code=404, detail="Yazı bulunamadı")
+    
+    # Görüntülenmeyi artır
     post.views += 1
     db.commit()
-    return post
+    
+    # MANUEL PAKETLEME (Verinin kaybolmasını engeller)
+    return {
+        "id": post.id,
+        "title": post.title,
+        "slug": post.slug,
+        "content": post.content,
+        "image_url": post.image_url,
+        "created_at": post.created_at,
+        "views": post.views
+    }
 
 @app.post("/api/admin/blog/create")
 def create_post(request: Request, title: str = Form(...), content: str = Form(...), image_url: str = Form(...), db: Session = Depends(get_db)):
