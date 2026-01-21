@@ -1,7 +1,7 @@
 # backend/main.py
 import os
 import sys
-
+import database as models
 # --- SİSTEM YOLU AYARI ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)

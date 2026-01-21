@@ -52,7 +52,15 @@
         .badge-RUYA { background: #6c5ce7; }
         .history-date { font-size: 0.8rem; color: #888; float: right; }
         .history-input { font-weight: bold; color: #2d3436; display: block; margin-bottom: 5px; }
-        .history-result { font-size: 0.9rem; color: #636e72; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .history-result { 
+    font-size: 0.9rem; 
+    color: #636e72; 
+    display: -webkit-box; 
+    -webkit-line-clamp: 3; /* Eski tarayıcılar için */
+    line-clamp: 3;         /* <--- YENİ EKLENECEK SATIR (Standart) */
+    -webkit-box-orient: vertical; 
+    overflow: hidden; 
+}
     </style>
 </head>
 <body>
