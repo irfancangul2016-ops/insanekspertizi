@@ -6,28 +6,29 @@ from typing import Optional
 import os
 
 # --- AYARLAR ---
+# Burası "Giriş Bileti" (Token) ayarlarıdır
 SECRET_KEY = "COK_GIZLI_VE_GUCLU_BIR_ANAHTAR_BURAYA_RASTGELE_HARFLER_YAZ"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 3000
+ACCESS_TOKEN_EXPIRE_MINUTES = 43200 # 30 gün boyunca giriş açık kalsın
 
-# DÜZELTME BURADA: "bcrypt" yerine "pbkdf2_sha256" kullanıyoruz.
-# Bu algoritma Python ile %100 uyumludur, kütüphane hatası vermez ve uzunluk sınırı yoktur.
+# DİKKAT: Bcrypt yerine garanti çalışan "pbkdf2_sha256" kullanıyoruz.
+# Bcrypt, Render sunucularında bazen versiyon hatası verip sistemi çökertiyor.
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 class AuthService:
     @staticmethod
     def verify_password(plain_password, hashed_password):
-        """Kullanıcının girdiği şifre ile veritabanındaki hash'i karşılaştırır."""
+        """Kullanıcının girdiği şifre doğru mu?"""
         return pwd_context.verify(plain_password, hashed_password)
 
     @staticmethod
     def get_password_hash(password):
-        """Şifreyi veritabanına kaydetmeden önce hashler (karıştırır)."""
+        """Şifreyi veritabanına kaydetmeden önce karıştırır"""
         return pwd_context.hash(password)
 
     @staticmethod
     def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-        """Kullanıcıya giriş bileti (JWT Token) verir."""
+        """Kullanıcıya giriş bileti verir"""
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.utcnow() + expires_delta
