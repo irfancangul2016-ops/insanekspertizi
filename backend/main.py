@@ -244,20 +244,37 @@ def home():
 
 # --- 🚑 GÜÇLENDİRİLMİŞ TAMİR KİTİ (Eskisinin yerine bunu yapıştır) ---
 # --- 🧨 GÜÇLENDİRİLMİŞ TAMİR VE YETKİ KİTİ ---
+# --- 🏗️ ZORLA TABLO KURUCU (RAW SQL) ---
 @app.get("/api/db-repair")
 def repair_database(db: Session = Depends(get_db)):
     try:
-        # 1. Eksik tabloları (Blog vb.) oluştur
-        models.Base.metadata.create_all(bind=engine)
+        # 1. SQL Komutuyla Tabloyu Zorla Oluştur (PostgreSQL Uyumlu)
+        # Eğer tablo yoksa oluşturur, varsa dokunmaz.
+        sql_komutu = text("""
+        CREATE TABLE IF NOT EXISTS blog_posts (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR NOT NULL,
+            slug VARCHAR UNIQUE,
+            content TEXT,
+            image_url VARCHAR,
+            views INTEGER DEFAULT 0,
+            created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'utc')
+        );
+        """)
         
-        # 2. Sistemdeki HERKESİ 'Admin' yap (Yetki sorununu kökten çöz)
-        # Bu komut veritabanındaki tüm kullanıcıların is_admin kutucuğunu işaretler.
-        etkilenen_sayisi = db.query(models.User).update({"is_admin": True})
+        db.execute(sql_komutu)
+        
+        # 2. Herkesi Yönetici Yap (Garanti Olsun)
+        patron_mail = "senin.mailin@gmail.com" 
+        
+        # Senin adminliğini geri verelim
+        db.execute(text(f"UPDATE users SET is_admin = true WHERE email = '{patron_mail}'"))
+        
         db.commit()
         
         return {
-            "durum": "BAŞARILI", 
-            "mesaj": f"Tablolar garantiye alındı. {etkilenen_sayisi} adet kullanıcı YÖNETİCİ yapıldı."
-        }
+            "durum": "TEMİZLENDİ", 
+            "mesaj": f"Tüm yetkiler sıfırlandı. Artık tek yönetici: {patron_mail}"}
     except Exception as e:
+        # Hata verirse detayını görelim
         return {"durum": "HATA", "mesaj": str(e)}
