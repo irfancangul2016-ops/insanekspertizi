@@ -25,6 +25,7 @@ from services.ai_writer import AIWriter
 from services.calculator import EbcedCalculator
 
 # --- VERİTABANI OLUŞTURMA ---
+
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="İnsan Ekspertizi API", version="2.0")

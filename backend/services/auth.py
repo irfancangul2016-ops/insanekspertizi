@@ -6,13 +6,13 @@ from typing import Optional
 import os
 
 # --- AYARLAR ---
-# Gerçek projede bu key .env dosyasından gelmeli, şimdilik buraya yazıyoruz.
 SECRET_KEY = "COK_GIZLI_VE_GUCLU_BIR_ANAHTAR_BURAYA_RASTGELE_HARFLER_YAZ"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 3000
 
-# Şifreleme Bağlamı (Bcrypt kullanır)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# DÜZELTME BURADA: "bcrypt" yerine "pbkdf2_sha256" kullanıyoruz.
+# Bu algoritma Python ile %100 uyumludur, kütüphane hatası vermez ve uzunluk sınırı yoktur.
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 class AuthService:
     @staticmethod
