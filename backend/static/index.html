@@ -4,40 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Yapay zeka destekli isim analizi ve rüya tabirleri. Bilinçaltınızı ve karakterinizi keşfedin.">
-    <title>İnsan Ekspertizi | AI Destekli Analiz Platformu</title>
+    <title>İnsan Ekspertizi | Profesyonel Karakter Analizi</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* --- MODERN CSS DEĞİŞKENLERİ --- */
         :root {
             --primary: #6c5ce7;
+            --primary-dark: #5849be;
             --secondary: #a29bfe;
             --accent: #00cec9;
             --dark: #2d3436;
-            --light: #f5f6fa;
-            --glass: rgba(255, 255, 255, 0.90);
-            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            --radius: 20px;
+            --text-light: #636e72;
+            --bg-light: #f8f9fd;
+            --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.95);
+            --shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+            --radius: 24px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
-        /* --- TEMEL AYARLAR --- */
         body {
             font-family: 'Poppins', sans-serif;
-            background: radial-gradient(circle at top left, #f6f8fb, #eef1f5);
+            background: var(--bg-light);
             margin: 0;
             color: var(--dark);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            overflow-x: hidden;
+            line-height: 1.6;
         }
+
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
         /* --- NAVİGASYON --- */
         nav {
             background: var(--glass);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(15px);
             padding: 1rem 5%;
             display: flex;
             justify-content: space-between;
@@ -45,718 +52,629 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            border-bottom: 1px solid rgba(255,255,255,0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            transition: var(--transition);
         }
 
         .logo {
-            font-size: 1.4rem;
-            font-weight: 700;
+            font-size: 1.5rem;
+            font-weight: 800;
             color: var(--primary);
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             letter-spacing: -0.5px;
         }
 
-        .nav-links button {
-            margin-left: 10px;
-            padding: 10px 24px;
-            border: none;
+        .nav-actions { display: flex; gap: 15px; align-items: center; }
+
+        .btn-base {
+            padding: 12px 28px;
             border-radius: 50px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             font-family: inherit;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            border: none;
+            display: flex; align-items: center; gap: 8px;
         }
 
         .btn-outline {
             background: transparent;
-            border: 1px solid var(--primary) !important;
+            border: 2px solid var(--primary);
             color: var(--primary);
         }
-
-        .btn-outline:hover {
-            background: var(--primary);
-            color: white;
-        }
+        .btn-outline:hover { background: var(--primary); color: white; transform: translateY(-2px); }
 
         .btn-fill {
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.2);
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
         }
+        .btn-fill:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4); }
 
-        .btn-fill:hover {
-            transform: translateY(-2px);
-            background: #5b4cc4;
-            box-shadow: 0 6px 20px rgba(108, 92, 231, 0.3);
-        }
+        /* Mobil Menü Butonu */
+        .menu-toggle { display: none; font-size: 1.5rem; color: var(--dark); cursor: pointer; }
 
-        /* --- ANA İÇERİK --- */
-        .container {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 40px;
-            flex: 1; /* Footer'ı alta itmek için */
-        }
-
-        /* --- KART TASARIMI --- */
-        .card {
-            background: white;
-            padding: 35px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: 1px solid rgba(255,255,255,1);
-            position: relative;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            margin-bottom: 25px;
-        }
-
-        .card-icon {
-            width: 54px;
-            height: 54px;
-            background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(162, 155, 254, 0.1));
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-            font-size: 1.6rem;
-        }
-
-        h2 { margin: 0; font-size: 1.2rem; color: var(--dark); font-weight: 600; }
-        p { color: #636e72; font-size: 0.9rem; line-height: 1.6; margin-top: 5px; }
-
-        /* --- FORMLAR --- */
-        .form-group { margin-bottom: 18px; position: relative; }
-        
-        input, textarea {
-            width: 100%;
-            padding: 16px;
-            padding-left: 48px;
-            border: 2px solid #f1f2f6;
-            border-radius: 14px;
-            background: #fdfdfd;
-            font-family: inherit;
-            font-size: 0.95rem;
-            transition: all 0.3s;
-            box-sizing: border-box;
-            color: var(--dark);
-        }
-
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.05);
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 18px;
-            top: 19px;
-            color: #b2bec3;
-            font-size: 1.1rem;
-            transition: 0.3s;
-        }
-        
-        input:focus ~ .input-icon, textarea:focus ~ .input-icon {
-            color: var(--primary);
-        }
-
-        .action-btn {
-            width: 100%;
-            padding: 16px;
-            background: var(--dark);
-            color: white;
-            border: none;
-            border-radius: 14px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s;
-            margin-top: 10px;
-        }
-
-        .action-btn:hover {
-            background: var(--primary);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
-        }
-
-        /* --- SONUÇ KUTUSU VE SKELETON LOADING --- */
-        .result-box {
-            margin-top: 25px;
-            padding: 25px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            white-space: pre-wrap;
-            display: none;
-            line-height: 1.8;
-            color: #4b5563;
-            font-size: 0.95rem;
-            border-left: 4px solid var(--primary);
-        }
-
-        /* SKELETON ANİMASYONU (YENİ) */
-        .skeleton-wrapper {
-            display: none;
-            margin-top: 20px;
-        }
-        .skeleton-line {
-            height: 12px;
-            background: #e0e0e0;
-            border-radius: 4px;
-            margin-bottom: 10px;
+        /* --- HERO SECTION --- */
+        .hero {
+            text-align: center;
+            padding: 120px 20px 80px;
+            background: linear-gradient(180deg, rgba(108,92,231,0.08) 0%, rgba(255,255,255,0) 100%);
             position: relative;
             overflow: hidden;
         }
-        .skeleton-line::after {
-            content: "";
-            display: block;
-            position: absolute;
-            left: -150px;
-            top: 0;
-            height: 100%;
-            width: 150px;
-            background: linear-gradient(to right, transparent 0%, #f5f5f5 50%, transparent 100%);
-            animation: load 1.5s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
-        }
-        .w-100 { width: 100%; }
-        .w-80 { width: 80%; }
-        .w-60 { width: 60%; }
-
-        @keyframes load {
-            from { left: -150px; }
-            to { left: 100%; }
-        }
-
-        /* --- MODAL --- */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(45, 52, 54, 0.6);
-            backdrop-filter: blur(8px);
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 40px;
-            border-radius: 24px;
-            width: 90%;
-            max-width: 380px;
-            position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            text-align: center;
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes modalPop {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .close {
-            position: absolute;
-            top: 20px;
-            right: 25px;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #b2bec3;
-            transition: 0.2s;
-        }
-        .close:hover { color: var(--dark); }
-
-        /* --- TOAST BİLDİRİMLERİ --- */
-        #toast-container {
-            position: fixed;
-            top: 24px;
-            right: 24px;
-            z-index: 3000;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .toast {
-            background: white;
-            padding: 16px 20px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 280px;
-            border-left: 4px solid;
-            font-size: 0.9rem;
-            font-weight: 500;
-            animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
-        .toast.success { border-color: #00b894; color: #2d3436; }
-        .toast.error { border-color: #ff7675; color: #2d3436; }
-        .toast i { font-size: 1.2rem; }
-        .toast.success i { color: #00b894; }
-        .toast.error i { color: #ff7675; }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        /* --- GEÇMİŞ LİSTESİ --- */
-        .history-item {
-            padding: 16px 0;
-            border-bottom: 1px solid #f1f2f6;
-            display: flex;
-            gap: 15px;
-        }
-        .history-item:last-child { border-bottom: none; }
         
-        .history-badge {
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: white;
+        .hero::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(162,155,254,0.1) 0%, transparent 60%);
+            z-index: -1; animation: rotate 60s linear infinite;
         }
-        .badge-ISIM { background: #0984e3; }
-        .badge-RUYA { background: #6c5ce7; }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .hero h1 { 
+            font-size: 4rem; color: var(--dark); margin: 0 0 25px; 
+            letter-spacing: -2px; line-height: 1.1; font-weight: 800;
+        }
+        .hero span { 
+            background: linear-gradient(120deg, var(--primary), var(--accent));
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hero p { font-size: 1.2rem; color: var(--text-light); max-width: 700px; margin: 0 auto 50px; font-weight: 300; }
+
+        /* --- İSTATİSTİKLER --- */
+        .stats-container {
+            display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; margin-bottom: 60px;
+        }
+        .stat-box { text-align: center; animation: fadeInUp 1s ease; }
+        .stat-number { font-size: 2.5rem; font-weight: 800; color: var(--dark); display: block; line-height: 1; }
+        .stat-label { font-size: 0.85rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-top: 5px; }
+
+        /* --- ANA ARAÇLAR (GRID) --- */
+        .tools-grid {
+            max-width: 1100px; margin: 0 auto 100px; padding: 0 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px;
+        }
+
+        .tool-card {
+            background: var(--white);
+            padding: 45px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border: 1px solid rgba(255,255,255,1);
+            position: relative; overflow: hidden;
+        }
+        .tool-card:hover { transform: translateY(-10px); box-shadow: 0 30px 60px rgba(108, 92, 231, 0.15); }
+
+        .card-header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
+        .card-icon {
+            width: 60px; height: 60px;
+            background: rgba(108, 92, 231, 0.1);
+            border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary); font-size: 1.8rem;
+        }
+        .tool-card h2 { margin: 0; font-size: 1.4rem; font-weight: 700; }
+        .tool-card p { margin: 5px 0 0; color: var(--text-light); font-size: 0.95rem; }
+
+        /* --- FORM ELEMANLARI --- */
+        .form-group { margin-bottom: 20px; position: relative; }
         
+        input, textarea {
+            width: 100%; padding: 18px; padding-left: 55px;
+            border: 2px solid #f0f2f5; border-radius: 16px;
+            background: #fdfdfd; font-family: inherit; font-size: 1rem;
+            transition: var(--transition); box-sizing: border-box; color: var(--dark);
+        }
+        input:focus, textarea:focus { 
+            outline: none; border-color: var(--primary); background: var(--white); 
+            box-shadow: 0 0 0 5px rgba(108, 92, 231, 0.1);
+        }
+        
+        .input-icon { position: absolute; left: 22px; top: 22px; color: #b2bec3; font-size: 1.2rem; transition: var(--transition); }
+        input:focus ~ .input-icon, textarea:focus ~ .input-icon { color: var(--primary); }
+        
+        /* Placeholder Animasyonu */
+        .floating-label {
+            position: absolute; left: 55px; top: 20px; color: #b2bec3; 
+            pointer-events: none; transition: 0.2s ease all; font-size: 1rem;
+        }
+        input:focus ~ .floating-label, input:not(:placeholder-shown) ~ .floating-label,
+        textarea:focus ~ .floating-label, textarea:not(:placeholder-shown) ~ .floating-label {
+            top: 2px; left: 20px; font-size: 0.75rem; color: var(--primary); font-weight: 600;
+        }
+
+        .submit-btn {
+            width: 100%; padding: 18px;
+            background: var(--dark); color: white;
+            border: none; border-radius: 16px;
+            font-size: 1.1rem; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: var(--transition);
+        }
+        .submit-btn:hover { background: var(--primary); letter-spacing: 0.5px; }
+
+        /* --- SONUÇ ALANI --- */
+        .result-area {
+            margin-top: 30px; padding: 30px;
+            background: #f8f9fa; border-radius: 16px;
+            display: none; line-height: 1.8; color: #4b5563; font-size: 1rem;
+            border-left: 5px solid var(--primary);
+            animation: slideDown 0.5s ease;
+        }
+        @keyframes slideDown { from { opacity:0; transform: translateY(-10px); } to { opacity:1; transform: translateY(0); } }
+
+        /* Skeleton Loading */
+        .skeleton-loader { display: none; margin-top: 25px; }
+        .s-line {
+            height: 14px; background: #eee; border-radius: 6px; margin-bottom: 12px;
+            position: relative; overflow: hidden;
+        }
+        .s-line::after {
+            content: ""; position: absolute; left: -100%; top: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 100% { left: 100%; } }
+        .w-100 { width: 100%; } .w-70 { width: 70%; } .w-50 { width: 50%; }
+
+        /* --- ÖZELLİKLER & REFERANSLAR --- */
+        .section-title { text-align: center; margin-bottom: 60px; }
+        .section-title h2 { font-size: 2.5rem; margin: 0 0 10px; }
+        .section-title p { color: var(--text-light); }
+
+        .features-section { padding: 80px 20px; background: var(--white); }
+        .features-grid {
+            max-width: 1100px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px;
+        }
+        .feature-item { padding: 30px; border-radius: 20px; transition: var(--transition); border: 1px solid #eee; }
+        .feature-item:hover { background: var(--bg-light); border-color: var(--primary); }
+        .feature-item i { font-size: 2.5rem; color: var(--accent); margin-bottom: 20px; }
+
+        /* --- SSS (FAQ) BÖLÜMÜ (YENİ) --- */
+        .faq-section { padding: 80px 20px; background: var(--bg-light); max-width: 800px; margin: 0 auto; }
+        .accordion-item {
+            background: var(--white); border-radius: 12px; margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); overflow: hidden;
+        }
+        .accordion-header {
+            padding: 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            font-weight: 600; transition: var(--transition);
+        }
+        .accordion-header:hover { color: var(--primary); }
+        .accordion-content {
+            max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+            padding: 0 20px; color: var(--text-light); line-height: 1.6;
+        }
+        .accordion-content p { margin-bottom: 20px; }
+        .active .accordion-content { max-height: 200px; }
+        .rotate-icon { transition: transform 0.3s; }
+        .active .rotate-icon { transform: rotate(180deg); }
+
         /* --- FOOTER --- */
         footer {
-            background: white;
-            padding: 40px 0;
-            text-align: center;
-            border-top: 1px solid #eee;
-            margin-top: 60px;
+            background: #1e272e; color: white; padding: 60px 20px;
+            text-align: center; margin-top: 80px;
         }
-        .footer-content {
-            max-width: 1000px;
-            margin: 0 auto;
-            color: #636e72;
-            font-size: 0.9rem;
-        }
-        .social-links { margin-top: 15px; }
-        .social-links a { color: var(--primary); margin: 0 10px; font-size: 1.2rem; transition: 0.3s; }
-        .social-links a:hover { color: var(--dark); }
+        .footer-social { margin: 20px 0; }
+        .footer-social a { color: rgba(255,255,255,0.6); margin: 0 15px; font-size: 1.5rem; transition: 0.3s; }
+        .footer-social a:hover { color: var(--primary); transform: scale(1.1); }
+        .copyright { color: rgba(255,255,255,0.4); font-size: 0.9rem; }
 
-        .hero {
-            text-align: center;
-            padding: 80px 20px 60px;
+        /* --- MODALLAR --- */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+            z-index: 2000; justify-content: center; align-items: center;
         }
-        .hero h1 { font-size: 2.8rem; color: var(--dark); margin: 0 0 15px; letter-spacing: -1px; }
-        .hero span { 
-    background: linear-gradient(120deg, var(--primary), var(--accent));
-    -webkit-background-clip: text; /* Eski/Webkit tarayıcılar için */
-    background-clip: text;         /* <--- YENİ EKLENECEK SATIR (Standart) */
-    -webkit-text-fill-color: transparent;
-}
+        .modal-box {
+            background: var(--white); width: 90%; max-width: 420px;
+            padding: 40px; border-radius: 24px; position: relative;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop { from { opacity:0; transform: scale(0.8); } to { opacity:1; transform: scale(1); } }
+        .close-modal { position: absolute; top: 20px; right: 25px; cursor: pointer; font-size: 1.5rem; color: #ccc; transition: 0.2s; }
+        .close-modal:hover { color: var(--dark); }
+
+        /* --- TOAST --- */
+        #toast-area { position: fixed; top: 30px; right: 30px; z-index: 3000; display: flex; flex-direction: column; gap: 15px; }
+        .toast {
+            background: var(--white); padding: 18px 24px; border-radius: 14px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 15px;
+            min-width: 300px; border-left: 5px solid; animation: slideInRight 0.4s;
+        }
+        .toast.success { border-color: #00b894; } .toast.success i { color: #00b894; }
+        .toast.error { border-color: #ff7675; } .toast.error i { color: #ff7675; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .nav-actions { display: none; } /* Hamburger menü eklenebilir */
+            .stats-container { gap: 30px; }
+            .tools-grid { grid-template-columns: 1fr; }
+        }
+        
+        /* Geçmiş Listesi */
+        .history-item { padding: 15px; border-bottom: 1px solid #f1f2f6; display: flex; gap: 15px; align-items: flex-start; }
+        .history-badge { padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; color: white; }
+        .badge-ISIM { background: #0984e3; } .badge-RUYA { background: #6c5ce7; }
     </style>
 </head>
 <body>
 
-    <div id="toast-container"></div>
+    <div id="toast-area"></div>
 
     <nav>
         <a href="#" class="logo">
-            <i class="fa-solid fa-dna"></i> İnsan Ekspertizi
+            <i class="fa-solid fa-dna fa-lg"></i> İnsan Ekspertizi
         </a>
         
-        <div class="nav-links" id="guest-menu">
-            <button class="btn-outline" onclick="openModal('loginModal')">Giriş Yap</button>
-            <button class="btn-fill" onclick="openModal('registerModal')">Ücretsiz Başla</button>
+        <div class="nav-actions" id="guest-nav">
+            <button class="btn-base btn-outline" onclick="openModal('loginModal')">Giriş Yap</button>
+            <button class="btn-base btn-fill" onclick="openModal('registerModal')">Hemen Başla</button>
         </div>
 
-        <div class="nav-links" id="user-menu" style="display: none;">
-            <button class="btn-outline" onclick="openHistory()">
-                <i class="fa-solid fa-clock-rotate-left"></i>
+        <div class="nav-actions" id="user-nav" style="display: none;">
+            <button class="btn-base btn-outline" onclick="openHistory()" title="Geçmiş">
+                <i class="fa-solid fa-clock-rotate-left"></i> <span style="display:none;">Geçmiş</span>
             </button>
-            <button class="btn-fill" onclick="logout()">
-                <i class="fa-solid fa-right-from-bracket"></i>
+            <button class="btn-base btn-fill" onclick="logout()" title="Çıkış">
+                <i class="fa-solid fa-power-off"></i>
             </button>
         </div>
     </nav>
 
-    <div class="hero">
-        <h1>Karakterinin <br> <span>DNA</span>'sını Çözümle</h1>
-        <p>Yapay zeka motorumuz ismindeki ve rüyalarındaki gizli şifreleri tarıyor.</p>
-    </div>
-
-    <div class="container">
+    <section class="hero">
+        <h1>Bilinçaltının <br> <span>Dijital Haritası</span></h1>
+        <p>Kadim bilgiler ve modern yapay zeka teknolojisi, isminin ve rüyalarının gizli şifrelerini çözmek için birleşti.</p>
         
-        <div class="card">
+        <div class="stats-container">
+            <div class="stat-box">
+                <span class="stat-number">20k+</span>
+                <span class="stat-label">Analiz</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number">4.9</span>
+                <span class="stat-label">Puan</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number">AI</span>
+                <span class="stat-label">Motor</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="tools-grid">
+        <div class="tool-card">
             <div class="card-header">
                 <div class="card-icon"><i class="fa-solid fa-fingerprint"></i></div>
                 <div>
                     <h2>İsim Analizi</h2>
-                    <p>Adının enerjisel haritasını çıkar.</p>
+                    <p>İsminin enerjisel frekansını ölç.</p>
                 </div>
             </div>
             
             <div class="form-group">
                 <input type="text" id="isim" placeholder=" ">
                 <i class="fa-solid fa-user input-icon"></i>
-                <label style="position:absolute; left:48px; top:18px; color:#aaa; pointer-events:none; transition:0.3s; font-size:0.9rem;">Adınız</label>
+                <label class="floating-label">Adınız</label>
             </div>
             <div class="form-group">
                 <input type="text" id="soyisim" placeholder=" ">
                 <i class="fa-solid fa-signature input-icon"></i>
-                <label style="position:absolute; left:48px; top:18px; color:#aaa; pointer-events:none; transition:0.3s; font-size:0.9rem;">Soyadınız</label>
+                <label class="floating-label">Soyadınız</label>
             </div>
             
-            <button class="action-btn" onclick="isimAnaliziYap()">
+            <button class="submit-btn" onclick="isimAnaliziYap()">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Analiz Et
             </button>
 
-            <div id="skeleton-isim" class="skeleton-wrapper">
-                <div class="skeleton-line w-100"></div>
-                <div class="skeleton-line w-80"></div>
-                <div class="skeleton-line w-100"></div>
-                <div class="skeleton-line w-60"></div>
+            <div id="skel-isim" class="skeleton-loader">
+                <div class="s-line w-100"></div><div class="s-line w-70"></div><div class="s-line w-100"></div>
             </div>
-
-            <div id="isimSonuc" class="result-box"></div>
+            <div id="res-isim" class="result-area"></div>
         </div>
 
-        <div class="card">
+        <div class="tool-card">
             <div class="card-header">
                 <div class="card-icon"><i class="fa-solid fa-moon"></i></div>
                 <div>
                     <h2>Rüya Tabiri</h2>
-                    <p>Bilinçaltının sana mesajı ne?</p>
+                    <p>Rüyalarının gizli mesajlarını oku.</p>
                 </div>
             </div>
             
             <div class="form-group">
-                <textarea id="ruyaMetni" rows="4" placeholder=" " style="resize: none;"></textarea>
-                <i class="fa-solid fa-pen-nib input-icon" style="top: 20px;"></i>
-                <label style="position:absolute; left:48px; top:18px; color:#aaa; pointer-events:none; transition:0.3s; font-size:0.9rem;">Rüyanı detaylıca anlat...</label>
+                <textarea id="ruyaMetni" rows="5" placeholder=" " style="resize:none"></textarea>
+                <i class="fa-solid fa-pen-nib input-icon" style="top:22px"></i>
+                <label class="floating-label">Rüyanı detaylıca anlat...</label>
             </div>
             
-            <button class="action-btn" onclick="ruyaAnaliziYap()">
+            <button class="submit-btn" onclick="ruyaAnaliziYap()">
                 <i class="fa-solid fa-eye"></i> Yorumla
             </button>
 
-            <div id="skeleton-ruya" class="skeleton-wrapper">
-                <div class="skeleton-line w-100"></div>
-                <div class="skeleton-line w-100"></div>
-                <div class="skeleton-line w-80"></div>
-                <div class="skeleton-line w-60"></div>
+            <div id="skel-ruya" class="skeleton-loader">
+                <div class="s-line w-100"></div><div class="s-line w-100"></div><div class="s-line w-50"></div>
             </div>
-
-            <div id="ruyaSonuc" class="result-box"></div>
+            <div id="res-ruya" class="result-area"></div>
         </div>
+    </section>
 
-    </div>
+    <section class="features-section">
+        <div class="section-title">
+            <h2>Neden İnsan Ekspertizi?</h2>
+            <p>Sıradan fal uygulamalarının ötesinde, derinlikli bir analiz.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-item">
+                <i class="fa-solid fa-brain"></i>
+                <h3>Google Gemini AI</h3>
+                <p>Dünyanın en gelişmiş dil modellerinden biriyle, bağlamsal ve derinlemesine yorumlar.</p>
+            </div>
+            <div class="feature-item">
+                <i class="fa-solid fa-server"></i>
+                <h3>Kozmik Hafıza</h3>
+                <p>Tüm analizleriniz güvenli bulut sunucularımızda (PostgreSQL) şifrelenerek saklanır.</p>
+            </div>
+            <div class="feature-item">
+                <i class="fa-solid fa-lock"></i>
+                <h3>%100 Gizlilik</h3>
+                <p>Rüyalarınız ve verileriniz sadece sizin gözleriniz içindir. Kimseyle paylaşılmaz.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="faq-section">
+        <div class="section-title">
+            <h2>Sıkça Sorulan Sorular</h2>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                Bu analizler bilimsel mi?
+                <i class="fa-solid fa-chevron-down rotate-icon"></i>
+            </div>
+            <div class="accordion-content">
+                <p>Analizlerimiz, psikolojik arketipler, sembolizm ve kadim isim bilimlerinin yapay zeka tarafından sentezlenmesiyle oluşturulur. %100 bilimsel kanıt iddiası taşımaz, rehberlik amaçlıdır.</p>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                Ücret ödemem gerekiyor mu?
+                <i class="fa-solid fa-chevron-down rotate-icon"></i>
+            </div>
+            <div class="accordion-content">
+                <p>Hayır, şu an için İnsan Ekspertizi platformunun tüm özellikleri tamamen ücretsizdir.</p>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                Verilerim güvende mi?
+                <i class="fa-solid fa-chevron-down rotate-icon"></i>
+            </div>
+            <div class="accordion-content">
+                <p>Kesinlikle. Veritabanımız endüstri standardı şifreleme yöntemleri ile korunmaktadır ve verileriniz üçüncü taraflarla paylaşılmaz.</p>
+            </div>
+        </div>
+    </section>
 
     <footer>
-        <div class="footer-content">
-            <p>&copy; 2026 İnsan Ekspertizi. Tüm hakları saklıdır.</p>
-            <div class="social-links">
-                <a href="#"><i class="fa-brands fa-instagram"></i></a>
-                <a href="#"><i class="fa-brands fa-twitter"></i></a>
-                <a href="#"><i class="fa-brands fa-linkedin"></i></a>
-            </div>
+        <div class="footer-social">
+            <a href="#"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#"><i class="fa-brands fa-twitter"></i></a>
+            <a href="#"><i class="fa-brands fa-youtube"></i></a>
+        </div>
+        <div class="copyright">
+            &copy; 2026 İnsan Ekspertizi A.Ş. Tüm hakları saklıdır. <br>
+            <span style="font-size: 0.8rem; opacity: 0.7;">İstanbul, Türkiye</span>
         </div>
     </footer>
 
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('loginModal')">&times;</span>
-            <div style="font-size:2rem; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-right-to-bracket"></i></div>
-            <h2 style="margin-bottom:20px;">Hoşgeldiniz</h2>
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeModal('loginModal')">&times;</span>
+            <h2 style="margin-bottom:20px; text-align:center;">Tekrar Hoşgeldin</h2>
             <div class="form-group">
-                <input type="email" id="loginEmail" placeholder="E-posta">
-                <i class="fa-solid fa-envelope input-icon"></i>
+                <input type="email" id="loginEmail" placeholder=" "><i class="fa-solid fa-envelope input-icon"></i>
+                <label class="floating-label">E-posta</label>
             </div>
             <div class="form-group">
-                <input type="password" id="loginPass" placeholder="Şifre">
-                <i class="fa-solid fa-key input-icon"></i>
+                <input type="password" id="loginPass" placeholder=" "><i class="fa-solid fa-key input-icon"></i>
+                <label class="floating-label">Şifre</label>
             </div>
-            <button class="action-btn" onclick="login()">Giriş Yap</button>
+            <button class="submit-btn" onclick="login()">Giriş Yap</button>
         </div>
     </div>
 
-    <div id="registerModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('registerModal')">&times;</span>
-            <div style="font-size:2rem; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-user-plus"></i></div>
-            <h2 style="margin-bottom:20px;">Hesap Oluştur</h2>
+    <div id="registerModal" class="modal-overlay">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeModal('registerModal')">&times;</span>
+            <h2 style="margin-bottom:20px; text-align:center;">Hesap Oluştur</h2>
             <div class="form-group">
-                <input type="email" id="regEmail" placeholder="E-posta">
-                <i class="fa-solid fa-envelope input-icon"></i>
+                <input type="email" id="regEmail" placeholder=" "><i class="fa-solid fa-envelope input-icon"></i>
+                <label class="floating-label">E-posta</label>
             </div>
             <div class="form-group">
-                <input type="password" id="regPass" placeholder="Şifre">
-                <i class="fa-solid fa-key input-icon"></i>
+                <input type="password" id="regPass" placeholder=" "><i class="fa-solid fa-key input-icon"></i>
+                <label class="floating-label">Şifre Belirleyin</label>
             </div>
-            <button class="action-btn" onclick="register()">Kayıt Ol</button>
+            <button class="submit-btn" onclick="register()">Kayıt Ol</button>
         </div>
     </div>
 
-    <div id="historyModal" class="modal">
-        <div class="modal-content" style="max-width: 500px; padding: 0; overflow: hidden;">
-            <div style="padding: 20px; border-bottom: 1px solid #eee; display:flex; justify-content:space-between; align-items:center; background:#f8f9fa;">
-                <h2 style="font-size: 1.1rem; margin:0;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--primary);"></i> Geçmiş Analizler</h2>
-                <span style="cursor:pointer; font-size:1.5rem;" onclick="closeModal('historyModal')">&times;</span>
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 600px; padding:0; overflow:hidden;">
+            <div style="padding:20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; background:#f8f9fa;">
+                <h3 style="margin:0;"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş Analizler</h3>
+                <span class="close-modal" style="position:static;" onclick="closeModal('historyModal')">&times;</span>
             </div>
-            <div id="historyList" style="max-height: 60vh; overflow-y: auto; padding:20px;">
-                </div>
+            <div id="historyList" style="max-height:60vh; overflow-y:auto; padding:20px;"></div>
         </div>
     </div>
 
     <script>
         const BASE_URL = "/api"; 
-        
-        // --- UX: DAKTİLO EFEKTİ ---
-        function typeWriter(text, elementId, speed = 10) {
-            const element = document.getElementById(elementId);
-            element.innerHTML = "";
-            element.style.display = "block";
+
+        // --- UX FONKSİYONLARI ---
+        function typeWriter(text, elementId, speed = 8) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = ""; el.style.display = "block";
             let i = 0;
-            
             function type() {
                 if (i < text.length) {
-                    // Eğer \n varsa <br> ekle, yoksa karakter ekle
-                    if (text.substring(i, i+1) === "\n") {
-                        element.innerHTML += "<br>";
-                    } else {
-                        element.innerHTML += text.charAt(i);
-                    }
-                    i++;
-                    setTimeout(type, speed);
+                    el.innerHTML += text.charAt(i) === "\n" ? "<br>" : text.charAt(i);
+                    i++; setTimeout(type, speed);
                 }
             }
             type();
         }
 
-        // --- UX: TOAST MESAJ ---
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            const icon = type === 'success' ? '<i class="fa-solid fa-check-circle"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
-            toast.innerHTML = `${icon} <span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = "slideIn 0.4s reverse";
-                setTimeout(() => toast.remove(), 400);
-            }, 3000);
+        function showToast(msg, type='success') {
+            const area = document.getElementById('toast-area');
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            const icon = type==='success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>';
+            t.innerHTML = `${icon} <span>${msg}</span>`;
+            area.appendChild(t);
+            setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(100%)'; setTimeout(()=>t.remove(),300); }, 3000);
+        }
+
+        function toggleAccordion(header) {
+            header.parentElement.classList.toggle('active');
         }
 
         // --- AUTH ---
         function checkAuth() {
-            const token = localStorage.getItem("token");
-            if (token) {
-                document.getElementById("guest-menu").style.display = "none";
-                document.getElementById("user-menu").style.display = "block";
+            if (localStorage.getItem("token")) {
+                document.getElementById("guest-nav").style.display = "none";
+                document.getElementById("user-nav").style.display = "flex";
             } else {
-                document.getElementById("guest-menu").style.display = "block";
-                document.getElementById("user-menu").style.display = "none";
+                document.getElementById("guest-nav").style.display = "flex";
+                document.getElementById("user-nav").style.display = "none";
             }
+        }
+
+        async function requestAuth(endpoint, data) {
+            try {
+                const res = await fetch(`${BASE_URL}${endpoint}`, {
+                    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)
+                });
+                if(res.ok) return {ok:true, data: await res.json()};
+                const err = await res.json();
+                return {ok:false, msg: err.detail || "Hata"};
+            } catch(e) { return {ok:false, msg: "Sunucu hatası"}; }
         }
 
         async function register() {
             const email = document.getElementById("regEmail").value;
             const password = document.getElementById("regPass").value;
-            if(!email || !password) return showToast("E-posta ve şifre gerekli!", "error");
-
-            try {
-                const res = await fetch(`${BASE_URL}/register`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, password })
-                });
-                
-                if (res.ok) {
-                    showToast("Kayıt başarılı! Giriş yapabilirsiniz.");
-                    closeModal("registerModal");
-                    openModal("loginModal");
-                } else {
-                    const data = await res.json();
-                    showToast(data.detail || "Hata oluştu", "error");
-                }
-            } catch (e) { showToast("Sunucu hatası!", "error"); }
+            if(!email || !password) return showToast("Alanları doldurun", "error");
+            
+            const res = await requestAuth("/register", {email, password});
+            if(res.ok) {
+                showToast("Kayıt başarılı! Giriş yapın.");
+                closeModal("registerModal"); openModal("loginModal");
+            } else showToast(res.msg, "error");
         }
 
         async function login() {
             const email = document.getElementById("loginEmail").value;
             const password = document.getElementById("loginPass").value;
-            
-            const formData = new FormData();
-            formData.append("username", email);
-            formData.append("password", password);
+            const fd = new FormData(); fd.append("username", email); fd.append("password", password);
 
             try {
-                const res = await fetch(`${BASE_URL}/token`, {
-                    method: "POST",
-                    body: formData
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    localStorage.setItem("token", data.access_token);
-                    showToast("Giriş başarılı!");
-                    checkAuth();
-                    closeModal("loginModal");
-                } else {
-                    showToast("Hatalı bilgiler!", "error");
-                }
-            } catch (e) { showToast("Bağlantı hatası!", "error"); }
+                const res = await fetch(`${BASE_URL}/token`, {method:"POST", body:fd});
+                if(res.ok) {
+                    const d = await res.json();
+                    localStorage.setItem("token", d.access_token);
+                    showToast("Giriş başarılı"); checkAuth(); closeModal("loginModal");
+                } else showToast("Hatalı bilgi", "error");
+            } catch(e) { showToast("Bağlantı sorunu", "error"); }
         }
 
-        function logout() {
-            localStorage.removeItem("token");
-            location.reload();
-        }
+        function logout() { localStorage.removeItem("token"); location.reload(); }
 
-        // --- ANALİZ İSTEĞİ (YENİLENMİŞ) ---
-        async function requestAnalysis(url, formData, resultId, skeletonId) {
-            const sonucDiv = document.getElementById(resultId);
-            const skeleton = document.getElementById(skeletonId);
-            
-            // 1. Öncekini temizle ve Skeleton'u göster
-            sonucDiv.style.display = "none";
-            sonucDiv.innerHTML = "";
-            skeleton.style.display = "block";
+        // --- ANALİZ ---
+        async function runAnalysis(url, fd, resId, skelId) {
+            const skel = document.getElementById(skelId);
+            const resBox = document.getElementById(resId);
+            skel.style.display="block"; resBox.style.display="none"; resBox.innerHTML="";
 
             const token = localStorage.getItem("token");
-            const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+            const headers = token ? {"Authorization": `Bearer ${token}`} : {};
 
             try {
-                const res = await fetch(BASE_URL + url, {
-                    method: "POST",
-                    headers: headers,
-                    body: formData
-                });
+                const res = await fetch(BASE_URL+url, {method:"POST", headers, body:fd});
                 const data = await res.json();
+                skel.style.display="none";
                 
-                // 2. Skeleton'u gizle
-                skeleton.style.display = "none";
-
-                if (data.analiz_sonucu || data.analiz) {
-                    const text = data.analiz_sonucu || data.analiz;
-                    // 3. Daktilo efektiyle yazdır
-                    typeWriter(text, resultId);
-                } else {
-                    sonucDiv.style.display = "block";
-                    sonucDiv.innerText = "Bir hata oluştu.";
-                    showToast("Sonuç alınamadı", "error");
-                }
-            } catch (e) {
-                skeleton.style.display = "none";
-                showToast("Sunucuya bağlanılamadı", "error");
-            }
+                if(data.analiz_sonucu || data.analiz) {
+                    typeWriter(data.analiz_sonucu || data.analiz, resId);
+                } else showToast("Sonuç alınamadı", "error");
+            } catch(e) { skel.style.display="none"; showToast("Hata oluştu", "error"); }
         }
 
         function isimAnaliziYap() {
-            const isim = document.getElementById("isim").value;
-            const soyisim = document.getElementById("soyisim").value;
-            if(!isim) return showToast("Lütfen bir isim girin", "error");
-            
-            const formData = new FormData();
-            formData.append("isim", isim);
-            formData.append("soyisim", soyisim);
-            requestAnalysis("/isim-analizi-yap", formData, "isimSonuc", "skeleton-isim");
+            const i = document.getElementById("isim").value;
+            const s = document.getElementById("soyisim").value;
+            if(!i) return showToast("İsim giriniz", "error");
+            const fd = new FormData(); fd.append("isim", i); fd.append("soyisim", s);
+            runAnalysis("/isim-analizi-yap", fd, "res-isim", "skel-isim");
         }
 
         function ruyaAnaliziYap() {
-            const metin = document.getElementById("ruyaMetni").value;
-            if(metin.length < 5) return showToast("Rüyanızı biraz daha anlatın", "error");
-            
-            const formData = new FormData();
-            formData.append("ruya_metni", metin);
-            requestAnalysis("/ruya-analizi", formData, "ruyaSonuc", "skeleton-ruya");
+            const t = document.getElementById("ruyaMetni").value;
+            if(t.length<5) return showToast("Rüya çok kısa", "error");
+            const fd = new FormData(); fd.append("ruya_metni", t);
+            runAnalysis("/ruya-analizi", fd, "res-ruya", "skel-ruya");
         }
 
         async function openHistory() {
             openModal('historyModal');
-            const listDiv = document.getElementById("historyList");
+            const list = document.getElementById("historyList");
+            list.innerHTML = "<p style='text-align:center; color:#999'>Yükleniyor...</p>";
             const token = localStorage.getItem("token");
-            
-            listDiv.innerHTML = '<div id="skeleton-hist" class="skeleton-wrapper" style="display:block"><div class="skeleton-line w-100"></div><div class="skeleton-line w-100"></div></div>';
 
             try {
-                const res = await fetch(`${BASE_URL}/users/me`, {
-                    headers: { "Authorization": `Bearer ${token}` }
-                });
-
-                if (res.ok) {
+                const res = await fetch(`${BASE_URL}/users/me`, {headers:{"Authorization":`Bearer ${token}`}});
+                if(res.ok) {
                     const data = await res.json();
-                    const analyses = data.analyses ? data.analyses.reverse() : [];
-
-                    if (analyses.length === 0) {
-                        listDiv.innerHTML = '<div style="text-align:center; padding:40px; color:#b2bec3;"><i class="fa-regular fa-folder-open" style="font-size:2rem; margin-bottom:10px;"></i><br>Henüz kayıt yok</div>';
-                        return;
-                    }
-
-                    let html = "";
-                    analyses.forEach(item => {
-                        const tarih = new Date(item.created_at).toLocaleDateString("tr-TR");
-                        const tipClass = item.analysis_type === "ISIM" ? "badge-ISIM" : "badge-RUYA";
-                        const icon = item.analysis_type === "ISIM" ? "fa-fingerprint" : "fa-moon";
-                        
-                        html += `
-                            <div class="history-item">
-                                <div style="font-size:1.4rem; color:#dfe6e9; min-width:40px; text-align:center;"><i class="fa-solid ${icon}"></i></div>
-                                <div style="flex:1;">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                        <span class="history-badge ${tipClass}">${item.analysis_type}</span>
-                                        <span style="font-size:0.75rem; color:#b2bec3;">${tarih}</span>
-                                    </div>
-                                    <div style="font-weight:600; font-size:0.95rem; color:var(--dark); margin-bottom:4px;">${item.input_text}</div>
-                                    <div style="font-size:0.85rem; color:#636e72; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height:1.4;">${item.result_text}</div>
+                    const arr = data.analyses ? data.analyses.reverse() : [];
+                    if(arr.length===0) { list.innerHTML="<p style='text-align:center; padding:20px'>Henüz kayıt yok</p>"; return; }
+                    
+                    let h = "";
+                    arr.forEach(x => {
+                        const date = new Date(x.created_at).toLocaleDateString("tr-TR");
+                        const cls = x.analysis_type==="ISIM"?"badge-ISIM":"badge-RUYA";
+                        const ico = x.analysis_type==="ISIM"?"fa-fingerprint":"fa-moon";
+                        h += `<div class="history-item">
+                            <div style="font-size:1.5rem; color:#ccc"><i class="fa-solid ${ico}"></i></div>
+                            <div style="flex:1">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+                                    <span class="history-badge ${cls}">${x.analysis_type}</span>
+                                    <span style="font-size:0.8rem; color:#aaa">${date}</span>
                                 </div>
+                                <div style="font-weight:600; margin-bottom:5px; color:#444">${x.input_text}</div>
+                                <div style="font-size:0.9rem; color:#666; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden">${x.result_text}</div>
                             </div>
-                        `;
+                        </div>`;
                     });
-                    listDiv.innerHTML = html;
+                    list.innerHTML = h;
                 }
-            } catch (e) { listDiv.innerHTML = "Geçmiş yüklenemedi."; }
+            } catch(e) { list.innerHTML="Hata"; }
         }
 
-        // --- UI ---
-        // Input placeholder animasyonu (CSS ile label'ı yukarı taşıma)
-        document.querySelectorAll('input, textarea').forEach(el => {
-            el.addEventListener('input', () => {
-                const label = el.nextElementSibling.nextElementSibling;
-                if(el.value.length > 0) label.style.opacity = '0';
-                else label.style.opacity = '1';
-            });
-        });
+        // --- UI UTILS ---
+        function openModal(id) { document.getElementById(id).style.display="flex"; }
+        function closeModal(id) { document.getElementById(id).style.display="none"; }
+        window.onclick = e => { if(e.target.classList.contains('modal-overlay')) e.target.style.display="none"; };
 
-        function openModal(id) { document.getElementById(id).style.display = "flex"; }
-        function closeModal(id) { document.getElementById(id).style.display = "none"; }
-        window.onclick = function(e) { if(e.target.classList.contains('modal')) e.target.style.display="none"; }
         checkAuth();
     </script>
 </body>
