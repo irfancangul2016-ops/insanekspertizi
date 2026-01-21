@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, Fo
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from datetime import datetime
 
-# Veritabanı Bağlantısı
+# Veritabanı URL Ayarı
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL and DATABASE_URL.startswith("postgres"):
@@ -26,7 +26,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
-    is_admin = Column(Boolean, default=False) # Admin yetkisi
+    is_admin = Column(Boolean, default=False)
     
     analyses = relationship("Analysis", back_populates="owner")
 
@@ -41,7 +41,7 @@ class Analysis(Base):
     
     owner = relationship("User", back_populates="analyses")
 
-# 👇 İŞTE BU EKSİK OLABİLİR, BUNUN BURADA OLDUĞUNDAN EMİN OL 👇
+# 👇 İŞTE ARADIĞIMIZ KAYIP PARÇA BU 👇
 class BlogPost(Base):
     __tablename__ = "blog_posts"
     id = Column(Integer, primary_key=True, index=True)
@@ -52,6 +52,7 @@ class BlogPost(Base):
     views = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+# Veritabanı yardımcı fonksiyonu
 def get_db():
     db = SessionLocal()
     try:
