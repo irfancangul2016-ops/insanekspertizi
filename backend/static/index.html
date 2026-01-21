@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İnsan Ekspertizi | Yapay Zeka Destekli Karakter Analizi</title>
+    <meta name="description" content="Yapay zeka destekli isim analizi ve rüya tabirleri. Bilinçaltınızı ve karakterinizi keşfedin.">
+    <title>İnsan Ekspertizi | AI Destekli Analiz Platformu</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -17,25 +18,26 @@
             --accent: #00cec9;
             --dark: #2d3436;
             --light: #f5f6fa;
-            --glass: rgba(255, 255, 255, 0.95);
-            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            --radius: 16px;
+            --glass: rgba(255, 255, 255, 0.90);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --radius: 20px;
         }
 
         /* --- TEMEL AYARLAR --- */
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: radial-gradient(circle at top left, #f6f8fb, #eef1f5);
             margin: 0;
             color: var(--dark);
             min-height: 100vh;
-            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* --- NAVİGASYON (ÜST MENÜ) --- */
+        /* --- NAVİGASYON --- */
         nav {
             background: var(--glass);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             padding: 1rem 5%;
             display: flex;
             justify-content: space-between;
@@ -43,33 +45,35 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.5);
         }
 
         .logo {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 700;
             color: var(--primary);
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 10px;
+            letter-spacing: -0.5px;
         }
 
         .nav-links button {
             margin-left: 10px;
-            padding: 10px 20px;
+            padding: 10px 24px;
             border: none;
             border-radius: 50px;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: inherit;
+            font-size: 0.9rem;
         }
 
         .btn-outline {
             background: transparent;
-            border: 2px solid var(--primary) !important;
+            border: 1px solid var(--primary) !important;
             color: var(--primary);
         }
 
@@ -79,102 +83,110 @@
         }
 
         .btn-fill {
-            background: linear-gradient(to right, var(--primary), var(--secondary));
+            background: var(--primary);
             color: white;
-            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.2);
         }
 
         .btn-fill:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+            background: #5b4cc4;
+            box-shadow: 0 6px 20px rgba(108, 92, 231, 0.3);
         }
 
-        /* --- ANA KONTEYNER --- */
+        /* --- ANA İÇERİK --- */
         .container {
             max-width: 1000px;
             margin: 40px auto;
             padding: 0 20px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
+            flex: 1; /* Footer'ı alta itmek için */
         }
 
-        /* --- KART TASARIMI (Glassmorphism) --- */
+        /* --- KART TASARIMI --- */
         .card {
             background: white;
-            padding: 30px;
+            padding: 35px;
             border-radius: var(--radius);
             box-shadow: var(--shadow);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: 1px solid rgba(255,255,255,0.5);
+            border: 1px solid rgba(255,255,255,1);
             position: relative;
-            overflow: hidden;
         }
 
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
         }
 
         .card-header {
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 18px;
+            margin-bottom: 25px;
         }
 
         .card-icon {
-            width: 50px;
-            height: 50px;
-            background: rgba(108, 92, 231, 0.1);
-            border-radius: 12px;
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(162, 155, 254, 0.1));
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--primary);
-            font-size: 1.5rem;
+            font-size: 1.6rem;
         }
 
-        h2 { margin: 0; font-size: 1.25rem; color: var(--dark); }
-        p { color: #636e72; font-size: 0.9rem; line-height: 1.6; }
+        h2 { margin: 0; font-size: 1.2rem; color: var(--dark); font-weight: 600; }
+        p { color: #636e72; font-size: 0.9rem; line-height: 1.6; margin-top: 5px; }
 
         /* --- FORMLAR --- */
-        .form-group { margin-bottom: 15px; position: relative; }
+        .form-group { margin-bottom: 18px; position: relative; }
         
         input, textarea {
             width: 100%;
-            padding: 15px;
-            padding-left: 45px; /* İkon boşluğu */
-            border: 2px solid #dfe6e9;
-            border-radius: 12px;
-            background: #f9f9f9;
+            padding: 16px;
+            padding-left: 48px;
+            border: 2px solid #f1f2f6;
+            border-radius: 14px;
+            background: #fdfdfd;
             font-family: inherit;
             font-size: 0.95rem;
             transition: all 0.3s;
             box-sizing: border-box;
+            color: var(--dark);
         }
 
         input:focus, textarea:focus {
             outline: none;
             border-color: var(--primary);
             background: white;
-            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
+            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.05);
         }
 
         .input-icon {
             position: absolute;
-            left: 15px;
-            top: 17px;
+            left: 18px;
+            top: 19px;
             color: #b2bec3;
+            font-size: 1.1rem;
+            transition: 0.3s;
+        }
+        
+        input:focus ~ .input-icon, textarea:focus ~ .input-icon {
+            color: var(--primary);
         }
 
         .action-btn {
             width: 100%;
-            padding: 15px;
+            padding: 16px;
             background: var(--dark);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
@@ -183,31 +195,63 @@
             justify-content: center;
             gap: 10px;
             transition: all 0.3s;
+            margin-top: 10px;
         }
 
         .action-btn:hover {
             background: var(--primary);
-            letter-spacing: 0.5px;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
         }
 
-        /* --- SONUÇ KUTUSU --- */
+        /* --- SONUÇ KUTUSU VE SKELETON LOADING --- */
         .result-box {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f1f2f6;
-            border-left: 4px solid var(--accent);
-            border-radius: 8px;
+            margin-top: 25px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
             white-space: pre-wrap;
             display: none;
-            animation: slideDown 0.5s ease;
+            line-height: 1.8;
+            color: #4b5563;
+            font-size: 0.95rem;
+            border-left: 4px solid var(--primary);
         }
 
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* SKELETON ANİMASYONU (YENİ) */
+        .skeleton-wrapper {
+            display: none;
+            margin-top: 20px;
+        }
+        .skeleton-line {
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .skeleton-line::after {
+            content: "";
+            display: block;
+            position: absolute;
+            left: -150px;
+            top: 0;
+            height: 100%;
+            width: 150px;
+            background: linear-gradient(to right, transparent 0%, #f5f5f5 50%, transparent 100%);
+            animation: load 1.5s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+        }
+        .w-100 { width: 100%; }
+        .w-80 { width: 80%; }
+        .w-60 { width: 60%; }
+
+        @keyframes load {
+            from { left: -150px; }
+            to { left: 100%; }
         }
 
-        /* --- MODAL (POP-UP) --- */
+        /* --- MODAL --- */
         .modal {
             display: none;
             position: fixed;
@@ -215,25 +259,28 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(45, 52, 54, 0.8);
-            backdrop-filter: blur(5px);
+            background: rgba(45, 52, 54, 0.6);
+            backdrop-filter: blur(8px);
             justify-content: center;
             align-items: center;
             z-index: 2000;
-            animation: fadeIn 0.3s;
         }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .modal-content {
             background: white;
             padding: 40px;
-            border-radius: 20px;
+            border-radius: 24px;
             width: 90%;
-            max-width: 400px;
+            max-width: 380px;
             position: relative;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             text-align: center;
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .close {
@@ -243,74 +290,96 @@
             font-size: 1.5rem;
             cursor: pointer;
             color: #b2bec3;
+            transition: 0.2s;
         }
+        .close:hover { color: var(--dark); }
 
-        /* --- TOAST BİLDİRİMLERİ (YENİ ÖZELLİK) --- */
+        /* --- TOAST BİLDİRİMLERİ --- */
         #toast-container {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 24px;
+            right: 24px;
             z-index: 3000;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .toast {
             background: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             display: flex;
             align-items: center;
-            gap: 10px;
-            min-width: 250px;
-            border-left: 5px solid;
-            animation: slideInRight 0.3s ease;
+            gap: 12px;
+            min-width: 280px;
+            border-left: 4px solid;
+            font-size: 0.9rem;
+            font-weight: 500;
+            animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        .toast.success { border-color: #00b894; }
-        .toast.error { border-color: #ff7675; }
+        .toast.success { border-color: #00b894; color: #2d3436; }
+        .toast.error { border-color: #ff7675; color: #2d3436; }
         .toast i { font-size: 1.2rem; }
         .toast.success i { color: #00b894; }
         .toast.error i { color: #ff7675; }
 
-        @keyframes slideInRight {
+        @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
 
         /* --- GEÇMİŞ LİSTESİ --- */
         .history-item {
-            background: white;
-            border-bottom: 1px solid #eee;
-            padding: 15px;
+            padding: 16px 0;
+            border-bottom: 1px solid #f1f2f6;
             display: flex;
-            align-items: flex-start;
             gap: 15px;
-            transition: background 0.2s;
         }
-        .history-item:hover { background: #f9f9f9; }
-        .history-badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            color: white;
-            text-transform: uppercase;
-        }
-        .badge-ISIM { background: linear-gradient(45deg, #0984e3, #74b9ff); }
-        .badge-RUYA { background: linear-gradient(45deg, #6c5ce7, #a29bfe); }
+        .history-item:last-child { border-bottom: none; }
         
+        .history-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: white;
+        }
+        .badge-ISIM { background: #0984e3; }
+        .badge-RUYA { background: #6c5ce7; }
+        
+        /* --- FOOTER --- */
+        footer {
+            background: white;
+            padding: 40px 0;
+            text-align: center;
+            border-top: 1px solid #eee;
+            margin-top: 60px;
+        }
+        .footer-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            color: #636e72;
+            font-size: 0.9rem;
+        }
+        .social-links { margin-top: 15px; }
+        .social-links a { color: var(--primary); margin: 0 10px; font-size: 1.2rem; transition: 0.3s; }
+        .social-links a:hover { color: var(--dark); }
+
         .hero {
             text-align: center;
-            padding: 60px 20px;
-            background: white;
-            margin-bottom: -40px;
-            padding-bottom: 80px;
+            padding: 80px 20px 60px;
         }
-        .hero h1 { font-size: 2.5rem; color: var(--dark); margin-bottom: 10px; }
-        .hero span { color: var(--primary); }
+        .hero h1 { font-size: 2.8rem; color: var(--dark); margin: 0 0 15px; letter-spacing: -1px; }
+        .hero span { 
+    background: linear-gradient(120deg, var(--primary), var(--accent));
+    -webkit-background-clip: text; /* Eski/Webkit tarayıcılar için */
+    background-clip: text;         /* <--- YENİ EKLENECEK SATIR (Standart) */
+    -webkit-text-fill-color: transparent;
+}
     </style>
 </head>
 <body>
@@ -324,22 +393,22 @@
         
         <div class="nav-links" id="guest-menu">
             <button class="btn-outline" onclick="openModal('loginModal')">Giriş Yap</button>
-            <button class="btn-fill" onclick="openModal('registerModal')">Ücretsiz Kayıt</button>
+            <button class="btn-fill" onclick="openModal('registerModal')">Ücretsiz Başla</button>
         </div>
 
         <div class="nav-links" id="user-menu" style="display: none;">
             <button class="btn-outline" onclick="openHistory()">
-                <i class="fa-solid fa-clock-rotate-left"></i> Geçmiş
+                <i class="fa-solid fa-clock-rotate-left"></i>
             </button>
             <button class="btn-fill" onclick="logout()">
-                <i class="fa-solid fa-right-from-bracket"></i> Çıkış
+                <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         </div>
     </nav>
 
     <div class="hero">
-        <h1>Kendini Keşfetmeye <br> <span>Yapay Zeka</span> İle Başla</h1>
-        <p>İsim analizi, rüya tabirleri ve karakter analizi için en gelişmiş motor.</p>
+        <h1>Karakterinin <br> <span>DNA</span>'sını Çözümle</h1>
+        <p>Yapay zeka motorumuz ismindeki ve rüyalarındaki gizli şifreleri tarıyor.</p>
     </div>
 
     <div class="container">
@@ -349,22 +418,32 @@
                 <div class="card-icon"><i class="fa-solid fa-fingerprint"></i></div>
                 <div>
                     <h2>İsim Analizi</h2>
-                    <p>Adının gizli frekansını çöz.</p>
+                    <p>Adının enerjisel haritasını çıkar.</p>
                 </div>
             </div>
             
             <div class="form-group">
+                <input type="text" id="isim" placeholder=" ">
                 <i class="fa-solid fa-user input-icon"></i>
-                <input type="text" id="isim" placeholder="Adınız">
+                <label style="position:absolute; left:48px; top:18px; color:#aaa; pointer-events:none; transition:0.3s; font-size:0.9rem;">Adınız</label>
             </div>
             <div class="form-group">
+                <input type="text" id="soyisim" placeholder=" ">
                 <i class="fa-solid fa-signature input-icon"></i>
-                <input type="text" id="soyisim" placeholder="Soyadınız">
+                <label style="position:absolute; left:48px; top:18px; color:#aaa; pointer-events:none; transition:0.3s; font-size:0.9rem;">Soyadınız</label>
             </div>
             
             <button class="action-btn" onclick="isimAnaliziYap()">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Analiz Et
             </button>
+
+            <div id="skeleton-isim" class="skeleton-wrapper">
+                <div class="skeleton-line w-100"></div>
+                <div class="skeleton-line w-80"></div>
+                <div class="skeleton-line w-100"></div>
+                <div class="skeleton-line w-60"></div>
+            </div>
+
             <div id="isimSonuc" class="result-box"></div>
         </div>
 
@@ -373,34 +452,55 @@
                 <div class="card-icon"><i class="fa-solid fa-moon"></i></div>
                 <div>
                     <h2>Rüya Tabiri</h2>
-                    <p>Bilinçaltının mesajını oku.</p>
+                    <p>Bilinçaltının sana mesajı ne?</p>
                 </div>
             </div>
             
             <div class="form-group">
+                <textarea id="ruyaMetni" rows="4" placeholder=" " style="resize: none;"></textarea>
                 <i class="fa-solid fa-pen-nib input-icon" style="top: 20px;"></i>
-                <textarea id="ruyaMetni" rows="4" placeholder="Rüyanı detaylıca anlat..."></textarea>
+                <label style="position:absolute; left:48px; top:18px; color:#aaa; pointer-events:none; transition:0.3s; font-size:0.9rem;">Rüyanı detaylıca anlat...</label>
             </div>
             
             <button class="action-btn" onclick="ruyaAnaliziYap()">
                 <i class="fa-solid fa-eye"></i> Yorumla
             </button>
+
+            <div id="skeleton-ruya" class="skeleton-wrapper">
+                <div class="skeleton-line w-100"></div>
+                <div class="skeleton-line w-100"></div>
+                <div class="skeleton-line w-80"></div>
+                <div class="skeleton-line w-60"></div>
+            </div>
+
             <div id="ruyaSonuc" class="result-box"></div>
         </div>
 
     </div>
 
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2026 İnsan Ekspertizi. Tüm hakları saklıdır.</p>
+            <div class="social-links">
+                <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                <a href="#"><i class="fa-brands fa-linkedin"></i></a>
+            </div>
+        </div>
+    </footer>
+
     <div id="loginModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('loginModal')">&times;</span>
-            <h2><i class="fa-solid fa-lock"></i> Giriş Yap</h2>
+            <div style="font-size:2rem; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-right-to-bracket"></i></div>
+            <h2 style="margin-bottom:20px;">Hoşgeldiniz</h2>
             <div class="form-group">
+                <input type="email" id="loginEmail" placeholder="E-posta">
                 <i class="fa-solid fa-envelope input-icon"></i>
-                <input type="email" id="loginEmail" placeholder="E-posta Adresi">
             </div>
             <div class="form-group">
-                <i class="fa-solid fa-key input-icon"></i>
                 <input type="password" id="loginPass" placeholder="Şifre">
+                <i class="fa-solid fa-key input-icon"></i>
             </div>
             <button class="action-btn" onclick="login()">Giriş Yap</button>
         </div>
@@ -409,49 +509,67 @@
     <div id="registerModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('registerModal')">&times;</span>
-            <h2><i class="fa-solid fa-user-plus"></i> Kayıt Ol</h2>
+            <div style="font-size:2rem; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-user-plus"></i></div>
+            <h2 style="margin-bottom:20px;">Hesap Oluştur</h2>
             <div class="form-group">
+                <input type="email" id="regEmail" placeholder="E-posta">
                 <i class="fa-solid fa-envelope input-icon"></i>
-                <input type="email" id="regEmail" placeholder="E-posta Adresi">
             </div>
             <div class="form-group">
+                <input type="password" id="regPass" placeholder="Şifre">
                 <i class="fa-solid fa-key input-icon"></i>
-                <input type="password" id="regPass" placeholder="Şifre Belirleyin">
             </div>
-            <button class="action-btn" onclick="register()">Üyeliği Başlat</button>
+            <button class="action-btn" onclick="register()">Kayıt Ol</button>
         </div>
     </div>
 
     <div id="historyModal" class="modal">
-        <div class="modal-content" style="max-width: 600px; padding: 0;">
-            <div style="padding: 20px; border-bottom: 1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                <h2 style="font-size: 1.2rem;">📜 Geçmiş Analizlerim</h2>
+        <div class="modal-content" style="max-width: 500px; padding: 0; overflow: hidden;">
+            <div style="padding: 20px; border-bottom: 1px solid #eee; display:flex; justify-content:space-between; align-items:center; background:#f8f9fa;">
+                <h2 style="font-size: 1.1rem; margin:0;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--primary);"></i> Geçmiş Analizler</h2>
                 <span style="cursor:pointer; font-size:1.5rem;" onclick="closeModal('historyModal')">&times;</span>
             </div>
-            <div id="historyList" style="max-height: 60vh; overflow-y: auto;">
-                <p style="padding: 20px; text-align: center; color:#999;">Yükleniyor...</p>
-            </div>
+            <div id="historyList" style="max-height: 60vh; overflow-y: auto; padding:20px;">
+                </div>
         </div>
     </div>
 
     <script>
         const BASE_URL = "/api"; 
         
-        // --- PROFESYONEL BİLDİRİM SİSTEMİ (TOAST) ---
+        // --- UX: DAKTİLO EFEKTİ ---
+        function typeWriter(text, elementId, speed = 10) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = "";
+            element.style.display = "block";
+            let i = 0;
+            
+            function type() {
+                if (i < text.length) {
+                    // Eğer \n varsa <br> ekle, yoksa karakter ekle
+                    if (text.substring(i, i+1) === "\n") {
+                        element.innerHTML += "<br>";
+                    } else {
+                        element.innerHTML += text.charAt(i);
+                    }
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        // --- UX: TOAST MESAJ ---
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            
-            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>';
-            
+            const icon = type === 'success' ? '<i class="fa-solid fa-check-circle"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
             toast.innerHTML = `${icon} <span>${message}</span>`;
             container.appendChild(toast);
-
-            // 3 saniye sonra sil
             setTimeout(() => {
-                toast.style.animation = "slideInRight 0.3s reverse";
-                setTimeout(() => toast.remove(), 300);
+                toast.style.animation = "slideIn 0.4s reverse";
+                setTimeout(() => toast.remove(), 400);
             }, 3000);
         }
 
@@ -470,7 +588,7 @@
         async function register() {
             const email = document.getElementById("regEmail").value;
             const password = document.getElementById("regPass").value;
-            if(!email || !password) return showToast("Alanları doldurun!", "error");
+            if(!email || !password) return showToast("E-posta ve şifre gerekli!", "error");
 
             try {
                 const res = await fetch(`${BASE_URL}/register`, {
@@ -507,7 +625,7 @@
                 if (res.ok) {
                     const data = await res.json();
                     localStorage.setItem("token", data.access_token);
-                    showToast("Hoşgeldiniz!");
+                    showToast("Giriş başarılı!");
                     checkAuth();
                     closeModal("loginModal");
                 } else {
@@ -521,11 +639,15 @@
             location.reload();
         }
 
-        // --- ANALİZ ---
-        async function requestAnalysis(url, formData, resultId) {
+        // --- ANALİZ İSTEĞİ (YENİLENMİŞ) ---
+        async function requestAnalysis(url, formData, resultId, skeletonId) {
             const sonucDiv = document.getElementById(resultId);
-            sonucDiv.style.display = "block";
-            sonucDiv.innerHTML = '<div style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Yapay zeka düşünüyor...</div>';
+            const skeleton = document.getElementById(skeletonId);
+            
+            // 1. Öncekini temizle ve Skeleton'u göster
+            sonucDiv.style.display = "none";
+            sonucDiv.innerHTML = "";
+            skeleton.style.display = "block";
 
             const token = localStorage.getItem("token");
             const headers = token ? { "Authorization": `Bearer ${token}` } : {};
@@ -538,45 +660,51 @@
                 });
                 const data = await res.json();
                 
+                // 2. Skeleton'u gizle
+                skeleton.style.display = "none";
+
                 if (data.analiz_sonucu || data.analiz) {
-                    sonucDiv.innerHTML = data.analiz_sonucu || data.analiz;
-                    showToast("Analiz tamamlandı!");
+                    const text = data.analiz_sonucu || data.analiz;
+                    // 3. Daktilo efektiyle yazdır
+                    typeWriter(text, resultId);
                 } else {
+                    sonucDiv.style.display = "block";
                     sonucDiv.innerText = "Bir hata oluştu.";
                     showToast("Sonuç alınamadı", "error");
                 }
             } catch (e) {
-                sonucDiv.innerText = "Sunucuya bağlanılamadı.";
-                showToast("Bağlantı hatası", "error");
+                skeleton.style.display = "none";
+                showToast("Sunucuya bağlanılamadı", "error");
             }
         }
 
         function isimAnaliziYap() {
             const isim = document.getElementById("isim").value;
             const soyisim = document.getElementById("soyisim").value;
-            if(!isim) return showToast("İsim girmelisiniz!", "error");
+            if(!isim) return showToast("Lütfen bir isim girin", "error");
             
             const formData = new FormData();
             formData.append("isim", isim);
             formData.append("soyisim", soyisim);
-            requestAnalysis("/isim-analizi-yap", formData, "isimSonuc");
+            requestAnalysis("/isim-analizi-yap", formData, "isimSonuc", "skeleton-isim");
         }
 
         function ruyaAnaliziYap() {
             const metin = document.getElementById("ruyaMetni").value;
-            if(metin.length < 5) return showToast("Rüyanızı detaylandırın.", "error");
+            if(metin.length < 5) return showToast("Rüyanızı biraz daha anlatın", "error");
             
             const formData = new FormData();
             formData.append("ruya_metni", metin);
-            requestAnalysis("/ruya-analizi", formData, "ruyaSonuc");
+            requestAnalysis("/ruya-analizi", formData, "ruyaSonuc", "skeleton-ruya");
         }
 
-        // --- GEÇMİŞ ---
         async function openHistory() {
             openModal('historyModal');
             const listDiv = document.getElementById("historyList");
             const token = localStorage.getItem("token");
             
+            listDiv.innerHTML = '<div id="skeleton-hist" class="skeleton-wrapper" style="display:block"><div class="skeleton-line w-100"></div><div class="skeleton-line w-100"></div></div>';
+
             try {
                 const res = await fetch(`${BASE_URL}/users/me`, {
                     headers: { "Authorization": `Bearer ${token}` }
@@ -587,7 +715,7 @@
                     const analyses = data.analyses ? data.analyses.reverse() : [];
 
                     if (analyses.length === 0) {
-                        listDiv.innerHTML = '<div style="padding:20px; text-align:center; color:#ccc;"><i class="fa-solid fa-box-open" style="font-size:2rem;"></i><br>Henüz kayıt yok.</div>';
+                        listDiv.innerHTML = '<div style="text-align:center; padding:40px; color:#b2bec3;"><i class="fa-regular fa-folder-open" style="font-size:2rem; margin-bottom:10px;"></i><br>Henüz kayıt yok</div>';
                         return;
                     }
 
@@ -599,28 +727,36 @@
                         
                         html += `
                             <div class="history-item">
-                                <div style="font-size:1.5rem; color:#b2bec3;"><i class="fa-solid ${icon}"></i></div>
+                                <div style="font-size:1.4rem; color:#dfe6e9; min-width:40px; text-align:center;"><i class="fa-solid ${icon}"></i></div>
                                 <div style="flex:1;">
-                                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                                         <span class="history-badge ${tipClass}">${item.analysis_type}</span>
-                                        <span style="font-size:0.8rem; color:#999;">${tarih}</span>
+                                        <span style="font-size:0.75rem; color:#b2bec3;">${tarih}</span>
                                     </div>
-                                    <div style="font-weight:bold; color:#2d3436; font-size:0.9rem;">"${item.input_text}"</div>
-                                    <div style="font-size:0.85rem; color:#636e72; margin-top:5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${item.result_text}</div>
+                                    <div style="font-weight:600; font-size:0.95rem; color:var(--dark); margin-bottom:4px;">${item.input_text}</div>
+                                    <div style="font-size:0.85rem; color:#636e72; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height:1.4;">${item.result_text}</div>
                                 </div>
                             </div>
                         `;
                     });
                     listDiv.innerHTML = html;
                 }
-            } catch (e) { listDiv.innerHTML = "Hata oluştu."; }
+            } catch (e) { listDiv.innerHTML = "Geçmiş yüklenemedi."; }
         }
 
-        // --- MODAL YÖNETİMİ ---
+        // --- UI ---
+        // Input placeholder animasyonu (CSS ile label'ı yukarı taşıma)
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('input', () => {
+                const label = el.nextElementSibling.nextElementSibling;
+                if(el.value.length > 0) label.style.opacity = '0';
+                else label.style.opacity = '1';
+            });
+        });
+
         function openModal(id) { document.getElementById(id).style.display = "flex"; }
         function closeModal(id) { document.getElementById(id).style.display = "none"; }
         window.onclick = function(e) { if(e.target.classList.contains('modal')) e.target.style.display="none"; }
-        
         checkAuth();
     </script>
 </body>
