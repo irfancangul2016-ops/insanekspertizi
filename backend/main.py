@@ -176,3 +176,39 @@ def repair_database(db: Session = Depends(get_db)):
         return {"durum": "BAŞARILI", "mesaj": "Veritabanı kontrol edildi."}
     except Exception as e:
         return {"durum": "HATA", "mesaj": str(e)}
+
+# --- 🌍 SEO VE GOOGLE BOTLARI İÇİN ---
+
+@app.get("/robots.txt", response_class=FileResponse)
+def robots_txt():
+    # Google'a "Her yeri gezebilirsin" diyoruz
+    content = """User-agent: *
+Allow: /
+Sitemap: https://insanekspertizi.org/sitemap.xml
+"""
+    # Dosyayı geçici oluşturup gönderiyoruz (Basit yöntem)
+    with open("robots.txt", "w") as f:
+        f.write(content)
+    return FileResponse("robots.txt")
+
+@app.get("/sitemap.xml", response_class=FileResponse)
+def sitemap_xml():
+    # Site haritası: Google'a sayfalarımızı tanıtıyoruz
+    content = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+   <url>
+      <loc>https://insanekspertizi.org/</loc>
+      <lastmod>2026-01-21</lastmod>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+   </url>
+   <url>
+      <loc>https://insanekspertizi.org/register</loc>
+      <lastmod>2026-01-21</lastmod>
+      <priority>0.8</priority>
+   </url>
+</urlset>
+"""
+    with open("sitemap.xml", "w") as f:
+        f.write(content)
+    return FileResponse("sitemap.xml")
