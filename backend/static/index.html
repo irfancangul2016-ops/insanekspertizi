@@ -323,82 +323,78 @@
         }
 
         // --- GEÇMİŞ İŞLEMLERİ (DÜZELTİLMİŞ) ---
+        // --- GEÇMİŞ VE İNDİRME FONKSİYONLARI ---
+        
+        // Metin İndirme Yardımcısı
+        function downloadTxt(filename, content) {
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+
         async function openHistory() {
-            openModal('historyModal');
-            const list = document.getElementById('historyList');
-            list.innerHTML = '<p style="text-align:center; color:#666;">Veriler çekiliyor...</p>';
+            openModal("historyModal");
+            const list = document.getElementById("historyList");
+            list.innerHTML = '<p style="text-align:center;">Veriler çekiliyor...</p>';
             
-            const token = localStorage.getItem("token");
-            if (!token) {
-                list.innerHTML = '<p style="text-align:center; color:red;">Giriş yapmalısınız.</p>';
-                return;
-            }
-
             try {
+                // Token ile veriyi çek
                 const res = await fetch("/api/users/me", {
-                    method: "GET",
-                    headers: { 
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json"
-                    }
+                    headers:{"Authorization":`Bearer ${localStorage.getItem("token")}`}
                 });
-
+                
                 if(res.ok) {
                     const user = await res.json();
                     
-                    // Veri kontrolü: analyses dizisi var mı?
-                    if(user.analyses && user.analyses.length > 0) {
-                        list.innerHTML = "";
-                        // Ters çevir (En yeniden eskiye)
-                        const sortedAnalyses = user.analyses.slice().reverse();
+                    // EĞER HİÇ KAYIT YOKSA
+                    if(!user.analyses || user.analyses.length === 0) {
+                        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Henüz kayıtlı analiziniz yok.<br>Analiz yaptıktan sonra burada görünecek.</div>';
+                        return;
+                    }
 
-                        sortedAnalyses.forEach((a, index) => {
-                            // Tarih formatlama
-                            let dateStr = "Tarih Yok";
-                            if(a.created_at) {
-                                dateStr = new Date(a.created_at).toLocaleDateString("tr-TR", {
-                                    day: 'numeric', month: 'long', hour: '2-digit', minute:'2-digit'
-                                });
-                            }
-
-                            const ozet = a.result_text ? a.result_text.substring(0, 80) + "..." : "Sonuç yok.";
-                            const badge = a.analysis_type === "ISIM" ? "ISIM" : "RUYA";
-                            const inputSummary = a.input_text ? a.input_text.substring(0, 30) : "...";
-                            
-                            // İndirme içeriği (Güvenli kodlama)
-                            const fullContent = `Tarih: ${dateStr}\nTür: ${badge}\nGirdi: ${a.input_text}\n\nANALİZ SONUCU:\n${a.result_text}\n\n-- İnsan Ekspertizi --`;
-                            const safeContent = encodeURIComponent(fullContent); 
-
-                            list.innerHTML += `
-                                <div class="history-item">
-                                    <div style="flex:1;">
-                                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
-                                            <span class="history-badge badge-${badge}">${badge}</span>
-                                            <span style="font-size:0.75rem; color:#b2bec3;">${dateStr}</span>
-                                        </div>
-                                        <div style="font-weight:600; font-size:0.9rem; color:#2d3436;">${inputSummary}...</div>
-                                        <p style="font-size:0.85rem; color:#636e72; margin:5px 0 0 0;">${ozet}</p>
-                                    </div>
-                                    <button class="download-btn" onclick="downloadText(decodeURIComponent('${safeContent}'), 'analiz-${index+1}.txt')">
-                                        <i class="fa-solid fa-download"></i>
-                                    </button>
+                    // KAYIT VARSA LİSTELE
+                    let html = "";
+                    // En yeniden eskiye sırala
+                    const tersListe = user.analyses.slice().reverse();
+                    
+                    tersListe.forEach((a, index) => {
+                        // Tarih düzeltme
+                        const tarih = a.created_at ? a.created_at.split('T')[0] : "Tarih Yok";
+                        const tur = a.analysis_type; // ISIM veya RUYA
+                        
+                        // İndirilecek metni hazırla
+                        const indirilecekMetin = `Tarih: ${tarih}\nTür: ${tur}\nGirdi: ${a.input_text}\n\nSONUÇ:\n${a.result_text}`;
+                        
+                        html += `
+                        <div style="display:flex; justify-content:space-between; align-items:start; padding:15px; border-bottom:1px solid #eee; gap:10px;">
+                            <div style="flex:1;">
+                                <div style="font-size:0.8rem; color:#888; margin-bottom:5px;">
+                                    <span style="background:#6c5ce7; color:white; padding:2px 6px; border-radius:4px;">${tur}</span> 
+                                    ${tarih}
                                 </div>
-                            `;
-                        });
-                    } else {
-                        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;"><i class="fa-regular fa-folder-open" style="font-size:2rem; display:block; margin-bottom:10px;"></i>Henüz hiç analiz yapmadınız.</div>';
-                    }
+                                <div style="font-weight:bold; margin-bottom:5px;">${a.input_text.substring(0, 40)}...</div>
+                                <div style="font-size:0.9rem; color:#555;">${a.result_text.substring(0, 80)}...</div>
+                            </div>
+                            
+                            <button onclick="downloadTxt('analiz-${index+1}.txt', \`${indirilecekMetin}\`)" 
+                                    style="background:#dfe6e9; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem;">
+                                <i class="fa-solid fa-download"></i> İndir
+                            </button>
+                        </div>
+                        `;
+                    });
+                    
+                    list.innerHTML = html;
                 } else {
-                    console.error("API Hatası:", res.status);
-                    if(res.status === 401) {
-                        logout(); // Oturum düşmüşse çıkış yap
-                    } else {
-                        list.innerHTML = '<p style="text-align:center; color:red;">Veriler alınamadı. (Hata Kodu: ' + res.status + ')</p>';
-                    }
+                    list.innerHTML = "Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.";
                 }
             } catch(e) { 
-                console.error("Bağlantı Hatası:", e);
-                list.innerHTML = '<p style="text-align:center; color:red;">Bağlantı hatası oluştu.</p>'; 
+                console.error(e);
+                list.innerHTML = "Bir hata oluştu."; 
             }
         }
 
