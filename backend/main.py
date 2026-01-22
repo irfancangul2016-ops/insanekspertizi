@@ -2,6 +2,7 @@ import os
 import requests
 import re
 import datetime
+import warnings
 from datetime import timedelta
 from typing import List, Optional
 
@@ -23,7 +24,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 
 # --- 1. AYARLAR VE VERİTABANI BAĞLANTISI ---
-DATABASE_URL = "sqlite:///./insanekspertizi.db"
+DATABASE_URL = "sqlite:///./insan_ekspertizi.db"
 SECRET_KEY = "cok_gizli_anahtar"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
