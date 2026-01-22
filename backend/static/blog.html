@@ -3,155 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog | İnsan Ekspertizi</title>
+    <title>İçgörüler | İnsan Ekspertizi Blog</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/9626/9626780.png">
     <meta name="theme-color" content="#6c5ce7">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root { --primary: #6c5ce7; --dark: #2d3436; --text-light: #636e72; --bg-light: #f8f9fd; --white: #ffffff; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg-light); margin: 0; color: var(--dark); line-height: 1.6; }
-        nav { background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #eee; }
-        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 10px; }
-        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; min-height: 80vh; }
-        
-        /* Liste */
-        .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
-        .blog-card { background: var(--white); border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: 0.3s; border: 1px solid #eee; cursor: pointer; text-decoration: none; color: inherit; display: flex; flex-direction: column; }
-        .blog-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(108, 92, 231, 0.15); }
-        .card-img { width: 100%; height: 200px; object-fit: cover; }
-        .card-content { padding: 25px; flex: 1; display: flex; flex-direction: column; }
-        .card-title { font-size: 1.2rem; font-weight: 700; margin: 10px 0; }
-        .card-excerpt { font-size: 0.9rem; color: var(--text-light); margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .read-more { margin-top: auto; color: var(--primary); font-weight: 600; font-size: 0.9rem; }
 
-        /* Detay */
-        .detail-view { display: none; background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .detail-img { width: 100%; height: 400px; object-fit: cover; border-radius: 16px; margin-bottom: 30px; }
-        .detail-title { font-size: 2.5rem; line-height: 1.2; margin-bottom: 10px; }
-        .detail-content { font-size: 1.1rem; line-height: 1.8; color: #2d3436; }
-        .back-btn { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; color: var(--text-light); font-weight: 600; margin-bottom: 20px; }
-        .back-btn:hover { color: var(--primary); }
+    <style>
+        :root { --primary: #6c5ce7; --primary-dark: #5849be; --secondary: #a29bfe; --dark: #2d3436; --text-light: #636e72; --bg-light: #f8f9fd; --white: #ffffff; --glass: rgba(255, 255, 255, 0.95); --radius: 24px; --transition: all 0.3s ease; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg-light); margin: 0; color: var(--dark); overflow-x: hidden; line-height: 1.6; }
+        
+        /* NAVIGASYON (Ana sayfayla aynı) */
+        nav { background: var(--glass); backdrop-filter: blur(15px); padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 12px; }
+        .nav-actions { display: flex; gap: 15px; align-items: center; }
+        .btn-base { padding: 10px 24px; border-radius: 50px; font-weight: 600; cursor: pointer; transition: var(--transition); border: none; font-size: 0.9rem; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); } .btn-outline:hover { background: var(--primary); color: white; }
+        .btn-fill { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); } .btn-fill:hover { transform: translateY(-3px); }
+
+        /* BLOG HEADER */
+        .blog-header { text-align: center; padding: 80px 20px 40px; background: white; margin-bottom: 40px; }
+        .blog-header h1 { font-size: 3rem; margin: 0 0 10px; font-weight: 800; color: var(--dark); }
+        .blog-header p { color: var(--text-light); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+
+        /* BLOG GRID */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
+        .posts-grid { display: flex; flex-direction: column; gap: 40px; }
+        
+        .post-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: var(--transition); border: 1px solid #eee; }
+        .post-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(108, 92, 231, 0.15); }
+        
+        .post-img { width: 100%; height: 250px; object-fit: cover; }
+        .post-content { padding: 30px; }
+        .post-meta { display: flex; gap: 15px; font-size: 0.85rem; color: #b2bec3; margin-bottom: 15px; }
+        .post-author { color: var(--primary); font-weight: 600; }
+        
+        .post-title { font-size: 1.5rem; margin: 0 0 15px; font-weight: 700; color: var(--dark); }
+        .post-excerpt { color: var(--text-light); margin-bottom: 20px; font-size: 0.95rem; }
+        .read-more { color: var(--primary); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        .read-more:hover { gap: 10px; }
+
+        /* SIDEBAR (ÜYELİK KANCASI) */
+        .sidebar { position: sticky; top: 100px; height: fit-content; }
+        .cta-widget { background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(108, 92, 231, 0.3); }
+        .cta-widget h3 { margin: 0 0 15px; font-size: 1.4rem; }
+        .cta-widget p { font-size: 0.9rem; opacity: 0.9; margin-bottom: 20px; }
+        .cta-btn { background: white; color: var(--primary); padding: 12px 25px; border-radius: 50px; text-decoration: none; font-weight: bold; display: inline-block; transition: var(--transition); border: none; cursor: pointer; }
+        .cta-btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+        /* FOOTER */
+        footer { background: #2d3436; color: rgba(255,255,255,0.6); padding: 50px 20px; text-align: center; margin-top: 80px; }
+
+        /* MODALS (Ana sayfayla aynı) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-box { background: white; width: 90%; max-width: 400px; padding: 40px; border-radius: 20px; position: relative; animation: popIn 0.3s; }
+        .close-modal { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 1.5rem; color: #ccc; }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .form-group { margin-bottom: 15px; }
+        input { width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 12px; font-family: inherit; box-sizing: border-box; }
+        .submit-btn { width: 100%; padding: 15px; background: var(--dark); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .submit-btn:hover { background: var(--primary); }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+            .sidebar { display: none; } /* Mobilde sidebarı gizle */
+        }
     </style>
 </head>
 <body>
 
     <nav>
-        <a href="/" class="logo"><i class="fa-solid fa-dna fa-lg"></i> İnsan Ekspertizi</a>
-        <div style="flex:1; margin-left:30px;"><a href="/blog" style="text-decoration:none; color:var(--dark); font-weight:600;">Blog</a></div>
-        <a href="/" style="text-decoration:none; color:var(--dark); font-weight:600;">Ana Sayfa</a>
+        <a href="/" class="logo"><i class="fa-solid fa-dna"></i> İnsan Ekspertizi</a>
+        <div class="nav-actions" id="guest-nav">
+            <button class="btn-base btn-outline" onclick="openModal('loginModal')">Giriş Yap</button>
+            <button class="btn-base btn-fill" onclick="openModal('registerModal')">Kayıt Ol</button>
+        </div>
+        <div class="nav-actions" id="user-nav" style="display: none;">
+            <a href="/" class="btn-base btn-fill">Analiz Paneli</a>
+        </div>
     </nav>
 
+    <header class="blog-header">
+        <h1>İçgörüler ve Makaleler</h1>
+        <p>Bilinçaltı, sembolizm ve karakter analizi üzerine uzmanlarımızın yazıları.</p>
+    </header>
+
     <div class="container">
-        <div id="loading" style="text-align:center; padding:50px; color:#ccc;"><i class="fa-solid fa-circle-notch fa-spin"></i> Yükleniyor...</div>
+        <div class="posts-grid" id="blog-posts">
+            <article class="post-card">
+                <img src="https://images.unsplash.com/photo-1560419015-7c427e871504?q=80&w=1000" alt="İsim Analizi" class="post-img">
+                <div class="post-content">
+                    <div class="post-meta">
+                        <span><i class="fa-regular fa-calendar"></i> 22 Ocak 2026</span>
+                        <span class="post-author"><i class="fa-solid fa-user-pen"></i> Aslı Hanım</span>
+                    </div>
+                    <h2 class="post-title">İsminizdeki Gizli Şifreler: Harflerin Enerjisi</h2>
+                    <p class="post-excerpt">A harfi liderlik, B harfi duygusallık... İsminizin baş harfi aslında karakterinizin %60'ını oluşturuyor olabilir mi? Harflerin enerjisel frekanslarını inceliyoruz.</p>
+                    <a href="#" class="read-more">Devamını Oku <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+            </article>
 
-        <div id="list-view" style="display: none;">
-            <div style="text-align:center; margin-bottom:50px;">
-                <h1 style="font-size:2.5rem; margin-bottom:10px;">Blog & İçgörüler</h1>
-                <p style="color:var(--text-light);">Bilinçaltı kütüphanesi.</p>
+            <article class="post-card">
+                <img src="https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=1000" alt="Rüya Tabiri" class="post-img">
+                <div class="post-content">
+                    <div class="post-meta">
+                        <span><i class="fa-regular fa-calendar"></i> 20 Ocak 2026</span>
+                        <span class="post-author"><i class="fa-solid fa-user-pen"></i> Yahya Bey</span>
+                    </div>
+                    <h2 class="post-title">Rüyada Yüksekten Düşmek Ne Anlama Gelir?</h2>
+                    <p class="post-excerpt">Geleneksel kaynaklara göre rüyada düşmek statü kaybı mıdır, yoksa bilinçaltının bir uyarısı mı? Nablusi ve İbn-i Sirin kaynaklarından derlediğimiz hikmetli yorumlar.</p>
+                    <a href="#" class="read-more">Devamını Oku <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+            </article>
+            
+            <article class="post-card">
+                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000" alt="Yüz Okuma" class="post-img">
+                <div class="post-content">
+                    <div class="post-meta">
+                        <span><i class="fa-regular fa-calendar"></i> 18 Ocak 2026</span>
+                        <span class="post-author"><i class="fa-solid fa-user-pen"></i> Dr. Mustafa Bey</span>
+                    </div>
+                    <h2 class="post-title">Bilinçaltı Sembolleri ve Yüz Okuma</h2>
+                    <p class="post-excerpt">Kaşlarınızın şekli veya dudak yapınız, çocukluğunuzdaki travmaları ele veriyor olabilir. Fizyonomi ilmine psikolojik bir bakış.</p>
+                    <a href="#" class="read-more">Devamını Oku <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+            </article>
+        </div>
+
+        <aside class="sidebar">
+            <div class="cta-widget">
+                <h3>Sizin Analiziniz?</h3>
+                <p>Burada okuduklarınız genel bilgilerdir. Kendi isminizin ve rüyalarınızın size özel analizini hemen yapın.</p>
+                <button onclick="openModal('registerModal')" class="cta-btn">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Ücretsiz Analiz Et
+                </button>
             </div>
-            <div id="posts-grid" class="blog-grid"></div>
-        </div>
+            
+            <div style="margin-top:30px; background:white; padding:20px; border-radius:20px; border:1px solid #eee;">
+                <h4 style="margin-top:0;">Popüler Konular</h4>
+                <ul style="list-style:none; padding:0; color:#636e72;">
+                    <li style="margin-bottom:10px;"><i class="fa-solid fa-angle-right" style="color:var(--primary)"></i> Rüyada Yılan Görmek</li>
+                    <li style="margin-bottom:10px;"><i class="fa-solid fa-angle-right" style="color:var(--primary)"></i> A Harfinin Gizemi</li>
+                    <li style="margin-bottom:10px;"><i class="fa-solid fa-angle-right" style="color:var(--primary)"></i> Ruh Eşi Analizi</li>
+                </ul>
+            </div>
+        </aside>
+    </div>
 
-        <div id="detail-view" class="detail-view">
-            <a href="/blog" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</a>
-            <h1 id="d-title" class="detail-title"></h1>
-            <div style="color:#b2bec3; margin-bottom:30px;"><i class="fa-regular fa-calendar"></i> <span id="d-date"></span></div>
-            <img id="d-img" class="detail-img" src="" onerror="this.style.display='none'">
-            <div id="d-content" class="detail-content"></div>
-        </div>
-        
-        <div id="error-box" style="display:none; padding:30px; background:#ffecec; color:#d63031; border-radius:10px; text-align:center; border:1px solid #fab1a0;"></div>
+    <footer>&copy; 2026 İnsan Ekspertizi.</footer>
 
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeModal('loginModal')">&times;</span>
+            <h2 style="text-align:center;">Giriş Yap</h2>
+            <div class="form-group"><input type="email" id="loginEmail" placeholder="E-posta"></div>
+            <div class="form-group"><input type="password" id="loginPass" placeholder="Şifre"></div>
+            <button class="submit-btn" onclick="login()">Giriş Yap</button>
+            <p style="text-align:center; margin-top:15px; font-size:0.9rem; cursor:pointer;" onclick="closeModal('loginModal'); openModal('registerModal')">Üye Ol</p>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal-overlay">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeModal('registerModal')">&times;</span>
+            <h2 style="text-align:center;">Kayıt Ol</h2>
+            <div class="form-group"><input type="email" id="regEmail" placeholder="E-posta"></div>
+            <div class="form-group"><input type="password" id="regPass" placeholder="Şifre"></div>
+            <div class="form-group"><input type="password" id="regPassConfirm" placeholder="Şifre Tekrar"></div>
+            <button class="submit-btn" onclick="register()">Kayıt Ol</button>
+        </div>
     </div>
 
     <script>
-        async function init() {
-            const path = window.location.pathname;
-            const loading = document.getElementById("loading");
-            
-            // Link temizliği: Sonundaki slash'i veya boşlukları at
-            // "/blog/deneme/" -> "deneme"
-            if (path.length > 6 && path.startsWith("/blog/")) {
-                let slug = path.split("/blog/")[1];
-                slug = slug.replace(/\/$/, ""); // Sonda slash varsa sil
-                await loadDetail(slug);
-            } else {
-                await loadList();
-            }
-            loading.style.display = "none";
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        // AUTH KONTROLÜ
+        const token = localStorage.getItem("token");
+        if(token) {
+            document.getElementById("guest-nav").style.display = "none";
+            document.getElementById("user-nav").style.display = "flex";
         }
 
-        async function loadList() {
-            document.getElementById("list-view").style.display = "block";
-            const grid = document.getElementById("posts-grid");
+        async function login() {
+            const email = document.getElementById("loginEmail").value;
+            const pass = document.getElementById("loginPass").value;
+            const fd = new FormData(); fd.append("username", email); fd.append("password", pass);
             try {
-                const res = await fetch("/api/blog/posts");
-                if (!res.ok) throw new Error("API Hatası: " + res.status);
-                const posts = await res.json();
-                
-                if (posts.length === 0) { grid.innerHTML = "<p style='text-align:center'>Henüz yazı yok.</p>"; return; }
+                const res = await fetch("/api/token", {method:"POST", body:fd});
+                if(res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem("token", data.access_token);
+                    window.location.href = "/"; // Giriş yapınca ana sayfaya at
+                } else alert("Hata");
+            } catch(e) { alert("Sunucu hatası"); }
+        }
 
-                grid.innerHTML = "";
-                posts.forEach(p => {
-                    // İçerik boşsa hata vermesin diye kontrol
-                    const rawContent = p.content || ""; 
-                    const excerpt = rawContent.substring(0, 150) + "...";
-                    const date = new Date(p.created_at).toLocaleDateString("tr-TR");
-                    
-                    grid.innerHTML += `
-                        <a href="/blog/${p.slug}" class="blog-card">
-                            <img src="${p.image_url}" class="card-img" onerror="this.src='https://via.placeholder.com/400x200?text=Resim+Yok'">
-                            <div class="card-content">
-                                <h3 class="card-title">${p.title}</h3>
-                                <p class="card-excerpt">${excerpt}</p>
-                                <span class="read-more">Oku <i class="fa-solid fa-arrow-right"></i></span>
-                            </div>
-                        </a>`;
+        async function register() {
+            const email = document.getElementById("regEmail").value;
+            const pass = document.getElementById("regPass").value;
+            const conf = document.getElementById("regPassConfirm").value;
+            if(pass !== conf) return alert("Şifreler uyuşmuyor");
+            try {
+                const res = await fetch("/api/register", {
+                    method:"POST", headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({email, password:pass})
                 });
-            } catch (e) { showError("Liste yüklenemedi: " + e.message); }
+                if(res.ok) {
+                    alert("Kayıt başarılı!");
+                    closeModal("registerModal"); openModal("loginModal");
+                } else alert("Hata");
+            } catch(e) { alert("Hata"); }
         }
-
-        async function loadDetail(slug) {
-            const view = document.getElementById("detail-view");
-            try {
-                // API'ye temiz slug gönder
-                const res = await fetch(`/api/blog/posts/${slug}`);
-                
-                if (res.status === 404) {
-                    showError("Aradığınız yazı bulunamadı (404). Silinmiş olabilir.");
-                    return;
-                }
-                if (!res.ok) throw new Error("Sunucu hatası: " + res.status);
-                
-                const post = await res.json();
-                
-                document.title = `${post.title} | İnsan Ekspertizi`;
-                document.getElementById("d-title").innerText = post.title || "Başlıksız";
-                document.getElementById("d-date").innerText = new Date(post.created_at).toLocaleDateString("tr-TR");
-                document.getElementById("d-img").src = post.image_url;
-                
-                // GÜVENLİ İÇERİK YÜKLEME
-                // Eğer content null ise patlamasın, boş string versin.
-                const safeContent = post.content || "İçerik bulunamadı.";
-                document.getElementById("d-content").innerHTML = safeContent.replace(/\n/g, "<br>");
-                
-                view.style.display = "block";
-
-            } catch (e) {
-                showError("Yazı açılırken hata oluştu: " + e.message);
-            }
-        }
-
-        function showError(msg) {
-            const box = document.getElementById("error-box");
-            box.style.display = "block";
-            box.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>HATA:</strong><br>${msg}<br><br><a href="/blog" style="color:#d63031">Listeye Dön</a>`;
-            document.getElementById("list-view").style.display = "none";
-            document.getElementById("detail-view").style.display = "none";
-        }
-
-        init();
     </script>
 </body>
 </html>
