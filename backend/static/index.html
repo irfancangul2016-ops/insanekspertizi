@@ -17,7 +17,13 @@
 
         /* NAV */
         nav { background: var(--glass); backdrop-filter: blur(15px); padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .logo { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-decoration: none; }
+        .logo { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-decoration: none; display:flex; align-items:center; gap:10px; }
+        
+        /* BLOG LİNKİ BURADA */
+        .nav-center { flex: 1; margin-left: 40px; }
+        .nav-link { text-decoration: none; color: var(--dark); font-weight: 600; font-size: 0.95rem; transition: 0.3s; }
+        .nav-link:hover { color: var(--primary); }
+
         .nav-actions { display: flex; gap: 10px; }
         .btn-base { padding: 8px 20px; border-radius: 50px; font-weight: 600; cursor: pointer; border: none; font-size: 0.9rem; transition: var(--transition); }
         .btn-outline { border: 2px solid var(--primary); color: var(--primary); background: none; }
@@ -33,14 +39,13 @@
         .tool-card { background: white; padding: 40px; border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: var(--transition); border: 1px solid #fff; position: relative; overflow: hidden; }
         .tool-card:hover { transform: translateY(-5px); border-color: var(--primary); }
         
-        /* MENTOR SEÇİMİ (YENİ) */
+        /* MENTOR SEÇİMİ */
         .mentor-select-wrapper { margin-bottom: 20px; }
         .mentor-options { display: flex; gap: 10px; margin-top: 10px; }
         .m-option { flex: 1; padding: 10px; border: 1px solid #eee; border-radius: 12px; cursor: pointer; text-align: center; transition: 0.2s; font-size: 0.85rem; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .m-option i { font-size: 1.2rem; margin-bottom: 5px; }
         .m-option:hover { background: #f8f9fa; }
         
-        /* Radio Input Gizleme */
         .m-option input { display: none; }
         .m-option.selected { border-color: var(--primary); background: #f0eeff; color: var(--primary); font-weight: bold; }
 
@@ -67,7 +72,7 @@
         .h-btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; margin-left: 10px; }
         .btn-view { background: var(--primary); color: white; }
 
-        /* DAKTİLO EFEKTİ İÇİN */
+        /* DAKTİLO EFEKTİ */
         .typewriter-text { text-align: left; white-space: pre-wrap; line-height: 1.8; font-size: 1.05rem; color: #444; max-height: 60vh; overflow-y: auto; padding-right: 10px; }
         .cursor { display: inline-block; width: 2px; height: 1.2em; background: var(--primary); animation: blink 1s infinite; vertical-align: bottom; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
@@ -75,13 +80,18 @@
         /* AUTH FORMS */
         .auth-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; }
 
-        @media (max-width: 768px) { .nav-actions { display: none; } }
+        @media (max-width: 768px) { .nav-actions { display: none; } .nav-center { display:none; } }
     </style>
 </head>
 <body>
 
     <nav>
         <a href="/" class="logo"><i class="fa-solid fa-dna"></i> İnsan Ekspertizi</a>
+        
+        <div class="nav-center">
+            <a href="/blog" class="nav-link"><i class="fa-solid fa-feather"></i> Blog & Makaleler</a>
+        </div>
+
         <div class="nav-actions" id="guest-nav">
             <button class="btn-base btn-outline" onclick="openModal('loginModal')">Giriş</button>
             <button class="btn-base btn-fill" onclick="openModal('registerModal')">Kayıt Ol</button>
@@ -96,9 +106,15 @@
         <section id="guest-hero" class="hero">
             <h1>Gerçek Uzmanlardan <br> <span>Profesyonel Analiz</span></h1>
             <p>Seçtiğiniz uzman (Yahya Bey, Aslı Hanım veya Dr. Mustafa) verilerinizi inceler ve size özel raporu 10 dakika içinde hazırlar.</p>
-            <button class="submit-btn" onclick="openModal('registerModal')" style="width:auto; margin:30px auto; padding: 15px 40px;">
-                Hemen Başla
-            </button>
+            
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:30px;">
+                <button class="submit-btn" onclick="openModal('registerModal')" style="width:auto; padding: 15px 40px;">
+                    Hemen Başla
+                </button>
+                <a href="/blog" class="submit-btn" style="width:auto; padding: 15px 40px; background:white; color:var(--dark); border:1px solid #ddd; text-decoration:none;">
+                    Blog'a Göz At
+                </a>
+            </div>
         </section>
 
         <section id="member-tools" class="tools-grid" style="display: none;">
@@ -160,7 +176,7 @@
         <div class="modal-box">
             <div style="font-size:4rem; color:#00b894; margin-bottom:20px;"><i class="fa-regular fa-circle-check"></i></div>
             <h2>Talep İletildi!</h2>
-            <p id="successMsg" style="color:#666; margin-bottom:20px;">Uzmanımız şu an dosyanızı inceliyor. Detaylı analiz yaklaşık 10-15 dakika sürecektir.</p>
+            <p id="successMsg" style="color:#666; margin-bottom:20px;"></p>
             <p style="font-size:0.9rem; background:#f8f9fa; padding:10px; border-radius:10px;">
                 <i class="fa-solid fa-bell"></i> Analiz tamamlandığında "Analizlerim" kısmından görüntüleyebilirsiniz.
             </p>
@@ -188,8 +204,7 @@
                 <h3 style="margin:0;">Analizlerim</h3>
                 <span style="cursor:pointer; font-size:1.5rem;" onclick="closeModal('historyModal')">&times;</span>
             </div>
-            <div id="historyList" class="history-list">
-                </div>
+            <div id="historyList" class="history-list"></div>
         </div>
     </div>
 
@@ -214,15 +229,13 @@
     <script>
         // --- SEÇİM MANTIĞI ---
         function selectOption(el, inputId, value) {
-            // Görseli güncelle
             const container = el.parentElement;
             container.querySelectorAll('.m-option').forEach(opt => opt.classList.remove('selected'));
             el.classList.add('selected');
-            // Değeri kaydet
             document.getElementById(inputId).value = value;
         }
 
-        // --- İSTEK GÖNDERME (BEKLETME MANTIĞI) ---
+        // --- İSTEK GÖNDERME ---
         async function submitRequest(type) {
             const token = localStorage.getItem("token");
             if(!token) return openModal('loginModal');
@@ -240,7 +253,6 @@
                 fd.append("mentor", mentor);
                 mentorName = mentor === 'yahya' ? "Yahya Bey" : (mentor === 'asli' ? "Aslı Hanım" : "Dr. Mustafa");
                 
-                // API Çağrısı (Arka planda çalışsın, cevabı beklemeden modala geçebiliriz ama garanti olsun diye bekliyoruz)
                 await fetch("/api/isim-analizi-yap", {method:"POST", headers:{"Authorization":`Bearer ${token}`}, body:fd});
             
             } else {
@@ -254,11 +266,9 @@
                 await fetch("/api/ruya-analizi", {method:"POST", headers:{"Authorization":`Bearer ${token}`}, body:fd});
             }
 
-            // Başarı mesajını göster
             document.getElementById("successMsg").innerText = `${mentorName} talebinizi aldı. Dosyanız sıraya alındı ve inceleniyor. 10 dakika sonra sonucunuz hazır olacak.`;
             openModal('successModal');
             
-            // Formları temizle
             if(document.getElementById('isim')) document.getElementById('isim').value = "";
             if(document.getElementById('ruya-metni')) document.getElementById('ruya-metni').value = "";
         }
@@ -279,23 +289,15 @@
                 }
 
                 list.innerHTML = "";
-                // En yeni en üstte
                 user.analyses.slice().reverse().forEach(a => {
-                    // Backend'den gelen "WAITING" kontrolü
                     const isWaiting = a.result_text === "WAITING_FOR_MENTOR";
+                    let statusHtml = isWaiting 
+                        ? `<span class="h-status status-wait"><i class="fa-solid fa-hourglass-half"></i> İnceleniyor (10dk)</span>`
+                        : `<span class="h-status status-ready"><i class="fa-solid fa-check"></i> Hazır</span>`;
                     
-                    let statusHtml = "";
-                    let btnHtml = "";
-
-                    if(isWaiting) {
-                        statusHtml = `<span class="h-status status-wait"><i class="fa-solid fa-hourglass-half"></i> İnceleniyor (10dk)</span>`;
-                        btnHtml = `<button class="h-btn" disabled style="opacity:0.5; cursor:not-allowed;">Bekleyin</button>`;
-                    } else {
-                        statusHtml = `<span class="h-status status-ready"><i class="fa-solid fa-check"></i> Hazır</span>`;
-                        // Tam metni güvenli şekilde gönder
-                        const safeText = encodeURIComponent(a.result_text);
-                        btnHtml = `<button class="h-btn btn-view" onclick="showResult('${safeText}')">Sonucu Oku</button>`;
-                    }
+                    let btnHtml = isWaiting
+                        ? `<button class="h-btn" disabled style="opacity:0.5; cursor:not-allowed;">Bekleyin</button>`
+                        : `<button class="h-btn btn-view" onclick="showResult('${encodeURIComponent(a.result_text)}')">Sonucu Oku</button>`;
 
                     list.innerHTML += `
                         <div class="h-item">
@@ -322,34 +324,29 @@
             
             const text = decodeURIComponent(encodedText);
             const container = document.getElementById('typewriterArea');
-            container.innerHTML = ""; // Temizle
+            container.innerHTML = "";
             
             let i = 0;
-            clearInterval(typeInterval); // Önceki varsa durdur
+            clearInterval(typeInterval);
 
-            // Efekt Başlasın
             typeInterval = setInterval(() => {
                 container.innerHTML += text.charAt(i);
-                container.scrollTop = container.scrollHeight; // Otomatik aşağı kaydır
+                container.scrollTop = container.scrollHeight;
                 i++;
-                if (i > text.length) {
-                    clearInterval(typeInterval);
-                    // İmleci kaldır veya yanıp söndür
-                }
-            }, 30); // Yazma hızı (ms)
+                if (i > text.length) clearInterval(typeInterval);
+            }, 30);
         }
         
         function copyResult() {
             const text = document.getElementById('typewriterArea').innerText;
             navigator.clipboard.writeText(text);
-            alert("Metin kopyalandı!");
+            alert("Kopyalandı!");
         }
 
         // --- AUTH & GENEL ---
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; clearInterval(typeInterval); }
         
-        // Auth Kontrol
         if(localStorage.getItem("token")) {
             document.getElementById("guest-nav").style.display = "none";
             document.getElementById("user-nav").style.display = "flex";
@@ -357,7 +354,6 @@
             document.getElementById("member-tools").style.display = "grid";
         }
 
-        // Login/Register API Çağrıları (Standart)
         async function login() {
             const email = document.getElementById("loginEmail").value;
             const pass = document.getElementById("loginPass").value;
