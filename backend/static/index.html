@@ -358,12 +358,21 @@
             const email = document.getElementById("loginEmail").value;
             const pass = document.getElementById("loginPass").value;
             let fd = new FormData(); fd.append("username", email); fd.append("password", pass);
-            let res = await fetch("/api/token", {method:"POST", body:fd});
-            if(res.ok) {
-                let data = await res.json();
-                localStorage.setItem("token", data.access_token);
-                window.location.reload();
-            } else alert("Hata");
+            
+            try {
+                let res = await fetch("/api/token", {method:"POST", body:fd});
+                if(res.ok) {
+                    let data = await res.json();
+                    localStorage.setItem("token", data.access_token);
+                    window.location.reload();
+                } else {
+                    // HATA DETAYINI GÖSTEREN KOD:
+                    let errorData = await res.json();
+                    alert("Giriş Başarısız: " + (errorData.detail || "Bilinmeyen bir sorun oluştu."));
+                }
+            } catch(e) { 
+                alert("Sunucuya bağlanılamadı. Lütfen internetinizi kontrol edin."); 
+            }
         }
         async function register() {
             let email = document.getElementById("regEmail").value;
