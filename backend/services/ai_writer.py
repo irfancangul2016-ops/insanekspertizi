@@ -302,210 +302,71 @@
 
 
 
-
 import os
-import requests
-import re
+import google.generativeai as genai
 
-# --- GLOBAL DEĞİŞKENLER VE VERİ YÜKLEME ---
-RUYA_SOZLUGU = {}
-ANAHTAR_KELIMELER = {}
-HARF_DETAYLARI = {}
-OZEL_UYARILAR = {}
-OZEL_ISIM_ANALIZLERI = {}
-
-# 1. RÜYA VERİLERİNİ YÜKLE
-try:
-    from services import ruya_data
-    RUYA_SOZLUGU = getattr(ruya_data, "RUYA_SOZLUGU", {})
-    ANAHTAR_KELIMELER = getattr(ruya_data, "ANAHTAR_KELIMELER", {})
-except Exception:
-    try:
-        import ruya_data
-        RUYA_SOZLUGU = getattr(ruya_data, "RUYA_SOZLUGU", {})
-        ANAHTAR_KELIMELER = getattr(ruya_data, "ANAHTAR_KELIMELER", {})
-    except:
-        print("UYARI: ruya_data.py bulunamadı.")
-
-# 2. İSİM VERİLERİNİ YÜKLE
-try:
-    from services import name_data
-    HARF_DETAYLARI = getattr(name_data, "HARF_DETAYLARI", {})
-    OZEL_UYARILAR = getattr(name_data, "OZEL_UYARILAR", {})
-    OZEL_ISIM_ANALIZLERI = getattr(name_data, "OZEL_ISIM_ANALIZLERI", {})
-except Exception:
-    try:
-        import name_data
-        HARF_DETAYLARI = getattr(name_data, "HARF_DETAYLARI", {})
-        OZEL_UYARILAR = getattr(name_data, "OZEL_UYARILAR", {})
-        OZEL_ISIM_ANALIZLERI = getattr(name_data, "OZEL_ISIM_ANALIZLERI", {})
-    except:
-        print("UYARI: name_data.py bulunamadı.")
+# API Key Kontrolü
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    # Key yoksa sahte bir modda çalışır (Test için)
+    print("UYARI: GEMINI_API_KEY bulunamadı!")
+else:
+    genai.configure(api_key=api_key)
 
 class AIWriter:
+    
+    # KARAKTER PROMPTLARI
+    PERSONAS = {
+        "yahya": """
+            ROLÜN: Sen 'Yahya Bey' isminde, görmüş geçirmiş, hikmet sahibi, geleneksel bir rüya tabiri alimisin.
+            ÜSLUBUN:
+            - 'Selamünaleyküm evladım', 'Hayrolsun', 'Allah'ın izniyle' gibi geleneksel ve İslami bir dil kullan.
+            - İbn-i Sirin, İmam Nablusi gibi eski alimlerin tarzında yorumla.
+            - Asla 'yapay zeka', 'algoritma' gibi kelimeler kullanma. Eski bir kitap sayfası gibi konuş.
+            - Öğüt verici, babacan ve rahatlatıcı ol.
+            - Cevabı şu başlıklarla ver: [HİKMETLİ YORUM], [MANEVİ MESAJ], [NE YAPMALISIN?].
+        """,
+        "eva": """
+            ROLÜN: Sen 'Kozmik Eva' isminde, astrolojiye, tarot falına ve enerjiye inanan, samimi bir spiritüel danışmansın.
+            ÜSLUBUN:
+            - 'Tatlım', 'Canım', 'Enerjin çok yüksek' gibi samimi, 'abla' tarzı bir dil kullan.
+            - Çakralar, evrenin mesajı, karma, aura gibi terimler kullan.
+            - Asla teknik terim kullanma. Bir kahve falı bakar gibi konuş.
+            - Biraz gizemli ama çok umut verici ol.
+            - Cevabı şu başlıklarla ver: [ENERJİ ANALİZİ], [EVRENİN SANA MESAJI], [RİTÜEL ÖNERİSİ].
+        """,
+        "arel": """
+            ROLÜN: Sen 'Dr. Arel' isminde, analitik düşünen, Carl Jung ve Freud ekolünden gelen bir bilinçaltı uzmanısın.
+            ÜSLUBUN:
+            - Akademik değil ama çok profesyonel, net ve bilimsel konuş.
+            - 'Bilinçaltı', 'Arketip', 'Bastırılmış duygu', 'Psikolojik yansıma' gibi terimler kullan.
+            - Mistik veya dini değil, tamamen psikolojik çözümleme yap.
+            - Soğukkanlı ve tespit odaklı ol.
+            - Cevabı şu başlıklarla ver: [PSİKOLOJİK ANALİZ], [BİLİNÇALTI SEMBOLLERİ], [TERAPÖTİK TAVSİYE].
+        """
+    }
+
     @staticmethod
-    def _find_active_model(api_key):
-        """
-        Aktif Google modellerini bulur.
-        ÖNCELİK: GEMINI FLASH (Hız ve Maliyet İçin)
-        """
+    def generate_text(prompt, mentor="yahya"):
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
-            response = requests.get(url)
-            if response.status_code != 200: return None
-            data = response.json()
+            model = genai.GenerativeModel('gemini-pro')
             
-            if 'models' in data:
-                valid_models = [m for m in data['models'] if 'generateContent' in m.get('supportedGenerationMethods', [])]
-                
-                # --- MODEL ÖNCELİK SIRALAMASI (DEĞİŞTİ: FLASH İLK SIRADA) ---
-                
-                # 1. Tercih: Gemini 1.5 Flash (En Hızlı)
-                for model in valid_models:
-                    if "gemini-1.5-flash" in model['name']: return model['name']
-                
-                # 2. Tercih: Gemini 1.5 Pro (Yedek - Kalite)
-                for model in valid_models:
-                    if "gemini-1.5-pro" in model['name']: return model['name']
-                
-                # 3. Tercih: Eski Pro
-                for model in valid_models:
-                    if "gemini-pro" in model['name']: return model['name']
-                
-                # Hiçbiri yoksa ne varsa onu al
-                if valid_models: return valid_models[0]['name']
-            return None
-        except:
-            return None
-
-    @staticmethod
-    def _send_request(prompt_text):
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key: return "HATA: API Key yok. Lütfen .env dosyasını kontrol et."
-        
-        active_model = AIWriter._find_active_model(api_key)
-        if not active_model: return "HATA: Google API aktif model bulamadı."
-
-        url = f"https://generativelanguage.googleapis.com/v1beta/{active_model}:generateContent?key={api_key}"
-        headers = {'Content-Type': 'application/json'}
-        payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
-
-        try:
-            response = requests.post(url, headers=headers, json=payload, timeout=60)
-            if response.status_code == 200:
-                return response.json()['candidates'][0]['content']['parts'][0]['text']
-            else:
-                return f"Google API Hatası: {response.text}"
+            # Seçilen mentora göre sistem talimatını al, yoksa varsayılan Yahya olsun
+            system_instruction = AIWriter.PERSONAS.get(mentor, AIWriter.PERSONAS["yahya"])
+            
+            full_prompt = f"{system_instruction}\n\nKULLANICI GİRDİSİ:\n{prompt}\n\nYukarıdaki girdiyi, senin karakterine uygun şekilde yorumla. Çıktın sadece yorum metni olsun."
+            
+            response = model.generate_content(full_prompt)
+            return response.text
         except Exception as e:
-            return f"Bağlantı Hatası: {str(e)}"
+            return f"Şu an ilham perilerim biraz yorgun evladım. (Hata: {str(e)})"
 
     @staticmethod
-    def veri_madenciligi(isim: str):
-        """İsim hakkında elimizdeki teknik verileri toplar."""
-        isim = isim.upper().strip()
-        ham_veri = []
-        
-        # 1. Özel İsim Veritabanı Kontrolü
-        if isim in OZEL_ISIM_ANALIZLERI:
-            bilgi = OZEL_ISIM_ANALIZLERI[isim]
-            ham_veri.append(f"⚠️ KRİTİK VERİTABANI BİLGİSİ: {isim}\nDerece: {bilgi.get('derece')}\nAçıklama: {bilgi.get('aciklama')}\n" + "-"*30)
-
-        # 2. Ek Kontrolleri
-        if isim.endswith("NUR"): ham_veri.append(f"⚠️ NUR EKI: {OZEL_UYARILAR.get('NUR_EKI', {}).get('aciklama')}")
-        if isim.endswith("CAN"): ham_veri.append(f"⚠️ CAN EKI: {OZEL_UYARILAR.get('CAN_EKI', {}).get('aciklama')}")
-        if isim.endswith("HAN"): ham_veri.append("⚠️ HAN EKI: Yönetici ve liderlik vasfı katar ama egoyu yükseltebilir.")
-
-        # 3. Harf Analizi (Daha Detaylı)
-        ham_veri.append(f"\n--- HARF FREKANSLARI VE ETKİLERİ ({isim}) ---")
-        harf_sayilari = {h: isim.count(h) for h in isim}
-        
-        for index, harf in enumerate(isim):
-            if harf == " ": continue
-            if harf in HARF_DETAYLARI:
-                detay = HARF_DETAYLARI[harf]
-                konum = "BAŞLANGIÇ HARFİ (En güçlü etki)" if index == 0 else ("SON HARF (Kalıcı etki)" if index == len(isim)-1 else "ARA HARF (Destekleyici)")
-                
-                ham_veri.append(f"► {harf} ({konum}):")
-                ham_veri.append(f"   - Anlam: {detay.get('genel')}")
-                
-                if harf_sayilari[harf] > 1: 
-                    ham_veri.append(f"   🔥 UYARI: Bu harften {harf_sayilari[harf]} tane var! Bu özellik kişinin kaderine HAKİM olur.")
-        
-        return "\n".join(ham_veri)
+    def ruya_tabiri_motoru(ruya_metni, mentor="yahya"):
+        prompt = f"Şu rüyayı yorumla: '{ruya_metni}'."
+        return AIWriter.generate_text(prompt, mentor)
 
     @staticmethod
-    def generate_name_analysis_rag(isim: str):
-        """
-        DERİN ANALİZ MOTORU
-        """
-        teknik_veri = AIWriter.veri_madenciligi(isim)
-        
-        prompt = f"""
-        Rolün: Sen "İnsan Ekspertizi" projesinin ACIMASIZ, DOBRA ve MİSTİK baş analistisin.
-        Asla "yapay zeka" gibi konuşma. Kadim bir bilge gibi konuş.
-        
-        ANALİZ EDİLECEK KİŞİ: "{isim}"
-
-        ELİMİZDEKİ TEKNİK İSTİHBARAT:
-        {teknik_veri}
-
-        GÖREVİN:
-        Bu teknik verileri al ve birleştirerek kişinin karakter röntgenini çek.
-        Sadece verileri listeleme! Onları yorumla. Örneğin "A harfi liderliktir" deme; "Adın A ile başladığı için emir almaktan nefret edersin, kendi kurallarını koymak istersin" de.
-
-        ANALİZ FORMATI (BU BAŞLIKLARI KULLAN):
-        
-        1. 🎭 GENEL KARAKTER VE AURA
-        (Kişinin dışarıdan nasıl göründüğü ve iç dünyası. Maskeleri indir.)
-
-        2. 💼 KARİYER VE PARA POTANSİYELİ
-        (Hangi işlere yatkın? Parayı tutar mı saçar mı? Lider mi köle mi?)
-
-        3. ❤️ AŞK VE İLİŞKİ DİNAMİĞİ
-        (Kıskanç mı? Sadık mı? Nasıl bir eş arar? "Zor sever" mi?)
-
-        4. ⚠️ KADERSEL UYARILAR VE ZAYIF NOKTALAR
-        (Eşya ismiyse -Gül, Deniz vb.- sertçe uyar. "İnsan eşya değildir" de. Ters enerji kuralını uygula: Mutlu ise mutsuz olabilir. Nur/Can ekleri varsa yüklerinden bahset.)
-
-        TONLAMA:
-        - Kısa, net ve vurucu cümleler kur.
-        - "Olabilir, edebilir" gibi yuvarlak laflar etme. "Böylesin" de.
-        - Okuyucuyu sars. Gerçekleri yüzüne vur.
-        """
-        
-        return AIWriter._send_request(prompt)
-
-    # --- RÜYA ANALİZİ MOTORU ---
-    @staticmethod
-    def ruya_tabiri_motoru(ruya_metni: str):
-        ruya_temiz = re.sub(r'[^\w\s]', '', ruya_metni).upper()
-        ruya_kelimeler = ruya_temiz.split()
-        
-        bulunan_bilgiler = []
-        bulunan_anahtarlar = set()
-
-        # Veritabanı taraması
-        for anahtar, bilgi in RUYA_SOZLUGU.items():
-            if anahtar in ruya_temiz and anahtar not in bulunan_anahtarlar:
-                bulunan_anahtarlar.add(anahtar)
-                detay_str = "\n".join([f"- {d}" for d in bilgi.get('detaylar', [])])
-                uyari_str = f"⚠️ DİKKAT: {bilgi.get('uyari')}" if bilgi.get('uyari') else ""
-                bulunan_bilgiler.append(f"📖 {anahtar}: {bilgi.get('genel')}\n{detay_str}\n{uyari_str}")
-
-        kaynak_metni = "\n".join(bulunan_bilgiler) if bulunan_bilgiler else "Veritabanında net eşleşme yok. Genel sembolizm kullan."
-
-        prompt = f"""
-        Sen Rüya Alimisin. Bilinçaltının şifrelerini çözen bir üst akılsın.
-        
-        RÜYA: "{ruya_metni}"
-        
-        ARŞİV KAYITLARI:
-        {kaynak_metni}
-        
-        GÖREV:
-        1. Yukarıdaki ARŞİV KAYITLARINI mutlaka analizine yedir.
-        2. Mistik, gizemli ve yol gösterici bir dille yorumla.
-        3. Rüyanın sahibine bir "Uyarı" veya "Müjde" vererek bitir.
-        """
-        
-        return AIWriter._send_request(prompt)
+    def generate_name_analysis_rag(name, mentor="yahya"):
+        prompt = f"Şu isim için detaylı bir karakter analizi yap: '{name}'."
+        return AIWriter.generate_text(prompt, mentor)

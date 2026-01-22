@@ -110,20 +110,33 @@ def get_me(request: Request, db: Session = Depends(get_db)):
     if not user: raise HTTPException(status_code=401, detail="Oturum yok")
     return user
 
+# --- GÜNCELLENMİŞ ANALİZ API'LERİ (MENTOR DESTEKLİ) ---
+
 @app.post("/api/isim-analizi-yap")
-async def isim_analiz(request: Request, isim: str = Form(...), soyisim: str = Form(...), db: Session = Depends(get_db)):
+async def isim_analiz(request: Request, 
+                      isim: str = Form(...), 
+                      soyisim: str = Form(...), 
+                      mentor: str = Form("yahya"), # <--- YENİ EKLENDİ (Varsayılan Yahya)
+                      db: Session = Depends(get_db)):
     try:
         tam = f"{isim} {soyisim}".upper()
-        sonuc = AIWriter.generate_name_analysis_rag(tam)
+        # Mentoru parametre olarak gönderiyoruz
+        sonuc = AIWriter.generate_name_analysis_rag(tam, mentor)
+        
         u = get_current_user(request, db)
         kaydet(db, "ISIM", tam, sonuc, u.id if u else None)
         return {"analiz_sonucu": sonuc}
     except Exception as e: return JSONResponse({"hata": str(e)}, status_code=500)
 
 @app.post("/api/ruya-analizi")
-async def ruya_analiz(request: Request, ruya_metni: str = Form(...), db: Session = Depends(get_db)):
+async def ruya_analiz(request: Request, 
+                      ruya_metni: str = Form(...), 
+                      mentor: str = Form("yahya"), # <--- YENİ EKLENDİ
+                      db: Session = Depends(get_db)):
     try:
-        sonuc = AIWriter.ruya_tabiri_motoru(ruya_metni)
+        # Mentoru parametre olarak gönderiyoruz
+        sonuc = AIWriter.ruya_tabiri_motoru(ruya_metni, mentor)
+        
         u = get_current_user(request, db)
         kaydet(db, "RUYA", ruya_metni, sonuc, u.id if u else None)
         return {"analiz": sonuc}
