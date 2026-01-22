@@ -322,26 +322,51 @@
             anchor.click();
         }
 
+        // --- GEÇMİŞ İŞLEMLERİ (DÜZELTİLMİŞ) ---
         async function openHistory() {
             openModal('historyModal');
             const list = document.getElementById('historyList');
-            list.innerHTML = '<p style="text-align:center;">Analizler yükleniyor...</p>';
+            list.innerHTML = '<p style="text-align:center; color:#666;">Veriler çekiliyor...</p>';
             
+            const token = localStorage.getItem("token");
+            if (!token) {
+                list.innerHTML = '<p style="text-align:center; color:red;">Giriş yapmalısınız.</p>';
+                return;
+            }
+
             try {
                 const res = await fetch("/api/users/me", {
-                    headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+                    method: "GET",
+                    headers: { 
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
                 });
+
                 if(res.ok) {
                     const user = await res.json();
+                    
+                    // Veri kontrolü: analyses dizisi var mı?
                     if(user.analyses && user.analyses.length > 0) {
                         list.innerHTML = "";
-                        user.analyses.reverse().forEach((a, index) => {
-                            const date = new Date(a.created_at).toLocaleDateString("tr-TR");
-                            const ozet = a.result_text.substring(0, 60) + "...";
+                        // Ters çevir (En yeniden eskiye)
+                        const sortedAnalyses = user.analyses.slice().reverse();
+
+                        sortedAnalyses.forEach((a, index) => {
+                            // Tarih formatlama
+                            let dateStr = "Tarih Yok";
+                            if(a.created_at) {
+                                dateStr = new Date(a.created_at).toLocaleDateString("tr-TR", {
+                                    day: 'numeric', month: 'long', hour: '2-digit', minute:'2-digit'
+                                });
+                            }
+
+                            const ozet = a.result_text ? a.result_text.substring(0, 80) + "..." : "Sonuç yok.";
                             const badge = a.analysis_type === "ISIM" ? "ISIM" : "RUYA";
+                            const inputSummary = a.input_text ? a.input_text.substring(0, 30) : "...";
                             
-                            // İndirme butonu için içerik hazırla
-                            const fullContent = `Tarih: ${date}\nTür: ${badge}\nGirdi: ${a.input_text}\n\nANALİZ SONUCU:\n${a.result_text}\n\n-- İnsan Ekspertizi --`;
+                            // İndirme içeriği (Güvenli kodlama)
+                            const fullContent = `Tarih: ${dateStr}\nTür: ${badge}\nGirdi: ${a.input_text}\n\nANALİZ SONUCU:\n${a.result_text}\n\n-- İnsan Ekspertizi --`;
                             const safeContent = encodeURIComponent(fullContent); 
 
                             list.innerHTML += `
@@ -349,22 +374,32 @@
                                     <div style="flex:1;">
                                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
                                             <span class="history-badge badge-${badge}">${badge}</span>
-                                            <span style="font-size:0.8rem; color:#b2bec3;">${date}</span>
+                                            <span style="font-size:0.75rem; color:#b2bec3;">${dateStr}</span>
                                         </div>
-                                        <div style="font-weight:600; font-size:0.9rem;">${a.input_text.substring(0,25)}...</div>
-                                        <p style="font-size:0.85rem; color:#636e72; margin:0;">${ozet}</p>
+                                        <div style="font-weight:600; font-size:0.9rem; color:#2d3436;">${inputSummary}...</div>
+                                        <p style="font-size:0.85rem; color:#636e72; margin:5px 0 0 0;">${ozet}</p>
                                     </div>
                                     <button class="download-btn" onclick="downloadText(decodeURIComponent('${safeContent}'), 'analiz-${index+1}.txt')">
-                                        <i class="fa-solid fa-download"></i> İNDİR
+                                        <i class="fa-solid fa-download"></i>
                                     </button>
                                 </div>
                             `;
                         });
                     } else {
-                        list.innerHTML = '<p style="text-align:center; color:#ccc;">Henüz analiz yok.</p>';
+                        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;"><i class="fa-regular fa-folder-open" style="font-size:2rem; display:block; margin-bottom:10px;"></i>Henüz hiç analiz yapmadınız.</div>';
+                    }
+                } else {
+                    console.error("API Hatası:", res.status);
+                    if(res.status === 401) {
+                        logout(); // Oturum düşmüşse çıkış yap
+                    } else {
+                        list.innerHTML = '<p style="text-align:center; color:red;">Veriler alınamadı. (Hata Kodu: ' + res.status + ')</p>';
                     }
                 }
-            } catch(e) { list.innerHTML = "Hata oluştu."; }
+            } catch(e) { 
+                console.error("Bağlantı Hatası:", e);
+                list.innerHTML = '<p style="text-align:center; color:red;">Bağlantı hatası oluştu.</p>'; 
+            }
         }
 
         // --- ANALİZLER ---

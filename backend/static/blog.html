@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İçgörüler | İnsan Ekspertizi Blog</title>
+    <title>Blog | İnsan Ekspertizi</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/9626/9626780.png">
     <meta name="theme-color" content="#6c5ce7">
     
@@ -11,10 +11,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root { --primary: #6c5ce7; --primary-dark: #5849be; --secondary: #a29bfe; --dark: #2d3436; --text-light: #636e72; --bg-light: #f8f9fd; --white: #ffffff; --glass: rgba(255, 255, 255, 0.95); --radius: 24px; --transition: all 0.3s ease; }
+        :root { --primary: #6c5ce7; --dark: #2d3436; --text-light: #636e72; --bg-light: #f8f9fd; --white: #ffffff; --glass: rgba(255, 255, 255, 0.95); --transition: all 0.3s ease; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg-light); margin: 0; color: var(--dark); overflow-x: hidden; line-height: 1.6; }
         
-        /* NAVIGASYON (Ana sayfayla aynı) */
+        /* NAVIGASYON */
         nav { background: var(--glass); backdrop-filter: blur(15px); padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 12px; }
         .nav-actions { display: flex; gap: 15px; align-items: center; }
@@ -22,53 +22,51 @@
         .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); } .btn-outline:hover { background: var(--primary); color: white; }
         .btn-fill { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); } .btn-fill:hover { transform: translateY(-3px); }
 
-        /* BLOG HEADER */
-        .blog-header { text-align: center; padding: 80px 20px 40px; background: white; margin-bottom: 40px; }
-        .blog-header h1 { font-size: 3rem; margin: 0 0 10px; font-weight: 800; color: var(--dark); }
+        /* HEADER */
+        .blog-header { text-align: center; padding: 60px 20px 40px; background: white; margin-bottom: 40px; border-bottom:1px solid #eee; }
+        .blog-header h1 { font-size: 2.5rem; margin: 0 0 10px; font-weight: 800; color: var(--dark); }
         .blog-header p { color: var(--text-light); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
 
-        /* BLOG GRID */
+        /* GRID */
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
         .posts-grid { display: flex; flex-direction: column; gap: 40px; }
         
         .post-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: var(--transition); border: 1px solid #eee; }
         .post-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(108, 92, 231, 0.15); }
-        
         .post-img { width: 100%; height: 250px; object-fit: cover; }
         .post-content { padding: 30px; }
         .post-meta { display: flex; gap: 15px; font-size: 0.85rem; color: #b2bec3; margin-bottom: 15px; }
-        .post-author { color: var(--primary); font-weight: 600; }
-        
         .post-title { font-size: 1.5rem; margin: 0 0 15px; font-weight: 700; color: var(--dark); }
         .post-excerpt { color: var(--text-light); margin-bottom: 20px; font-size: 0.95rem; }
-        .read-more { color: var(--primary); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
-        .read-more:hover { gap: 10px; }
+        .read-more { color: var(--primary); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 
-        /* SIDEBAR (ÜYELİK KANCASI) */
+        /* SIDEBAR */
         .sidebar { position: sticky; top: 100px; height: fit-content; }
         .cta-widget { background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(108, 92, 231, 0.3); }
-        .cta-widget h3 { margin: 0 0 15px; font-size: 1.4rem; }
-        .cta-widget p { font-size: 0.9rem; opacity: 0.9; margin-bottom: 20px; }
         .cta-btn { background: white; color: var(--primary); padding: 12px 25px; border-radius: 50px; text-decoration: none; font-weight: bold; display: inline-block; transition: var(--transition); border: none; cursor: pointer; }
-        .cta-btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
 
-        /* FOOTER */
-        footer { background: #2d3436; color: rgba(255,255,255,0.6); padding: 50px 20px; text-align: center; margin-top: 80px; }
-
-        /* MODALS (Ana sayfayla aynı) */
+        /* MODALS */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-box { background: white; width: 90%; max-width: 400px; padding: 40px; border-radius: 20px; position: relative; animation: popIn 0.3s; }
-        .close-modal { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 1.5rem; color: #ccc; }
+        .blog-modal-box { background: white; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; padding: 0; border-radius: 20px; position: relative; animation: popIn 0.3s; }
+        .auth-modal-box { background: white; width: 90%; max-width: 400px; padding: 40px; border-radius: 20px; position: relative; animation: popIn 0.3s; }
+        .close-modal { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 1.5rem; color: #333; z-index: 10; background: rgba(255,255,255,0.8); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        
+        .blog-full-img { width: 100%; height: 300px; object-fit: cover; }
+        .blog-full-content { padding: 40px; }
+        .blog-text { font-size: 1.1rem; line-height: 1.8; color: #444; }
+        .blog-text h3 { color: var(--primary); margin-top: 30px; }
+
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
+        /* FORM & FOOTER */
         .form-group { margin-bottom: 15px; }
         input { width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 12px; font-family: inherit; box-sizing: border-box; }
         .submit-btn { width: 100%; padding: 15px; background: var(--dark); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .submit-btn:hover { background: var(--primary); }
+        footer { background: #2d3436; color: rgba(255,255,255,0.6); padding: 50px 20px; text-align: center; margin-top: 80px; }
 
         @media (max-width: 768px) {
             .container { grid-template-columns: 1fr; }
-            .sidebar { display: none; } /* Mobilde sidebarı gizle */
+            .sidebar { display: none; }
         }
     </style>
 </head>
@@ -77,8 +75,8 @@
     <nav>
         <a href="/" class="logo"><i class="fa-solid fa-dna"></i> İnsan Ekspertizi</a>
         <div class="nav-actions" id="guest-nav">
-            <button class="btn-base btn-outline" onclick="openModal('loginModal')">Giriş Yap</button>
-            <button class="btn-base btn-fill" onclick="openModal('registerModal')">Kayıt Ol</button>
+            <button class="btn-base btn-outline" onclick="openAuthModal('loginModal')">Giriş Yap</button>
+            <button class="btn-base btn-fill" onclick="openAuthModal('registerModal')">Kayıt Ol</button>
         </div>
         <div class="nav-actions" id="user-nav" style="display: none;">
             <a href="/" class="btn-base btn-fill">Analiz Paneli</a>
@@ -86,88 +84,54 @@
     </nav>
 
     <header class="blog-header">
-        <h1>İçgörüler ve Makaleler</h1>
-        <p>Bilinçaltı, sembolizm ve karakter analizi üzerine uzmanlarımızın yazıları.</p>
+        <h1>Blog ve Makaleler</h1>
+        <p>Bilinçaltı, sembolizm ve karakter analizi üzerine uzmanlarımızın incelemeleri.</p>
     </header>
 
     <div class="container">
-        <div class="posts-grid" id="blog-posts">
-            <article class="post-card">
-                <img src="https://images.unsplash.com/photo-1560419015-7c427e871504?q=80&w=1000" alt="İsim Analizi" class="post-img">
-                <div class="post-content">
-                    <div class="post-meta">
-                        <span><i class="fa-regular fa-calendar"></i> 22 Ocak 2026</span>
-                        <span class="post-author"><i class="fa-solid fa-user-pen"></i> Aslı Hanım</span>
-                    </div>
-                    <h2 class="post-title">İsminizdeki Gizli Şifreler: Harflerin Enerjisi</h2>
-                    <p class="post-excerpt">A harfi liderlik, B harfi duygusallık... İsminizin baş harfi aslında karakterinizin %60'ını oluşturuyor olabilir mi? Harflerin enerjisel frekanslarını inceliyoruz.</p>
-                    <a href="#" class="read-more">Devamını Oku <i class="fa-solid fa-arrow-right"></i></a>
-                </div>
-            </article>
-
-            <article class="post-card">
-                <img src="https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=1000" alt="Rüya Tabiri" class="post-img">
-                <div class="post-content">
-                    <div class="post-meta">
-                        <span><i class="fa-regular fa-calendar"></i> 20 Ocak 2026</span>
-                        <span class="post-author"><i class="fa-solid fa-user-pen"></i> Yahya Bey</span>
-                    </div>
-                    <h2 class="post-title">Rüyada Yüksekten Düşmek Ne Anlama Gelir?</h2>
-                    <p class="post-excerpt">Geleneksel kaynaklara göre rüyada düşmek statü kaybı mıdır, yoksa bilinçaltının bir uyarısı mı? Nablusi ve İbn-i Sirin kaynaklarından derlediğimiz hikmetli yorumlar.</p>
-                    <a href="#" class="read-more">Devamını Oku <i class="fa-solid fa-arrow-right"></i></a>
-                </div>
-            </article>
-            
-            <article class="post-card">
-                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000" alt="Yüz Okuma" class="post-img">
-                <div class="post-content">
-                    <div class="post-meta">
-                        <span><i class="fa-regular fa-calendar"></i> 18 Ocak 2026</span>
-                        <span class="post-author"><i class="fa-solid fa-user-pen"></i> Dr. Mustafa Bey</span>
-                    </div>
-                    <h2 class="post-title">Bilinçaltı Sembolleri ve Yüz Okuma</h2>
-                    <p class="post-excerpt">Kaşlarınızın şekli veya dudak yapınız, çocukluğunuzdaki travmaları ele veriyor olabilir. Fizyonomi ilmine psikolojik bir bakış.</p>
-                    <a href="#" class="read-more">Devamını Oku <i class="fa-solid fa-arrow-right"></i></a>
-                </div>
-            </article>
+        <div class="posts-grid" id="blog-posts-container">
+            <p style="text-align:center; color:#999;">Yazılar yükleniyor...</p>
         </div>
 
         <aside class="sidebar">
             <div class="cta-widget">
                 <h3>Sizin Analiziniz?</h3>
                 <p>Burada okuduklarınız genel bilgilerdir. Kendi isminizin ve rüyalarınızın size özel analizini hemen yapın.</p>
-                <button onclick="openModal('registerModal')" class="cta-btn">
+                <button onclick="openAuthModal('registerModal')" class="cta-btn">
                     <i class="fa-solid fa-wand-magic-sparkles"></i> Ücretsiz Analiz Et
                 </button>
-            </div>
-            
-            <div style="margin-top:30px; background:white; padding:20px; border-radius:20px; border:1px solid #eee;">
-                <h4 style="margin-top:0;">Popüler Konular</h4>
-                <ul style="list-style:none; padding:0; color:#636e72;">
-                    <li style="margin-bottom:10px;"><i class="fa-solid fa-angle-right" style="color:var(--primary)"></i> Rüyada Yılan Görmek</li>
-                    <li style="margin-bottom:10px;"><i class="fa-solid fa-angle-right" style="color:var(--primary)"></i> A Harfinin Gizemi</li>
-                    <li style="margin-bottom:10px;"><i class="fa-solid fa-angle-right" style="color:var(--primary)"></i> Ruh Eşi Analizi</li>
-                </ul>
             </div>
         </aside>
     </div>
 
     <footer>&copy; 2026 İnsan Ekspertizi.</footer>
 
+    <div id="blogModal" class="modal-overlay">
+        <div class="blog-modal-box">
+            <span class="close-modal" onclick="closeBlogModal()">&times;</span>
+            <img id="modalImg" src="" class="blog-full-img">
+            <div class="blog-full-content">
+                <h2 id="modalTitle" style="font-size:2rem; margin-bottom:10px;"></h2>
+                <div id="modalMeta" style="color:#888; margin-bottom:20px;"></div>
+                <div id="modalText" class="blog-text"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="loginModal" class="modal-overlay">
-        <div class="modal-box">
-            <span class="close-modal" onclick="closeModal('loginModal')">&times;</span>
+        <div class="auth-modal-box">
+            <span class="close-modal" onclick="closeAuthModal('loginModal')">&times;</span>
             <h2 style="text-align:center;">Giriş Yap</h2>
             <div class="form-group"><input type="email" id="loginEmail" placeholder="E-posta"></div>
             <div class="form-group"><input type="password" id="loginPass" placeholder="Şifre"></div>
             <button class="submit-btn" onclick="login()">Giriş Yap</button>
-            <p style="text-align:center; margin-top:15px; font-size:0.9rem; cursor:pointer;" onclick="closeModal('loginModal'); openModal('registerModal')">Üye Ol</p>
+            <p style="text-align:center; margin-top:15px; cursor:pointer; color:var(--primary);" onclick="closeAuthModal('loginModal'); openAuthModal('registerModal')">Üye Ol</p>
         </div>
     </div>
 
     <div id="registerModal" class="modal-overlay">
-        <div class="modal-box">
-            <span class="close-modal" onclick="closeModal('registerModal')">&times;</span>
+        <div class="auth-modal-box">
+            <span class="close-modal" onclick="closeAuthModal('registerModal')">&times;</span>
             <h2 style="text-align:center;">Kayıt Ol</h2>
             <div class="form-group"><input type="email" id="regEmail" placeholder="E-posta"></div>
             <div class="form-group"><input type="password" id="regPass" placeholder="Şifre"></div>
@@ -177,10 +141,79 @@
     </div>
 
     <script>
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        // --- BLOG VERİLERİNİ ÇEK ---
+        let dbPosts = [];
+
+        async function loadPosts() {
+            const container = document.getElementById("blog-posts-container");
+            try {
+                // Backend'den çek
+                const res = await fetch("/api/posts");
+                if (!res.ok) throw new Error("Veri çekilemedi");
+                
+                dbPosts = await res.json();
+
+                if (dbPosts.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; padding:40px; color:#999; background:white; border-radius:20px;">Henüz hiç blog yazısı eklenmemiş. <br> Admin panelinden içerik girebilirsiniz.</div>';
+                    return;
+                }
+
+                container.innerHTML = ""; // Yükleniyor yazısını sil
+
+                dbPosts.forEach((post, index) => {
+                    // İçerikten kısa özet çıkar (HTML taglerini temizle)
+                    const tempDiv = document.createElement("div");
+                    tempDiv.innerHTML = post.content; // 'content' veritabanındaki kolon adı olmalı
+                    const plainText = tempDiv.textContent || tempDiv.innerText || "";
+                    const excerpt = plainText.substring(0, 150) + "...";
+                    
+                    // Tarih formatla (varsa)
+                    const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString("tr-TR") : "Tarih Yok";
+
+                    container.innerHTML += `
+                        <article class="post-card">
+                            <img src="${post.image_url || 'https://images.unsplash.com/photo-1516575334481-f85287c2c81d?q=80&w=1000'}" class="post-img" onerror="this.src='https://via.placeholder.com/800x400?text=Resim+Yok'">
+                            <div class="post-content">
+                                <div class="post-meta">
+                                    <span><i class="fa-regular fa-calendar"></i> ${dateStr}</span>
+                                    <span class="post-author"><i class="fa-solid fa-user-pen"></i> Editör</span>
+                                </div>
+                                <h2 class="post-title">${post.title}</h2>
+                                <p class="post-excerpt">${excerpt}</p>
+                                <span class="read-more" onclick="openBlog(${index})">Devamını Oku <i class="fa-solid fa-arrow-right"></i></span>
+                            </div>
+                        </article>
+                    `;
+                });
+
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = '<p style="text-align:center; color:red;">Yazılar yüklenirken bir hata oluştu.</p>';
+            }
+        }
+
+        // --- MODAL MANTIĞI ---
+        function openBlog(index) {
+            const post = dbPosts[index];
+            document.getElementById('modalImg').src = post.image_url || 'https://via.placeholder.com/800x400?text=Resim+Yok';
+            document.getElementById('modalTitle').innerText = post.title;
+            const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString("tr-TR") : "";
+            document.getElementById('modalMeta').innerText = dateStr;
+            document.getElementById('modalText').innerHTML = post.content;
+            
+            document.getElementById('blogModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBlogModal() {
+            document.getElementById('blogModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // --- AUTH & STATE ---
+        function openAuthModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeAuthModal(id) { document.getElementById(id).style.display = 'none'; }
         
-        // AUTH KONTROLÜ
         const token = localStorage.getItem("token");
         if(token) {
             document.getElementById("guest-nav").style.display = "none";
@@ -196,9 +229,9 @@
                 if(res.ok) {
                     const data = await res.json();
                     localStorage.setItem("token", data.access_token);
-                    window.location.href = "/"; // Giriş yapınca ana sayfaya at
+                    window.location.href = "/";
                 } else alert("Hata");
-            } catch(e) { alert("Sunucu hatası"); }
+            } catch(e) { alert("Hata"); }
         }
 
         async function register() {
@@ -213,10 +246,13 @@
                 });
                 if(res.ok) {
                     alert("Kayıt başarılı!");
-                    closeModal("registerModal"); openModal("loginModal");
+                    closeAuthModal("registerModal"); openAuthModal("loginModal");
                 } else alert("Hata");
             } catch(e) { alert("Hata"); }
         }
+
+        // Sayfa açılınca yazıları çek
+        window.onload = loadPosts;
     </script>
 </body>
 </html>

@@ -4,6 +4,10 @@ import time
 import re  # <--- YENİ EKLENEN (Temizlikçi)
 from collections import defaultdict
 from datetime import datetime
+from sqlalchemy.orm import joinedload
+from typing import List
+# Pydantic modelleri için
+from pydantic import BaseModel
 
 # Modül yollarını ayarla
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -186,7 +190,23 @@ def get_post_detail(slug: str, db: Session = Depends(get_db)):
         "created_at": post.created_at,
         "views": post.views
     }
+# --- PYDANTIC MODELLERİ (VERİ PAKETLEME İÇİN) ---
+class AnalysisSchema(BaseModel):
+    id: int
+    analysis_type: str
+    input_text: str
+    result_text: str
+    created_at: datetime
 
+    class Config:
+        orm_mode = True
+
+class UserWithHistory(BaseModel):
+    email: str
+    analyses: List[AnalysisSchema] = []
+
+    class Config:
+        orm_mode = True
 @app.post("/api/admin/blog/create")
 def create_post(request: Request, title: str = Form(...), content: str = Form(...), image_url: str = Form(...), db: Session = Depends(get_db)):
     user = get_current_user(request, db)
@@ -207,6 +227,13 @@ def create_post(request: Request, title: str = Form(...), content: str = Form(..
         return {"durum": "BAŞARILI", "slug": slug}
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": f"Kayıt Hatası: {str(e)}"})
+
+# --- BLOG YAZILARINI GETİREN API (Halka Açık) ---
+@app.get("/api/posts")
+def get_public_posts(db: Session = Depends(get_db)):
+    # En son eklenen en üstte görünsün diye (desc) sıralıyoruz
+    posts = db.query(BlogPost).order_by(BlogPost.id.desc()).all()
+    return posts
 
 @app.delete("/api/admin/blog/delete/{id}")
 def delete_post(id: int, request: Request, db: Session = Depends(get_db)):
