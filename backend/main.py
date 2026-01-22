@@ -1,230 +1,286 @@
-import warnings
-warnings.filterwarnings("ignore") # Uyarıları sustur
-
 import os
-import requests
-import re
-import datetime
-from datetime import timedelta
-from typing import List, Optional
+import sys
+import time
+import re  # <--- YENİ EKLENEN (Temizlikçi)
+from collections import defaultdict
+from datetime import datetime
+from sqlalchemy.orm import joinedload
+from typing import List
+# Pydantic modelleri için
+from pydantic import BaseModel
+
+# Modül yollarını ayarla
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI, Depends, HTTPException, status, Form, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey, DateTime, desc, text
+from sqlalchemy.orm import Session
 
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session, relationship, joinedload
+# Modüller
+import database as models
+from database import engine, get_db
+import dto
+from services.auth import AuthService
+from services.ai_writer import AIWriter
 
-from pydantic import BaseModel 
-from passlib.context import CryptContext
-from jose import JWTError, jwt
-
-# --- 1. AYARLAR ---
-DATABASE_URL = "sqlite:///./insan_ekspertizi.db"
-SECRET_KEY = "cok_gizli_anahtar"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
-
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/token")
-
-app = FastAPI()
-
-# --- 2. AI MOTORU ---
-class AIWriter:
-    PERSONAS = {
-        "yahya": "ROLÜN: Sen 'Yahya Bey', İslami kaynaklara hakim , beyefendi bir rüya tabiri uzmanısın.",
-        "asli": "ROLÜN: Sen 'Aslı Hanım', astroloji ve enerji uzmanısın.",
-        "mustafa": "ROLÜN: Sen 'Dr. Mustafa Bey', analitik psikoloji uzmanısın."
-    }
-
-    @staticmethod
-    def _send_request(prompt_text):
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key: return "HATA: API Key bulunamadı."
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-        headers = {'Content-Type': 'application/json'}
-        payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
-        try:
-            res = requests.post(url, headers=headers, json=payload, timeout=60)
-            if res.status_code == 200: return res.json()['candidates'][0]['content']['parts'][0]['text']
-            return "Servis şu an cevap veremiyor."
-        except Exception as e: return f"Bağlantı hatası: {str(e)}"
-
-    @staticmethod
-    def generate_name_analysis_rag(isim, mentor):
-        return AIWriter._send_request(f"{AIWriter.PERSONAS.get(mentor,'yahya')}\n\nKişi: {isim}\nKarakter analizi yap.")
-
-    @staticmethod
-    def ruya_tabiri_motoru(ruya, mentor):
-        return AIWriter._send_request(f"{AIWriter.PERSONAS.get(mentor,'yahya')}\n\nRüya: {ruya}\nYorumla.")
-
-# --- 3. TABLOLAR ---
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    analyses = relationship("Analysis", back_populates="owner")
-
-class Analysis(Base):
-    __tablename__ = "analyses"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    analysis_type = Column(String)
-    input_text = Column(String)
-    result_text = Column(Text)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    owner = relationship("User", back_populates="analyses")
-
-class BlogPost(Base):
+# --- BYPASS: BLOG POST MODELİ (Main İçinde) ---
+class BlogPost(models.Base):
     __tablename__ = "blog_posts"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
+    slug = Column(String, unique=True, index=True)
     content = Column(Text)
-    image_url = Column(String, nullable=True)
-    author = Column(String, default="Editör")
-    is_published = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    image_url = Column(String)
+    views = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
-# --- 4. ŞEMALAR ---
-class UserCreate(BaseModel):
-    email: str
-    password: str
+app = FastAPI(title="İnsan Ekspertizi")
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# Rate Limiting
+request_counts = defaultdict(list)
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    if request.url.path in ["/api/isim-analizi-yap", "/api/ruya-analizi"]:
+        client_ip = request.client.host
+        now = time.time()
+        request_counts[client_ip] = [t for t in request_counts[client_ip] if now - t < 60]
+        if len(request_counts[client_ip]) >= 10:
+            return JSONResponse(status_code=429, content={"analiz": "Çok hızlısın, 1 dk bekle."})
+        request_counts[client_ip].append(now)
+    response = await call_next(request)
+    return response
+
+# --- YARDIMCI ---
+def get_current_user(request: Request, db: Session):
+    auth_header = request.headers.get('Authorization')
+    if not auth_header: return None
+    try:
+        token = auth_header.split(" ")[1]
+        from jose import jwt
+        from services.auth import SECRET_KEY, ALGORITHM
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+        return db.query(models.User).filter(models.User.email == email).first()
+    except: return None
+
+def kaydet(db: Session, tip: str, girdi: str, sonuc: str, user_id: int = None):
+    try:
+        yeni = models.Analysis(user_id=user_id, analysis_type=tip, input_text=girdi, result_text=sonuc)
+        db.add(yeni)
+        db.commit()
+    except: pass
+
+# --- API ---
+
+@app.post("/api/register", response_model=dto.User)
+def register(user: dto.UserCreate, db: Session = Depends(get_db)):
+    if db.query(models.User).filter(models.User.email == user.email).first():
+        raise HTTPException(status_code=400, detail="E-posta kullanımda.")
+    hashed = AuthService.get_password_hash(user.password)
+    new_user = models.User(email=user.email, hashed_password=hashed)
+    db.add(new_user)
+    db.commit()
+    return new_user
+
+@app.post("/api/token")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    if not user or not AuthService.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Hatalı giriş")
+    return {"access_token": AuthService.create_access_token(data={"sub": user.email}), "token_type": "bearer"}
+
+@app.get("/api/users/me")
+def get_me(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Oturum yok")
+    return user
+
+# --- GÜNCELLENMİŞ ANALİZ API'LERİ (MENTOR DESTEKLİ) ---
+
+@app.post("/api/isim-analizi-yap")
+async def isim_analiz(request: Request, 
+                      isim: str = Form(...), 
+                      soyisim: str = Form(...), 
+                      mentor: str = Form("yahya"), # <--- YENİ EKLENDİ (Varsayılan Yahya)
+                      db: Session = Depends(get_db)):
+    try:
+        tam = f"{isim} {soyisim}".upper()
+        # Mentoru parametre olarak gönderiyoruz
+        sonuc = AIWriter.generate_name_analysis_rag(tam, mentor)
+        
+        u = get_current_user(request, db)
+        kaydet(db, "ISIM", tam, sonuc, u.id if u else None)
+        return {"analiz_sonucu": sonuc}
+    except Exception as e: return JSONResponse({"hata": str(e)}, status_code=500)
+
+@app.post("/api/ruya-analizi")
+async def ruya_analiz(request: Request, 
+                      ruya_metni: str = Form(...), 
+                      mentor: str = Form("yahya"), # <--- YENİ EKLENDİ
+                      db: Session = Depends(get_db)):
+    try:
+        # Mentoru parametre olarak gönderiyoruz
+        sonuc = AIWriter.ruya_tabiri_motoru(ruya_metni, mentor)
+        
+        u = get_current_user(request, db)
+        kaydet(db, "RUYA", ruya_metni, sonuc, u.id if u else None)
+        return {"analiz": sonuc}
+    except Exception as e: return JSONResponse({"analiz": str(e)}, status_code=500)
+
+# --- BLOG API ---
+@app.get("/api/blog/posts")
+def get_posts(db: Session = Depends(get_db)):
+    try:
+        posts = db.query(BlogPost).order_by(desc(BlogPost.created_at)).all()
+        # Otomatik çeviriciye güvenme, veriyi elle listeye dök
+        data = []
+        for p in posts:
+            data.append({
+                "id": p.id,
+                "title": p.title,
+                "slug": p.slug,
+                "content": p.content,
+                "image_url": p.image_url,
+                "created_at": p.created_at,
+                "views": p.views
+            })
+        return data
+    except Exception as e:
+        print(f"BLOG LISTE HATASI: {e}")
+        return []
+@app.get("/api/blog/posts/{slug}")
+def get_post_detail(slug: str, db: Session = Depends(get_db)):
+    clean_slug = slug.strip().split("?")[0]
+    
+    post = db.query(BlogPost).filter(BlogPost.slug == clean_slug).first()
+    
+    if not post: 
+        raise HTTPException(status_code=404, detail="Yazı bulunamadı")
+    
+    # Görüntülenmeyi artır
+    post.views += 1
+    db.commit()
+    
+    # MANUEL PAKETLEME (Verinin kaybolmasını engeller)
+    return {
+        "id": post.id,
+        "title": post.title,
+        "slug": post.slug,
+        "content": post.content,
+        "image_url": post.image_url,
+        "created_at": post.created_at,
+        "views": post.views
+    }
+# --- PYDANTIC MODELLERİ (VERİ PAKETLEME İÇİN) ---
 class AnalysisSchema(BaseModel):
     id: int
     analysis_type: str
     input_text: str
     result_text: str
-    created_at: datetime.datetime
-    class Config: orm_mode = True
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
 
 class UserWithHistory(BaseModel):
     email: str
     analyses: List[AnalysisSchema] = []
-    class Config: orm_mode = True
 
-# --- 5. YARDIMCILAR ---
-def get_db():
-    db = SessionLocal()
-    try: yield db
-    finally: db.close()
-
-def seed_blog_posts(db: Session):
-    if db.query(BlogPost).count() == 0:
-        db.add(BlogPost(title="Örnek Yazı", content="<p>İçerik...</p>", author="Admin"))
+    class Config:
+        orm_mode = True
+@app.post("/api/admin/blog/create")
+def create_post(request: Request, title: str = Form(...), content: str = Form(...), image_url: str = Form(...), db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user or not user.is_admin: raise HTTPException(status_code=403, detail="Yetkisiz")
+    
+    # 🧼 SLUG TEMİZLİK ROBOTU
+    # 1. Türkçe karakterleri düzelt
+    slug = title.lower().replace(" ", "-").replace("ı","i").replace("ğ","g").replace("ü","u").replace("ş","s").replace("ö","o").replace("ç","c")
+    # 2. Sadece harf, rakam ve tire (-) bırak. Soru işareti (?) dahil her şeyi sil.
+    slug = re.sub(r'[^a-z0-9-]', '', slug)
+    # 3. Fazla tireleri sil
+    slug = re.sub(r'-+', '-', slug).strip('-')
+    
+    try:
+        new_post = BlogPost(title=title, content=content, image_url=image_url, slug=slug)
+        db.add(new_post)
         db.commit()
+        return {"durum": "BAŞARILI", "slug": slug}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": f"Kayıt Hatası: {str(e)}"})
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    to_encode.update({"exp": datetime.datetime.utcnow() + timedelta(minutes=60)})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None: raise HTTPException(status_code=401)
-    except JWTError: raise HTTPException(status_code=401)
-    user = db.query(User).filter(User.email == email).first()
-    if user is None: raise HTTPException(status_code=401)
-    return user
-
-# --- 6. API ---
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/")
-def read_root(): return FileResponse('static/index.html')
-
-@app.get("/blog")
-def read_blog(): return FileResponse('static/blog.html')
-
-# --- YENİ EKLENEN GİZLİ KONTROL PANELİ ---
-@app.get("/api/debug/users")
-def debug_users(db: Session = Depends(get_db)):
-    """Sistemdeki kayıtlı tüm kullanıcıları gösterir (Şifreleri gizleyerek)"""
-    users = db.query(User).all()
-    return [{"id": u.id, "email": u.email} for u in users]
-# ----------------------------------------
-
-@app.post("/api/register")
-def register(user: UserCreate, db: Session = Depends(get_db)):
-    # Email'i küçük harfe çeviriyoruz ki 'Admin' ile 'admin' karışmasın
-    clean_email = user.email.lower().strip()
-    
-    db_user = db.query(User).filter(User.email == clean_email).first()
-    if db_user: raise HTTPException(status_code=400, detail="Bu email zaten kayıtlı")
-    
-    hashed_pw = pwd_context.hash(user.password)
-    new_user = User(email=clean_email, hashed_password=hashed_pw)
-    db.add(new_user)
-    db.commit()
-    return {"msg": "Kayıt başarılı"}
-
-@app.post("/api/token", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # Giriş yaparken de email'i küçültüyoruz
-    clean_email = form_data.username.lower().strip()
-    
-    user = db.query(User).filter(User.email == clean_email).first()
-    if not user:
-        raise HTTPException(status_code=400, detail="Böyle bir kullanıcı bulunamadı")
-    if not pwd_context.verify(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Şifre yanlış")
-    
-    access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@app.get("/api/users/me", response_model=UserWithHistory)
-async def read_users_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    user = db.query(User).options(joinedload(User.analyses)).filter(User.id == current_user.id).first()
-    su_an = datetime.datetime.utcnow()
-    for analiz in user.analyses:
-        if (su_an - analiz.created_at).total_seconds() / 60 < 10: 
-            analiz.result_text = "WAITING_FOR_MENTOR"
-    return user
-
-@app.post("/api/isim-analizi-yap")
-async def isim_analiz(request: Request, isim: str = Form(...), soyisim: str = Form(...), mentor: str = Form("yahya"), db: Session = Depends(get_db)):
-    try:
-        tam_isim = f"{isim} {soyisim}".upper()
-        sonuc = AIWriter.generate_name_analysis_rag(tam_isim, mentor)
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            token = auth_header.split(" ")[1]
-            user = await get_current_user(token, db)
-            db.add(Analysis(user_id=user.id, analysis_type="ISIM", input_text=tam_isim, result_text=sonuc))
-            db.commit()
-        return {"analiz_sonucu": sonuc}
-    except Exception as e: return JSONResponse({"hata": str(e)}, status_code=500)
-
-@app.post("/api/ruya-analizi")
-async def ruya_analiz(request: Request, ruya_metni: str = Form(...), mentor: str = Form("yahya"), db: Session = Depends(get_db)):
-    try:
-        sonuc = AIWriter.ruya_tabiri_motoru(ruya_metni, mentor)
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            token = auth_header.split(" ")[1]
-            user = await get_current_user(token, db)
-            db.add(Analysis(user_id=user.id, analysis_type="RUYA", input_text=ruya_metni, result_text=sonuc))
-            db.commit()
-        return {"analiz": sonuc}
-    except Exception as e: return JSONResponse({"analiz": str(e)}, status_code=500)
-
+# --- BLOG YAZILARINI GETİREN API (Halka Açık) ---
 @app.get("/api/posts")
 def get_public_posts(db: Session = Depends(get_db)):
-    seed_blog_posts(db)
-    return db.query(BlogPost).filter(BlogPost.is_published == True).order_by(BlogPost.created_at.desc()).all()
+    # En son eklenen en üstte görünsün diye (desc) sıralıyoruz
+    posts = db.query(BlogPost).order_by(BlogPost.id.desc()).all()
+    return posts
+    
+@app.delete("/api/admin/blog/delete/{id}")
+def delete_post(id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user or not user.is_admin: raise HTTPException(status_code=403, detail="Yetkisiz")
+    db.query(BlogPost).filter(BlogPost.id == id).delete()
+    db.commit()
+    return {"durum": "SİLİNDİ"}
+
+# --- ADMIN STATS ---
+@app.get("/api/admin/stats")
+def get_stats(request: Request, db: Session = Depends(get_db)):
+    admin = get_current_user(request, db)
+    if not admin or not admin.is_admin: raise HTTPException(status_code=403, detail="Yetkisiz")
+    
+    try:
+        return {
+            "total_users": db.query(models.User).count(),
+            "total_analysis": db.query(models.Analysis).count(),
+            "total_posts": db.query(BlogPost).count(),
+            "activities": [] 
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": f"Stats Hatası: {str(e)}"})
+
+# --- DB REPAIR ---
+@app.get("/api/db-repair")
+def repair_db():
+    try:
+        models.Base.metadata.create_all(bind=engine)
+        return "Tablolar (BlogPost dahil) garantiye alındı."
+    except Exception as e:
+        return f"Hata: {e}"
+
+# --- SAYFALAR ---
+@app.get("/robots.txt", response_class=FileResponse)
+def robots(): return FileResponse("robots.txt") if os.path.exists("robots.txt") else "Robots.txt yok"
+
+@app.get("/sitemap.xml", response_class=FileResponse)
+def sitemap(): return FileResponse("sitemap.xml") if os.path.exists("sitemap.xml") else "Sitemap yok"
+
+@app.get("/")
+def home(): return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+@app.get("/admin")
+def admin(): return FileResponse(os.path.join(STATIC_DIR, "admin.html"))
+
+@app.get("/blog")
+@app.get("/blog/{slug}")
+def blog(slug: str = None): return FileResponse(os.path.join(STATIC_DIR, "blog.html"))
