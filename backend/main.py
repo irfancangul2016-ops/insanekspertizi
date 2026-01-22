@@ -23,7 +23,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 
 # --- 1. AYARLAR VE VERİTABANI BAĞLANTISI ---
-DATABASE_URL = "sqlite:///./test.db"
+DATABASE_URL = "sqlite:///./insanekspertizi.db"
 SECRET_KEY = "cok_gizli_anahtar"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
