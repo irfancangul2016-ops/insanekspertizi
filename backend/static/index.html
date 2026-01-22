@@ -2,338 +2,60 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="google-site-verification" content="n885IxRWqu9n2Imp2mEswBv3sZgjqdWT5zRtsS3ZlYs" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Yapay zeka destekli isim analizi ve rüya tabirleri. Bilinçaltınızı ve karakterinizi keşfedin.">
-    <meta property="og:title" content="İnsan Ekspertizi | Karakterinin DNA'sını Çöz">
-    <meta property="og:description" content="Yapay zeka destekli isim analizi ve rüya tabirleri. Bilinçaltının gizli şifrelerini şimdi ücretsiz keşfet.">
-    <meta property="og:image" content="https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop">
-    <meta property="og:url" content="https://insanekspertizi.org">
-    <meta property="og:type" content="website">
-    
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="İnsan Ekspertizi | AI Analiz">
-    <meta name="twitter:description" content="İsmin ve rüyaların kaderini fısıldıyor. Yapay zeka ile analiz et.">
-    <meta name="twitter:image" content="https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop">
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/9626/9626780.png">
-    <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#6c5ce7">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/9626/9626780.png">
     <title>İnsan Ekspertizi | Profesyonel Karakter Analizi</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/9626/9626780.png">
+    <meta name="theme-color" content="#6c5ce7">
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root {
-            --primary: #6c5ce7;
-            --primary-dark: #5849be;
-            --secondary: #a29bfe;
-            --accent: #00cec9;
-            --dark: #2d3436;
-            --text-light: #636e72;
-            --bg-light: #f8f9fd;
-            --white: #ffffff;
-            --glass: rgba(255, 255, 255, 0.95);
-            --shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
-            --radius: 24px;
-            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--bg-light);
-            margin: 0;
-            color: var(--dark);
-            overflow-x: hidden;
-            line-height: 1.6;
-        }
-
-        /* --- SCROLLBAR --- */
-        ::-webkit-scrollbar { width: 10px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 5px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-
-        /* --- NAVİGASYON --- */
-        nav {
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            padding: 1rem 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            transition: var(--transition);
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            letter-spacing: -0.5px;
-        }
-
+        :root { --primary: #6c5ce7; --primary-dark: #5849be; --secondary: #a29bfe; --accent: #00cec9; --dark: #2d3436; --text-light: #636e72; --bg-light: #f8f9fd; --white: #ffffff; --glass: rgba(255, 255, 255, 0.95); --shadow: 0 15px 35px rgba(0, 0, 0, 0.08); --radius: 24px; --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg-light); margin: 0; color: var(--dark); overflow-x: hidden; line-height: 1.6; }
+        ::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-track { background: #f1f1f1; } ::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 5px; }
+        nav { background: var(--glass); backdrop-filter: blur(15px); padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 12px; }
         .nav-actions { display: flex; gap: 15px; align-items: center; }
-
-        .btn-base {
-            padding: 12px 28px;
-            border-radius: 50px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            font-family: inherit;
-            font-size: 0.95rem;
-            border: none;
-            display: flex; align-items: center; gap: 8px;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-        .btn-outline:hover { background: var(--primary); color: white; transform: translateY(-2px); }
-
-        .btn-fill {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
-        }
-        .btn-fill:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4); }
-
-        /* Mobil Menü Butonu */
-        .menu-toggle { display: none; font-size: 1.5rem; color: var(--dark); cursor: pointer; }
-
-        /* --- HERO SECTION --- */
-        .hero {
-            text-align: center;
-            padding: 120px 20px 80px;
-            background: linear-gradient(180deg, rgba(108,92,231,0.08) 0%, rgba(255,255,255,0) 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .hero::before {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(162,155,254,0.1) 0%, transparent 60%);
-            z-index: -1; animation: rotate 60s linear infinite;
-        }
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        .hero h1 { 
-            font-size: 4rem; color: var(--dark); margin: 0 0 25px; 
-            letter-spacing: -2px; line-height: 1.1; font-weight: 800;
-        }
+        .btn-base { padding: 12px 28px; border-radius: 50px; font-weight: 600; cursor: pointer; transition: var(--transition); border: none; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); } .btn-outline:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+        .btn-fill { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); } .btn-fill:hover { transform: translateY(-3px); }
+        .hero { text-align: center; padding: 120px 20px 80px; background: linear-gradient(180deg, rgba(108,92,231,0.08) 0%, rgba(255,255,255,0) 100%); position: relative; overflow: hidden; }
+        .hero h1 { font-size: 4rem; color: var(--dark); margin: 0 0 25px; line-height: 1.1; font-weight: 800; } 
+        /* DÜZELTİLDİ: background-clip eklendi */
         .hero span { 
-            background: linear-gradient(120deg, var(--primary), var(--accent));
-            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+            background: linear-gradient(120deg, var(--primary), var(--accent)); 
+            -webkit-background-clip: text; 
+            background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            color: transparent;
         }
-        .hero p { font-size: 1.2rem; color: var(--text-light); max-width: 700px; margin: 0 auto 50px; font-weight: 300; }
-
-        /* --- İSTATİSTİKLER --- */
-        .stats-container {
-            display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; margin-bottom: 60px;
-        }
-        .stat-box { text-align: center; animation: fadeInUp 1s ease; }
-        .stat-number { font-size: 2.5rem; font-weight: 800; color: var(--dark); display: block; line-height: 1; }
-        .stat-label { font-size: 0.85rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-top: 5px; }
-
-        /* --- ANA ARAÇLAR (GRID) --- */
-        .tools-grid {
-            max-width: 1100px; margin: 0 auto 100px; padding: 0 20px;
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px;
-        }
-
-        .tool-card {
-            background: var(--white);
-            padding: 45px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            transition: var(--transition);
-            border: 1px solid rgba(255,255,255,1);
-            position: relative; overflow: hidden;
-        }
-        .tool-card:hover { transform: translateY(-10px); box-shadow: 0 30px 60px rgba(108, 92, 231, 0.15); }
-
-        .card-header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
-        .card-icon {
-            width: 60px; height: 60px;
-            background: rgba(108, 92, 231, 0.1);
-            border-radius: 18px;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--primary); font-size: 1.8rem;
-        }
-        .tool-card h2 { margin: 0; font-size: 1.4rem; font-weight: 700; }
-        .tool-card p { margin: 5px 0 0; color: var(--text-light); font-size: 0.95rem; }
-
-        /* --- FORM ELEMANLARI --- */
+        .stats-container { display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; margin-bottom: 60px; } .stat-number { font-size: 2.5rem; font-weight: 800; }
+        .tools-grid { max-width: 1100px; margin: 0 auto 100px; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px; }
+        .tool-card { background: var(--white); padding: 45px; border-radius: var(--radius); box-shadow: var(--shadow); transition: var(--transition); border: 1px solid white; } .tool-card:hover { transform: translateY(-10px); }
+        .card-icon { width: 60px; height: 60px; background: rgba(108, 92, 231, 0.1); border-radius: 18px; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.8rem; }
         .form-group { margin-bottom: 20px; position: relative; }
-        
-        input, textarea {
-            width: 100%; padding: 18px; padding-left: 55px;
-            border: 2px solid #f0f2f5; border-radius: 16px;
-            background: #fdfdfd; font-family: inherit; font-size: 1rem;
-            transition: var(--transition); box-sizing: border-box; color: var(--dark);
-        }
-        input:focus, textarea:focus { 
-            outline: none; border-color: var(--primary); background: var(--white); 
-            box-shadow: 0 0 0 5px rgba(108, 92, 231, 0.1);
-        }
-        
-        .input-icon { position: absolute; left: 22px; top: 22px; color: #b2bec3; font-size: 1.2rem; transition: var(--transition); }
-        input:focus ~ .input-icon, textarea:focus ~ .input-icon { color: var(--primary); }
-        
-        /* Placeholder Animasyonu */
-        .floating-label {
-            position: absolute; left: 55px; top: 20px; color: #b2bec3; 
-            pointer-events: none; transition: 0.2s ease all; font-size: 1rem;
-        }
-        input:focus ~ .floating-label, input:not(:placeholder-shown) ~ .floating-label,
-        textarea:focus ~ .floating-label, textarea:not(:placeholder-shown) ~ .floating-label {
-            top: 2px; left: 20px; font-size: 0.75rem; color: var(--primary); font-weight: 600;
-        }
-
-        .submit-btn {
-            width: 100%; padding: 18px;
-            background: var(--dark); color: white;
-            border: none; border-radius: 16px;
-            font-size: 1.1rem; font-weight: 600; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: var(--transition);
-        }
-        .submit-btn:hover { background: var(--primary); letter-spacing: 0.5px; }
-
-        /* --- SONUÇ ALANI --- */
-        .result-area {
-            margin-top: 30px; padding: 30px;
-            background: #f8f9fa; border-radius: 16px;
-            display: none; line-height: 1.8; color: #4b5563; font-size: 1rem;
-            border-left: 5px solid var(--primary);
-            animation: slideDown 0.5s ease;
-        }
-        @keyframes slideDown { from { opacity:0; transform: translateY(-10px); } to { opacity:1; transform: translateY(0); } }
-
-        /* Skeleton Loading */
-        .skeleton-loader { display: none; margin-top: 25px; }
-        .s-line {
-            height: 14px; background: #eee; border-radius: 6px; margin-bottom: 12px;
-            position: relative; overflow: hidden;
-        }
-        .s-line::after {
-            content: ""; position: absolute; left: -100%; top: 0; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
-            animation: shimmer 1.5s infinite;
-        }
-        @keyframes shimmer { 100% { left: 100%; } }
-        .w-100 { width: 100%; } .w-70 { width: 70%; } .w-50 { width: 50%; }
-
-        /* --- ÖZELLİKLER & REFERANSLAR --- */
-        .section-title { text-align: center; margin-bottom: 60px; }
-        .section-title h2 { font-size: 2.5rem; margin: 0 0 10px; }
-        .section-title p { color: var(--text-light); }
-
-        .features-section { padding: 80px 20px; background: var(--white); }
-        .features-grid {
-            max-width: 1100px; margin: 0 auto;
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px;
-        }
-        .feature-item { padding: 30px; border-radius: 20px; transition: var(--transition); border: 1px solid #eee; }
-        .feature-item:hover { background: var(--bg-light); border-color: var(--primary); }
-        .feature-item i { font-size: 2.5rem; color: var(--accent); margin-bottom: 20px; }
-
-        /* --- SSS (FAQ) BÖLÜMÜ (YENİ) --- */
-        .faq-section { padding: 80px 20px; background: var(--bg-light); max-width: 800px; margin: 0 auto; }
-        .accordion-item {
-            background: var(--white); border-radius: 12px; margin-bottom: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03); overflow: hidden;
-        }
-        .accordion-header {
-            padding: 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-            font-weight: 600; transition: var(--transition);
-        }
-        .accordion-header:hover { color: var(--primary); }
-        .accordion-content {
-            max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
-            padding: 0 20px; color: var(--text-light); line-height: 1.6;
-        }
-        .accordion-content p { margin-bottom: 20px; }
-        .active .accordion-content { max-height: 200px; }
-        .rotate-icon { transition: transform 0.3s; }
-        .active .rotate-icon { transform: rotate(180deg); }
-
-        /* --- FOOTER --- */
-        footer {
-            background: #1e272e; color: white; padding: 60px 20px;
-            text-align: center; margin-top: 80px;
-        }
-        .footer-social { margin: 20px 0; }
-        .footer-social a { color: rgba(255,255,255,0.6); margin: 0 15px; font-size: 1.5rem; transition: 0.3s; }
-        .footer-social a:hover { color: var(--primary); transform: scale(1.1); }
-        .copyright { color: rgba(255,255,255,0.4); font-size: 0.9rem; }
-
-        /* --- MODALLAR --- */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
-            z-index: 2000; justify-content: center; align-items: center;
-        }
-        .modal-box {
-            background: var(--white); width: 90%; max-width: 420px;
-            padding: 40px; border-radius: 24px; position: relative;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
-            animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        @keyframes modalPop { from { opacity:0; transform: scale(0.8); } to { opacity:1; transform: scale(1); } }
-        .close-modal { position: absolute; top: 20px; right: 25px; cursor: pointer; font-size: 1.5rem; color: #ccc; transition: 0.2s; }
-        .close-modal:hover { color: var(--dark); }
-
-        /* --- TOAST --- */
-        #toast-area { position: fixed; top: 30px; right: 30px; z-index: 3000; display: flex; flex-direction: column; gap: 15px; }
-        .toast {
-            background: var(--white); padding: 18px 24px; border-radius: 14px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 15px;
-            min-width: 300px; border-left: 5px solid; animation: slideInRight 0.4s;
-        }
-        .toast.success { border-color: #00b894; } .toast.success i { color: #00b894; }
-        .toast.error { border-color: #ff7675; } .toast.error i { color: #ff7675; }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-        /* --- RESPONSIVE --- */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2.5rem; }
-            .nav-actions { display: none; } /* Hamburger menü eklenebilir */
-            .stats-container { gap: 30px; }
-            .tools-grid { grid-template-columns: 1fr; }
-        }
-        
-        /* Geçmiş Listesi */
-        .history-item { padding: 15px; border-bottom: 1px solid #f1f2f6; display: flex; gap: 15px; align-items: flex-start; }
-        .history-badge { padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; color: white; }
-        .badge-ISIM { background: #0984e3; } .badge-RUYA { background: #6c5ce7; }
-        
+        input, textarea { width: 100%; padding: 18px; padding-left: 55px; border: 2px solid #f0f2f5; border-radius: 16px; background: #fdfdfd; font-size: 1rem; box-sizing: border-box; }
+        input:focus, textarea:focus { outline: none; border-color: var(--primary); background: var(--white); }
+        .input-icon { position: absolute; left: 22px; top: 22px; color: #b2bec3; font-size: 1.2rem; }
+        .floating-label { position: absolute; left: 55px; top: 20px; color: #b2bec3; pointer-events: none; transition: 0.2s ease all; }
+        input:focus ~ .floating-label, input:not(:placeholder-shown) ~ .floating-label, textarea:focus ~ .floating-label, textarea:not(:placeholder-shown) ~ .floating-label { top: 2px; left: 20px; font-size: 0.75rem; color: var(--primary); font-weight: 600; }
+        .submit-btn { width: 100%; padding: 18px; background: var(--dark); color: white; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: var(--transition); } .submit-btn:hover { background: var(--primary); }
+        .result-area { margin-top: 30px; padding: 30px; background: #f8f9fa; border-radius: 16px; display: none; line-height: 1.8; color: #4b5563; border-left: 5px solid var(--primary); }
+        .features-section { padding: 80px 20px; background: var(--white); } .features-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; } .feature-item { padding: 30px; border-radius: 20px; border: 1px solid #eee; }
+        footer { background: #1e272e; color: white; padding: 60px 20px; text-align: center; margin-top: 80px; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-box { background: var(--white); width: 90%; max-width: 420px; padding: 40px; border-radius: 24px; position: relative; box-shadow: 0 30px 60px rgba(0,0,0,0.3); animation: modalPop 0.4s; } @keyframes modalPop { from { opacity:0; transform: scale(0.8); } to { opacity:1; transform: scale(1); } }
+        .close-modal { position: absolute; top: 20px; right: 25px; cursor: pointer; font-size: 1.5rem; color: #ccc; }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.5rem; } .nav-actions { display: none; } }
     </style>
 </head>
 <body>
 
-    <div id="toast-area"></div>
-
     <nav>
-        <a href="#" class="logo">
-            <i class="fa-solid fa-dna fa-lg"></i> İnsan Ekspertizi
-        </a>
+        <a href="#" class="logo"><i class="fa-solid fa-dna fa-lg"></i> İnsan Ekspertizi</a>
         <div style="flex:1; margin-left:30px;">
-            <a href="/blog" style="text-decoration:none; color:var(--dark); font-weight:600; font-size:0.95rem; transition:0.3s;" onmouseover="this.style.color='#6c5ce7'" onmouseout="this.style.color='#2d3436'">
-                Blog
-            </a>
+            <a href="/blog" style="text-decoration:none; color:var(--dark); font-weight:600;">Blog</a>
         </div>
         
         <div class="nav-actions" id="guest-nav">
@@ -342,32 +64,18 @@
         </div>
 
         <div class="nav-actions" id="user-nav" style="display: none;">
-            <button class="btn-base btn-outline" onclick="openHistory()" title="Geçmiş">
-                <i class="fa-solid fa-clock-rotate-left"></i> <span style="display:none;">Geçmiş</span>
-            </button>
-            <button class="btn-base btn-fill" onclick="logout()" title="Çıkış">
-                <i class="fa-solid fa-power-off"></i>
-            </button>
+            <span style="font-weight:600; color:var(--primary); margin-right:10px;">Üye</span>
+            <button class="btn-base btn-fill" onclick="logout()" title="Çıkış"><i class="fa-solid fa-power-off"></i></button>
         </div>
     </nav>
 
     <section class="hero">
         <h1>Bilinçaltının <br> <span>Dijital Haritası</span></h1>
         <p>Kadim bilgiler ve modern yapay zeka teknolojisi, isminin ve rüyalarının gizli şifrelerini çözmek için birleşti.</p>
-        
         <div class="stats-container">
-            <div class="stat-box">
-                <span class="stat-number">20k+</span>
-                <span class="stat-label">Analiz</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-number">4.9</span>
-                <span class="stat-label">Puan</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-number">AI</span>
-                <span class="stat-label">Motor</span>
-            </div>
+            <div class="stat-box"><span class="stat-number">20k+</span><span class="stat-label">Analiz</span></div>
+            <div class="stat-box"><span class="stat-number">4.9</span><span class="stat-label">Puan</span></div>
+            <div class="stat-box"><span class="stat-number">AI</span><span class="stat-label">Motor</span></div>
         </div>
     </section>
 
@@ -375,10 +83,7 @@
         <div class="tool-card">
             <div class="card-header">
                 <div class="card-icon"><i class="fa-solid fa-fingerprint"></i></div>
-                <div>
-                    <h2>İsim Analizi</h2>
-                    <p>İsminin enerjisel frekansını ölç.</p>
-                </div>
+                <div><h2>İsim Analizi</h2><p>İsminin enerjisel frekansını ölç.</p></div>
             </div>
             
             <div class="form-group">
@@ -392,130 +97,49 @@
                 <label class="floating-label">Soyadınız</label>
             </div>
             
-            <button class="submit-btn" onclick="isimAnaliziYap()">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> onclick
+            <button class="submit-btn" onclick="analyzeName()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Analiz Et
             </button>
-
-            <div id="skel-isim" class="skeleton-loader">
-                <div class="s-line w-100"></div><div class="s-line w-70"></div><div class="s-line w-100"></div>
-            </div>
-            <div id="res-isim" class="result-area"></div>
+            <div id="isim-sonuc" class="result-area"></div>
         </div>
 
         <div class="tool-card">
             <div class="card-header">
                 <div class="card-icon"><i class="fa-solid fa-moon"></i></div>
-                <div>
-                    <h2>Rüya Tabiri</h2>
-                    <p>Rüyalarının gizli mesajlarını oku.</p>
-                </div>
+                <div><h2>Rüya Tabiri</h2><p>Rüyalarının gizli mesajlarını oku.</p></div>
             </div>
             
             <div class="form-group">
-                <textarea id="ruyaMetni" rows="5" placeholder=" " style="resize:none"></textarea>
+                <textarea id="ruya-metni" rows="5" placeholder=" " style="resize:none"></textarea>
                 <i class="fa-solid fa-pen-nib input-icon" style="top:22px"></i>
                 <label class="floating-label">Rüyanı detaylıca anlat...</label>
             </div>
             
-            <button class="submit-btn" onclick="ruyaAnaliziYap()">
+            <button class="submit-btn" onclick="analyzeDream()">
                 <i class="fa-solid fa-eye"></i> Yorumla
             </button>
-
-            <div id="skel-ruya" class="skeleton-loader">
-                <div class="s-line w-100"></div><div class="s-line w-100"></div><div class="s-line w-50"></div>
-            </div>
-            <div id="res-ruya" class="result-area"></div>
+            <div id="ruya-sonuc" class="result-area"></div>
         </div>
     </section>
 
     <section class="features-section">
-        <div class="section-title">
-            <h2>Neden İnsan Ekspertizi?</h2>
-            <p>Sıradan fal uygulamalarının ötesinde, derinlikli bir analiz.</p>
-        </div>
         <div class="features-grid">
-            <div class="feature-item">
-                <i class="fa-solid fa-brain"></i>
-                <h3>Google Gemini AI</h3>
-                <p>Dünyanın en gelişmiş dil modellerinden biriyle, bağlamsal ve derinlemesine yorumlar.</p>
-            </div>
-            <div class="feature-item">
-                <i class="fa-solid fa-server"></i>
-                <h3>Kozmik Hafıza</h3>
-                <p>Tüm analizleriniz güvenli bulut sunucularımızda (PostgreSQL) şifrelenerek saklanır.</p>
-            </div>
-            <div class="feature-item">
-                <i class="fa-solid fa-lock"></i>
-                <h3>%100 Gizlilik</h3>
-                <p>Rüyalarınız ve verileriniz sadece sizin gözleriniz içindir. Kimseyle paylaşılmaz.</p>
-            </div>
-        </div>
-    </section>
-
-    <section class="faq-section">
-        <div class="section-title">
-            <h2>Sıkça Sorulan Sorular</h2>
-        </div>
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-                Bu analizler bilimsel mi?
-                <i class="fa-solid fa-chevron-down rotate-icon"></i>
-            </div>
-            <div class="accordion-content">
-                <p>Analizlerimiz, psikolojik arketipler, sembolizm ve kadim isim bilimlerinin yapay zeka tarafından sentezlenmesiyle oluşturulur. %100 bilimsel kanıt iddiası taşımaz, rehberlik amaçlıdır.</p>
-            </div>
-        </div>
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-                Ücret ödemem gerekiyor mu?
-                <i class="fa-solid fa-chevron-down rotate-icon"></i>
-            </div>
-            <div class="accordion-content">
-                <p>Hayır, şu an için İnsan Ekspertizi platformunun tüm özellikleri tamamen ücretsizdir.</p>
-            </div>
-        </div>
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-                Verilerim güvende mi?
-                <i class="fa-solid fa-chevron-down rotate-icon"></i>
-            </div>
-            <div class="accordion-content">
-                <p>Kesinlikle. Veritabanımız endüstri standardı şifreleme yöntemleri ile korunmaktadır ve verileriniz üçüncü taraflarla paylaşılmaz.</p>
-            </div>
+            <div class="feature-item"><i class="fa-solid fa-brain" style="font-size:2rem; color:var(--accent);"></i><h3>Google Gemini AI</h3><p>Gelişmiş yapay zeka yorumu.</p></div>
+            <div class="feature-item"><i class="fa-solid fa-lock" style="font-size:2rem; color:var(--accent);"></i><h3>%100 Gizlilik</h3><p>Verileriniz şifrelenir.</p></div>
+            <div class="feature-item"><i class="fa-solid fa-bolt" style="font-size:2rem; color:var(--accent);"></i><h3>Anında Sonuç</h3><p>Saniyeler içinde rapor.</p></div>
         </div>
     </section>
 
     <footer>
-        <div class="footer-links">
-            <a href="/static/legal.html">Hakkımızda</a>
-            <a href="/static/legal.html">Gizlilik Politikası</a>
-            <a href="/static/legal.html">Kullanım Şartları</a>
-            <a href="mailto:info@insanekspertizi.org">İletişim</a>
-        </div>
-        
-        <div class="footer-social">
-            <a href="#"><i class="fa-brands fa-instagram"></i></a>
-            <a href="#"><i class="fa-brands fa-twitter"></i></a>
-            <a href="#"><i class="fa-brands fa-linkedin"></i></a>
-        </div>
-
-        <p style="margin-top:20px; color:rgba(255,255,255,0.5); font-size:0.8rem;">
-            &copy; 2026 İnsan Ekspertizi. Tüm hakları saklıdır.
-        </p>
+        <p style="color:rgba(255,255,255,0.5);">&copy; 2026 İnsan Ekspertizi.</p>
     </footer>
 
     <div id="loginModal" class="modal-overlay">
         <div class="modal-box">
             <span class="close-modal" onclick="closeModal('loginModal')">&times;</span>
-            <h2 style="margin-bottom:20px; text-align:center;">Tekrar Hoşgeldin</h2>
-            <div class="form-group">
-                <input type="email" id="loginEmail" placeholder=" "><i class="fa-solid fa-envelope input-icon"></i>
-                <label class="floating-label">E-posta</label>
-            </div>
-            <div class="form-group">
-                <input type="password" id="loginPass" placeholder=" "><i class="fa-solid fa-key input-icon"></i>
-                <label class="floating-label">Şifre</label>
-            </div>
+            <h2 style="text-align:center;">Giriş Yap</h2>
+            <div class="form-group"><input type="email" id="loginEmail" placeholder=" "><label class="floating-label">E-posta</label></div>
+            <div class="form-group"><input type="password" id="loginPass" placeholder=" "><label class="floating-label">Şifre</label></div>
             <button class="submit-btn" onclick="login()">Giriş Yap</button>
         </div>
     </div>
@@ -523,203 +147,145 @@
     <div id="registerModal" class="modal-overlay">
         <div class="modal-box">
             <span class="close-modal" onclick="closeModal('registerModal')">&times;</span>
-            <h2 style="margin-bottom:20px; text-align:center;">Hesap Oluştur</h2>
-            <div class="form-group">
-                <input type="email" id="regEmail" placeholder=" "><i class="fa-solid fa-envelope input-icon"></i>
-                <label class="floating-label">E-posta</label>
-            </div>
-            <div class="form-group">
-                <input type="password" id="regPass" placeholder=" "><i class="fa-solid fa-key input-icon"></i>
-                <label class="floating-label">Şifre Belirleyin</label>
-            </div>
+            <h2 style="text-align:center;">Kayıt Ol</h2>
+            <div class="form-group"><input type="email" id="regEmail" placeholder=" "><label class="floating-label">E-posta</label></div>
+            <div class="form-group"><input type="password" id="regPass" placeholder=" "><label class="floating-label">Şifre</label></div>
             <button class="submit-btn" onclick="register()">Kayıt Ol</button>
         </div>
     </div>
 
-    <div id="historyModal" class="modal-overlay">
-        <div class="modal-box" style="max-width: 600px; padding:0; overflow:hidden;">
-            <div style="padding:20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; background:#f8f9fa;">
-                <h3 style="margin:0;"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş Analizler</h3>
-                <span class="close-modal" style="position:static;" onclick="closeModal('historyModal')">&times;</span>
-            </div>
-            <div id="historyList" style="max-height:60vh; overflow-y:auto; padding:20px;"></div>
+    <div id="gate-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
+        <div style="background:white; padding:40px; border-radius:24px; text-align:center; max-width:400px; width:90%; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+            <button onclick="closeGate()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#999;">&times;</button>
+            <div style="font-size:3rem; margin-bottom:20px;">🔒</div>
+            <h2 style="color:#2d3436; margin-bottom:10px;">Analiziniz Hazır!</h2>
+            <p style="color:#636e72; margin-bottom:30px;">Sonuçları görmek için lütfen ücretsiz hesabınızı oluşturun.</p>
+            <button onclick="closeGate(); openModal('registerModal')" style="width:100%; background:#6c5ce7; color:white; padding:15px; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer; margin-bottom:15px;">Ücretsiz Hesap Oluştur</button>
+            <button onclick="closeGate(); openModal('loginModal')" style="width:100%; background:#f1f2f6; color:#2d3436; padding:15px; border:none; border-radius:12px; font-weight:bold; cursor:pointer;">Giriş Yap</button>
         </div>
     </div>
 
     <script>
-      // --- ID KONTROL VE HATA AVCISI ---
-     function checkElement(id) {
-        const el = document.getElementById(id);
-        if (!el) {
-            alert("HATA: HTML dosyasında id='" + id + "' olan bir kutu bulamadım! Lütfen ADIM 1 ve 2'yi kontrol et.");
-            return null;
-        }
-        return el;
-     }
-
-     // --- GİRİŞ KONTROLLERİ ---
-     function isLoggedIn() {
-        return localStorage.getItem("token") !== null;
-        }
-    
-     function checkLoginStatus() {
-        // Tasarımındaki giriş/çıkış butonlarının ID'lerini buraya göre ayarla
-        // Eğer bulamazsa hata vermez, sessizce geçer.
-        const token = localStorage.getItem("token");
-        const authPanel = document.getElementById("auth-buttons"); // Giriş yap/Kayıt ol divi
-        const userPanel = document.getElementById("user-panel");   // Hoşgeldin kullanıcı divi
-
-        if (token) {
-            if(authPanel) authPanel.style.display = "none";
-            if(userPanel) userPanel.style.display = "flex";
-        } else {
-            if(authPanel) authPanel.style.display = "flex";
-            if(userPanel) userPanel.style.display = "none";
-        }
-     }
-
-     // --- KAPI (GATE) SİSTEMİ ---
-        function showGate() {
-        const gate = document.getElementById("gate-modal");
-        if(gate) gate.style.display = "flex";
-        else alert("HATA: 'gate-modal' ID'li pencere kodu HTML'e eklenmemiş!");
-     }
-    
-     function closeGate() {
-        document.getElementById("gate-modal").style.display = "none";
+        // --- YARDIMCI FONKSİYONLAR ---
+        function checkElement(id) {
+            const el = document.getElementById(id);
+            if(!el) console.error("Eleman bulunamadı:", id);
+            return el;
         }
 
-     function redirectToRegister() {
-        closeGate();
-        // Eğer register diye bir tab veya bölüm varsa oraya git
-        window.location.href = "/#register"; 
-        // Veya varsa: switchTab('register');
-     }
-
-        function redirectToLogin() {
-        closeGate();
-        window.location.href = "/#login";
-        // Veya varsa: switchTab('login');
-     }
-
-        function logout() {
-        localStorage.removeItem("token");
-        window.location.reload();
-        }
-
-        // --- ANALİZ FONKSİYONLARI ---
-     async function analyzeName() {
-        // 1. Önce kutuları kontrol et
-        const isimBox = checkElement("isim");
-        const soyisimBox = checkElement("soyisim");
-        const sonucBox = checkElement("isim-sonuc");
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         
-        if (!isimBox || !soyisimBox || !sonucBox) return; // Eksik varsa dur.
+        // --- GATE SİSTEMİ ---
+        function showGate() { document.getElementById('gate-modal').style.display = 'flex'; }
+        function closeGate() { document.getElementById('gate-modal').style.display = 'none'; }
 
-        const isim = isimBox.value;
-        const soyisim = soyisimBox.value;
+        // --- AUTH DURUMU ---
+        function checkLoginStatus() {
+            const token = localStorage.getItem("token");
+            if(token) {
+                document.getElementById("guest-nav").style.display = "none";
+                document.getElementById("user-nav").style.display = "flex";
+            } else {
+                document.getElementById("guest-nav").style.display = "flex";
+                document.getElementById("user-nav").style.display = "none";
+            }
+        }
+        function logout() { localStorage.removeItem("token"); window.location.reload(); }
 
-        if (!isim || !soyisim) { alert("Lütfen isim ve soyisim girin."); return; }
-
-        // 2. KAPI KONTROLÜ
-        if (!isLoggedIn()) {
-            showGate();
-            return;
+        // --- API İŞLEMLERİ (KAYIT & GİRİŞ) ---
+        async function login() {
+            const email = document.getElementById("loginEmail").value;
+            const pass = document.getElementById("loginPass").value;
+            const fd = new FormData(); fd.append("username", email); fd.append("password", pass);
+            try {
+                const res = await fetch("/api/token", { method: "POST", body: fd });
+                if(res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem("token", data.access_token);
+                    window.location.reload();
+                } else alert("Hatalı giriş!");
+            } catch(e) { alert("Sunucu hatası"); }
         }
 
-        sonucBox.style.display = "block";
-        sonucBox.innerHTML = "⏳ Analiz ediliyor...";
+        async function register() {
+            const email = document.getElementById("regEmail").value;
+            const pass = document.getElementById("regPass").value;
+            try {
+                const res = await fetch("/api/register", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({email, password: pass})
+                });
+                if(res.ok) {
+                    closeModal('registerModal');
+                    openModal('loginModal');
+                    alert("Kayıt başarılı! Giriş yapabilirsiniz.");
+                } else alert("Kayıt hatası.");
+            } catch(e) { alert("Sunucu hatası"); }
+        }
 
-        const fd = new FormData();
-        fd.append("isim", isim);
-        fd.append("soyisim", soyisim);
+        // --- ANALİZ MOTORLARI (KAPICI DAHİL) ---
+        async function analyzeName() {
+            const isim = document.getElementById("isim").value;
+            const soyisim = document.getElementById("soyisim").value;
+            if(!isim || !soyisim) { alert("Lütfen isim girin."); return; }
 
-        try {
-            const res = await fetch("/api/isim-analizi-yap", {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
-                body: fd
-            });
+            // KAPICI KONTROLÜ
+            if(!localStorage.getItem("token")) { showGate(); return; }
+
+            const resDiv = document.getElementById("isim-sonuc");
+            resDiv.style.display = "block";
+            resDiv.innerHTML = "⏳ Analiz yapılıyor...";
             
-            if (res.ok) {
-                const data = await res.json();
-                sonucBox.innerHTML = data.analiz_sonucu.replace(/\n/g, "<br>");
-            } else {
-                if(res.status === 401) { logout(); showGate(); }
-                else { alert("Bir hata oluştu."); }
-            }
-        } catch (e) { alert("Sunucu hatası."); }
-     }
+            const fd = new FormData(); fd.append("isim", isim); fd.append("soyisim", soyisim);
+            
+            try {
+                const res = await fetch("/api/isim-analizi-yap", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
+                    body: fd
+                });
+                if(res.ok) {
+                    const data = await res.json();
+                    resDiv.innerHTML = data.analiz_sonucu.replace(/\n/g, "<br>");
+                } else {
+                    if(res.status === 401) { logout(); showGate(); }
+                    else resDiv.innerHTML = "Hata oluştu.";
+                }
+            } catch(e) { resDiv.innerHTML = "Bağlantı hatası."; }
+        }
 
         async function analyzeDream() {
-        // 1. Kutuyu kontrol et
-        const ruyaBox = checkElement("ruya-metni");
-        const sonucBox = checkElement("ruya-sonuc");
+            const ruya = document.getElementById("ruya-metni").value;
+            if(!ruya) { alert("Lütfen rüya girin."); return; }
 
-        if (!ruyaBox || !sonucBox) return;
+            // KAPICI KONTROLÜ
+            if(!localStorage.getItem("token")) { showGate(); return; }
 
-        const ruya = ruyaBox.value;
-        if (!ruya) { alert("Lütfen rüya metni girin."); return; }
+            const resDiv = document.getElementById("ruya-sonuc");
+            resDiv.style.display = "block";
+            resDiv.innerHTML = "⏳ Rüya yorumlanıyor...";
 
-        // 2. KAPI KONTROLÜ
-        if (!isLoggedIn()) {
-            showGate();
-            return;
+            const fd = new FormData(); fd.append("ruya_metni", ruya);
+
+            try {
+                const res = await fetch("/api/ruya-analizi", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
+                    body: fd
+                });
+                if(res.ok) {
+                    const data = await res.json();
+                    resDiv.innerHTML = data.analiz.replace(/\n/g, "<br>");
+                } else {
+                    if(res.status === 401) { logout(); showGate(); }
+                    else resDiv.innerHTML = "Hata oluştu.";
+                }
+            } catch(e) { resDiv.innerHTML = "Bağlantı hatası."; }
         }
 
-        sonucBox.style.display = "block";
-        sonucBox.innerHTML = "⏳ Yorumlanıyor...";
-
-        const fd = new FormData();
-        fd.append("ruya_metni", ruya);
-
-        try {
-            const res = await fetch("/api/ruya-analizi", {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
-                body: fd
-            });
-            
-            if (res.ok) {
-                const data = await res.json();
-                sonucBox.innerHTML = data.analiz.replace(/\n/g, "<br>");
-            } else {
-                if(res.status === 401) { logout(); showGate(); }
-                else { alert("Yorumlanamadı."); }
-            }
-        } catch (e) { alert("Sunucu hatası."); }
-        }
-    
         window.onload = checkLoginStatus;
     </script>
-    <div id="gate-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
-    <div style="background:white; padding:40px; border-radius:20px; text-align:center; max-width:400px; width:90%; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
-        <button onclick="closeGate()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#999;">&times;</button>
-        
-        <div style="font-size:3rem; margin-bottom:20px;">🔒</div>
-        <h2 style="color:#2d3436; margin-bottom:10px;">Analiziniz Hazır!</h2>
-        <p style="color:#636e72; margin-bottom:30px; line-height:1.6;">
-            Yapay zeka analizini tamamladı. Sonuçları görmek ve detaylı raporu okumak için lütfen <strong>ücretsiz</strong> hesabınızı oluşturun veya giriş yapın.
-        </p>
-        
-        <button onclick="redirectToRegister()" style="width:100%; background:#6c5ce7; color:white; padding:15px; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer; margin-bottom:15px; transition:0.3s;">
-            <i class="fa-solid fa-user-plus"></i> Ücretsiz Hesap Oluştur
-        </button>
-        
-        <button onclick="redirectToLogin()" style="width:100%; background:#f1f2f6; color:#2d3436; padding:15px; border:none; border-radius:12px; font-weight:bold; font-size:1rem; cursor:pointer; transition:0.3s;">
-            Zaten hesabım var, Giriş Yap
-        </button>
-    </div>
-</div>
-<div id="gate-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
-    <div style="background:white; padding:40px; border-radius:20px; text-align:center; max-width:400px; width:90%; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
-        <button onclick="closeGate()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#999;">&times;</button>
-        <div style="font-size:3rem; margin-bottom:20px;">🔒</div>
-        <h2 style="color:#2d3436; margin-bottom:10px;">Analiziniz Hazır!</h2>
-        <p style="color:#636e72; margin-bottom:30px;">Sonuçları görmek için lütfen ücretsiz hesabınızı oluşturun.</p>
-        <button onclick="redirectToRegister()" style="width:100%; background:#6c5ce7; color:white; padding:15px; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer; margin-bottom:15px;">Hesap Oluştur</button>
-        <button onclick="redirectToLogin()" style="width:100%; background:#f1f2f6; color:#2d3436; padding:15px; border:none; border-radius:12px; font-weight:bold;">Giriş Yap</button>
-    </div>
-</div>
 </body>
 </html>
