@@ -354,6 +354,7 @@
             document.getElementById("member-tools").style.display = "grid";
         }
 
+        // --- GÜNCELLENMİŞ GİRİŞ VE KAYIT (HATA YAKALAMA EKLENDİ) ---
         async function login() {
             const email = document.getElementById("loginEmail").value;
             const pass = document.getElementById("loginPass").value;
@@ -366,20 +367,39 @@
                     localStorage.setItem("token", data.access_token);
                     window.location.reload();
                 } else {
-                    // HATA DETAYINI GÖSTEREN KOD:
                     let errorData = await res.json();
-                    alert("Giriş Başarısız: " + (errorData.detail || "Bilinmeyen bir sorun oluştu."));
+                    alert("Giriş Yapılamadı: " + (errorData.detail || "Bilinmeyen hata"));
                 }
             } catch(e) { 
-                alert("Sunucuya bağlanılamadı. Lütfen internetinizi kontrol edin."); 
+                alert("Sunucuya ulaşılamıyor. İnternetinizi kontrol edin."); 
             }
         }
+
         async function register() {
             let email = document.getElementById("regEmail").value;
             let pass = document.getElementById("regPass").value;
-            let res = await fetch("/api/register", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email, password:pass})});
-            if(res.ok) { alert("Kayıt olundu!"); window.location.reload(); }
+            
+            try {
+                let res = await fetch("/api/register", {
+                    method:"POST", 
+                    headers:{"Content-Type":"application/json"}, 
+                    body:JSON.stringify({email, password:pass})
+                });
+                
+                if(res.ok) { 
+                    alert("Kayıt Başarılı! Şimdi giriş yapabilirsiniz."); 
+                    closeModal('registerModal');
+                    openModal('loginModal');
+                } else {
+                    // İŞTE BURASI: Hatayı artık göreceğiz
+                    let errorData = await res.json();
+                    alert("Kayıt Başarısız: " + (errorData.detail || "Bilinmeyen hata"));
+                }
+            } catch(e) {
+                alert("Kayıt sırasında bağlantı hatası oluştu.");
+            }
         }
+
         function logout() { localStorage.removeItem("token"); window.location.reload(); }
     </script>
 </body>
