@@ -312,71 +312,43 @@
             
             try {
                 const token = localStorage.getItem("token");
-                if(!token) {
-                    list.innerHTML = '<p style="padding:20px; text-align:center;">Lütfen önce giriş yapın.</p>';
-                    return;
-                }
-
                 const res = await fetch("/api/users/me", {headers:{"Authorization":`Bearer ${token}`}});
-                
-                if(!res.ok) {
-                    list.innerHTML = '<p style="padding:20px; text-align:center;">Veriler alınamadı.</p>';
-                    return;
-                }
-
                 const user = await res.json();
                 
                 if(!user.analyses || user.analyses.length === 0) {
-                    list.innerHTML = '<p style="padding:20px; text-align:center;">Henüz hiç analiz yaptırmadınız.</p>';
+                    list.innerHTML = '<p style="padding:20px; text-align:center;">Henüz analiz yok.</p>';
+                    return;
+                }
+                if(!res.ok) {
+                    // Hatayı ekrana bas ki görelim
+                    let err = await res.json(); 
+                    list.innerHTML = `<p style="padding:20px; text-align:center; color:red;">Hata: ${err.detail || "Veri alınamadı"}</p>`;
                     return;
                 }
 
                 list.innerHTML = "";
-                // En yeni en üstte görünsün diye ters çevir (reverse)
-                const sortedAnalyses = user.analyses.slice().reverse();
+                user.analyses.forEach(a => {
+                    // ARTIK BEKLEME YOK, DİREKT OKU BUTONU VAR
+                    let btnHtml = `<button class="h-btn btn-view" onclick="showResult('${encodeURIComponent(a.result_text)}')">Sonucu Oku</button>`;
 
-                sortedAnalyses.forEach(a => {
-                    const isWaiting = a.result_text === "WAITING_FOR_MENTOR";
-                    
-                    let statusHtml = isWaiting 
-                        ? `<span class="h-status status-wait"><i class="fa-solid fa-hourglass-half"></i> İnceleniyor (10dk)</span>`
-                        : `<span class="h-status status-ready"><i class="fa-solid fa-check"></i> Hazır</span>`;
-                    
-                    // Metni güvenli hale getir (Encode)
-                    let btnHtml = isWaiting
-                        ? `<button class="h-btn" disabled style="opacity:0.5; cursor:not-allowed;">Bekleyin</button>`
-                        : `<button class="h-btn btn-view" onclick="showResult('${encodeURIComponent(a.result_text)}')">Sonucu Oku</button>`;
-
-                    // Tarihi düzgün formatla
-                    let tarih = "Yeni";
-                    if(a.created_at) {
-                        const d = new Date(a.created_at);
-                        tarih = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    }
+                    // Tarihi Formatla
+                    let tarih = new Date(a.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
                     list.innerHTML += `
                         <div class="h-item">
                             <div class="h-info">
-                                <div style="font-weight:bold; color:var(--dark);">
-                                    ${a.analysis_type === 'ISIM' ? '<i class="fa-solid fa-fingerprint"></i> İsim' : '<i class="fa-solid fa-moon"></i> Rüya'}
-                                </div>
-                                <div style="font-size:0.85rem; color:#666; margin-top:3px;">
-                                    ${a.input_text.substring(0, 30)}...
-                                </div>
-                                <div style="font-size:0.75rem; color:#999; margin-top:3px;">Saat: ${tarih}</div>
+                                <div style="font-weight:bold;">${a.analysis_type === 'ISIM' ? 'İsim Analizi' : 'Rüya Yorumu'}</div>
+                                <div style="font-size:0.8rem; color:#888;">${a.input_text.substring(0,25)}...</div>
+                                <div style="font-size:0.7rem; color:#aaa;">${tarih}</div>
                             </div>
                             <div style="text-align:right;">
-                                <div style="margin-bottom:8px;">${statusHtml}</div>
+                                <span class="h-status status-ready"><i class="fa-solid fa-check"></i> Tamamlandı</span>
                                 ${btnHtml}
                             </div>
                         </div>
                     `;
                 });
-
-            } catch(e) { 
-                console.log(e);
-                list.innerHTML = '<p style="padding:20px; text-align:center; color:red;">Bir hata oluştu.</p>'; 
-            }
+            } catch(e) { list.innerHTML = "Hata oluştu."; }
         }
 
         // --- DAKTİLO EFEKTİ ---

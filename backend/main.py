@@ -6,6 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 from sqlalchemy.orm import joinedload
 from typing import List
+from sqlalchemy import desc
 # Pydantic modelleri için
 from pydantic import BaseModel
 
@@ -111,21 +112,31 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 # --- GÜNCELLENMİŞ GEÇMİŞİ GETİRME FONKSİYONU ---
 @app.get("/api/users/me")
 def get_me(request: Request, db: Session = Depends(get_db)):
-    user = get_current_user_from_request(request, db)
-    if not user: raise HTTPException(status_code=401, detail="Giriş yapınız")
+    # 1. Kullanıcıyı bul
+    user = get_current_user(request, db)
+    if not user: 
+        raise HTTPException(status_code=401, detail="Oturum yok")
     
-    analizler = []
-    # Ters çeviriyoruz ki en yeni en üstte olsun
-    for a in reversed(user.analyses):
-        analizler.append({
+    # 2. Analizleri doğrudan tablodan çek (En garantili yöntem)
+    # En yeniden en eskiye doğru sırala (desc)
+    analizler_db = db.query(models.Analysis).filter(models.Analysis.user_id == user.id).order_by(desc(models.Analysis.id)).all()
+    
+    # 3. Listeyi manuel oluştur
+    analiz_listesi = []
+    for a in analizler_db:
+        analiz_listesi.append({
             "id": a.id,
             "input_text": a.input_text,
-            "result_text": a.result_text, # Kilit yok, direkt metni ver
+            "result_text": a.result_text,
             "created_at": a.created_at,
             "analysis_type": a.analysis_type
         })
     
-    return {"email": user.email, "analyses": analizler}
+    # 4. Paketi gönder
+    return {
+        "email": user.email,
+        "analyses": analiz_listesi
+    }
 @app.post("/api/isim-analizi-yap")
 async def isim_analiz(request: Request, 
                       isim: str = Form(...), 
