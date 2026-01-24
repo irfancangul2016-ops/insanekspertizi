@@ -191,7 +191,11 @@
             <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
             
             <div id="typewriterArea" class="typewriter-text"></div>
-            
+            <div style="margin-top:20px; text-align:right; display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn-base btn-outline" onclick="downloadPDF()"><i class="fa-solid fa-file-pdf"></i> PDF İndir</button>
+                
+                <button class="btn-base btn-outline" onclick="copyResult()"><i class="fa-regular fa-copy"></i> Kopyala</button>
+            </div>
             <div style="margin-top:20px; text-align:right;">
                 <button class="btn-base btn-outline" onclick="copyResult()"><i class="fa-regular fa-copy"></i> Kopyala</button>
             </div>
@@ -227,6 +231,10 @@
     </div>
 
     <script>
+        // --- GLOBAL DEĞİŞKENLER (Veri Yönetimi İçin) ---
+        let currentUserAnalyses = []; // Analizleri burada tutacağız
+        let typeInterval; // Daktilo efekti için
+
         // --- SEÇİM MANTIĞI ---
         function selectOption(el, inputId, value) {
             const container = el.parentElement;
@@ -235,12 +243,37 @@
             document.getElementById(inputId).value = value;
         }
 
+        // --- PDF İNDİRME FONKSİYONU (YENİ) ---
+        function downloadPDF() {
+            let printContent = document.getElementById('typewriterArea').innerHTML;
+            
+            // Yeni bir pencere açıp yazdırıyoruz (En temiz PDF yöntemi)
+            let myWindow = window.open('', 'PRINT', 'height=600,width=800');
+            
+            myWindow.document.write('<html><head><title>İnsan Ekspertizi Raporu</title>');
+            myWindow.document.write('<style>body{font-family:sans-serif; padding:40px; line-height:1.6;} h1{color:#6c5ce7; border-bottom:2px solid #eee; padding-bottom:10px;}</style>');
+            myWindow.document.write('</head><body>');
+            myWindow.document.write('<h1>İnsan Ekspertizi - Kişiye Özel Analiz Raporu</h1>');
+            myWindow.document.write('<p style="font-size:12px; color:#666;">Tarih: ' + new Date().toLocaleDateString('tr-TR') + '</p>');
+            myWindow.document.write('<div style="margin-top:30px;">' + printContent + '</div>');
+            myWindow.document.write('<div style="margin-top:50px; text-align:center; font-size:11px; color:#999;">www.insanekspertizi.org</div>');
+            myWindow.document.write('</body></html>');
+
+            myWindow.document.close(); // Gerekli
+            myWindow.focus(); // Gerekli
+
+            setTimeout(() => {
+                myWindow.print();
+                myWindow.close();
+            }, 500);
+        }
+
         // --- İSTEK GÖNDERME ---
         async function submitRequest(type) {
             const token = localStorage.getItem("token");
             if(!token) return openModal('loginModal');
 
-            // 1. BUTONU BUL VE KİLİTLE (Kasma hissini önler)
+            // 1. BUTONU KİLİTLE
             let btn;
             let originalText;
             if(type === 'isim') {
@@ -277,25 +310,17 @@
             }
 
             try {
-                // İsteği Gönder (Bu sırada buton dönüyor olacak)
                 let res = await fetch(url, {method:"POST", headers:{"Authorization":`Bearer ${token}`}, body:fd});
                 
-                // 2. BUTONU ESKİ HALİNE GETİR
-                if(btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                }
+                if(btn) { btn.disabled = false; btn.innerHTML = originalText; }
 
                 if(res.ok) {
-                    // 3. MESAJI GÜNCELLE (10 dk yazısını kaldırdık)
-                    document.getElementById("successMsg").innerText = "Analiziniz başarıyla tamamlandı! Sonucu hemen 'Analizlerim' menüsünden okuyabilirsiniz.";
+                    document.getElementById("successMsg").innerText = "Analiziniz tamamlandı! 'Analizlerim' menüsünden hemen okuyabilirsiniz.";
                     openModal('successModal');
-                    
-                    // Inputları temizle
                     if(document.getElementById('isim')) document.getElementById('isim').value = "";
                     if(document.getElementById('ruya-metni')) document.getElementById('ruya-metni').value = "";
                 } else {
-                    alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+                    alert("Bir hata oluştu.");
                 }
             } catch(e) {
                 if(btn) { btn.disabled = false; btn.innerHTML = originalText; }
@@ -303,8 +328,7 @@
             }
         }
 
-        // --- GEÇMİŞ VE DURUM KONTROLÜ ---
-        // --- GÜNCELLENMİŞ GEÇMİŞ FONKSİYONU ---
+        // --- GEÇMİŞ VE DURUM KONTROLÜ (DÜZELTİLDİ) ---
         async function openHistory() {
             openModal('historyModal');
             const list = document.getElementById('historyList');
@@ -313,36 +337,43 @@
             try {
                 const token = localStorage.getItem("token");
                 const res = await fetch("/api/users/me", {headers:{"Authorization":`Bearer ${token}`}});
+                if(!res.ok) { list.innerHTML = '<p style="color:red; text-align:center;">Veri alınamadı.</p>'; return; }
+
                 const user = await res.json();
                 
-                if(!user.analyses || user.analyses.length === 0) {
+                // VERİLERİ GLOBALE KAYDET (Hata Çözümü)
+                currentUserAnalyses = user.analyses || [];
+
+                if(currentUserAnalyses.length === 0) {
                     list.innerHTML = '<p style="padding:20px; text-align:center;">Henüz analiz yok.</p>';
-                    return;
-                }
-                if(!res.ok) {
-                    // Hatayı ekrana bas ki görelim
-                    let err = await res.json(); 
-                    list.innerHTML = `<p style="padding:20px; text-align:center; color:red;">Hata: ${err.detail || "Veri alınamadı"}</p>`;
                     return;
                 }
 
                 list.innerHTML = "";
-                user.analyses.forEach(a => {
-                    // ARTIK BEKLEME YOK, DİREKT OKU BUTONU VAR
-                    let btnHtml = `<button class="h-btn btn-view" onclick="showResult('${encodeURIComponent(a.result_text)}')">Sonucu Oku</button>`;
+                
+                // index parametresi ile döngü
+                currentUserAnalyses.forEach((a, index) => {
+                    // Tarih Düzeltme (UTC -> TR)
+                    let tarihStr = "Tarih Yok";
+                    if(a.created_at) {
+                        let rawDate = a.created_at.endsWith("Z") ? a.created_at : a.created_at + "Z";
+                        tarihStr = new Date(rawDate).toLocaleString('tr-TR', {
+                            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                        });
+                    }
 
-                    // Tarihi Formatla
-                    let tarih = new Date(a.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    // BUTON: Artık metni değil, index numarasını gönderiyoruz
+                    let btnHtml = `<button class="h-btn btn-view" onclick="openResultByIndex(${index})">Sonucu Oku</button>`;
 
                     list.innerHTML += `
                         <div class="h-item">
                             <div class="h-info">
                                 <div style="font-weight:bold;">${a.analysis_type === 'ISIM' ? 'İsim Analizi' : 'Rüya Yorumu'}</div>
                                 <div style="font-size:0.8rem; color:#888;">${a.input_text.substring(0,25)}...</div>
-                                <div style="font-size:0.7rem; color:#aaa;">${tarih}</div>
+                                <div style="font-size:0.7rem; color:#aaa;">${tarihStr}</div>
                             </div>
                             <div style="text-align:right;">
-                                <span class="h-status status-ready"><i class="fa-solid fa-check"></i> Tamamlandı</span>
+                                <span class="h-status status-ready"><i class="fa-solid fa-check"></i> Hazır</span>
                                 ${btnHtml}
                             </div>
                         </div>
@@ -351,27 +382,33 @@
             } catch(e) { list.innerHTML = "Hata oluştu."; }
         }
 
-        // --- DAKTİLO EFEKTİ ---
-        let typeInterval;
-        function showResult(encodedText) {
+        // --- YENİ SONUÇ GÖSTERME FONKSİYONU ---
+        function openResultByIndex(index) {
+            const analiz = currentUserAnalyses[index];
+            if(!analiz) return;
+
             closeModal('historyModal');
             openModal('resultModal');
+
+            document.getElementById('resultTitle').innerText = 
+                analiz.analysis_type === 'ISIM' ? 'İsim Karakter Analizi' : 'Rüya Tabiri Raporu';
             
-            const text = decodeURIComponent(encodedText);
+            const text = analiz.result_text;
             const container = document.getElementById('typewriterArea');
-            container.innerHTML = "";
+            container.innerHTML = ""; 
             
             let i = 0;
             clearInterval(typeInterval);
 
+            // Hızlı Daktilo Efekti
             typeInterval = setInterval(() => {
                 container.innerHTML += text.charAt(i);
                 container.scrollTop = container.scrollHeight;
                 i++;
-                if (i > text.length) clearInterval(typeInterval);
-            }, 30);
+                if (i >= text.length) clearInterval(typeInterval);
+            }, 10);
         }
-        
+
         function copyResult() {
             const text = document.getElementById('typewriterArea').innerText;
             navigator.clipboard.writeText(text);
@@ -389,7 +426,6 @@
             document.getElementById("member-tools").style.display = "grid";
         }
 
-        // --- GÜNCELLENMİŞ GİRİŞ VE KAYIT (HATA YAKALAMA EKLENDİ) ---
         async function login() {
             const email = document.getElementById("loginEmail").value;
             const pass = document.getElementById("loginPass").value;
@@ -403,36 +439,29 @@
                     window.location.reload();
                 } else {
                     let errorData = await res.json();
-                    alert("Giriş Yapılamadı: " + (errorData.detail || "Bilinmeyen hata"));
+                    alert("Giriş Yapılamadı: " + (errorData.detail || "Hata"));
                 }
-            } catch(e) { 
-                alert("Sunucuya ulaşılamıyor. İnternetinizi kontrol edin."); 
-            }
+            } catch(e) { alert("Bağlantı hatası."); }
         }
 
         async function register() {
             let email = document.getElementById("regEmail").value;
             let pass = document.getElementById("regPass").value;
-            
             try {
                 let res = await fetch("/api/register", {
                     method:"POST", 
                     headers:{"Content-Type":"application/json"}, 
                     body:JSON.stringify({email, password:pass})
                 });
-                
                 if(res.ok) { 
-                    alert("Kayıt Başarılı! Şimdi giriş yapabilirsiniz."); 
+                    alert("Kayıt Başarılı! Giriş yapabilirsiniz."); 
                     closeModal('registerModal');
                     openModal('loginModal');
                 } else {
-                    // İŞTE BURASI: Hatayı artık göreceğiz
                     let errorData = await res.json();
-                    alert("Kayıt Başarısız: " + (errorData.detail || "Bilinmeyen hata"));
+                    alert("Kayıt Başarısız: " + (errorData.detail || "Hata"));
                 }
-            } catch(e) {
-                alert("Kayıt sırasında bağlantı hatası oluştu.");
-            }
+            } catch(e) { alert("Bağlantı hatası."); }
         }
 
         function logout() { localStorage.removeItem("token"); window.location.reload(); }
