@@ -240,37 +240,67 @@
             const token = localStorage.getItem("token");
             if(!token) return openModal('loginModal');
 
-            let fd = new FormData();
-            let mentorName = "";
+            // 1. BUTONU BUL VE KİLİTLE (Kasma hissini önler)
+            let btn;
+            let originalText;
+            if(type === 'isim') {
+                btn = document.querySelector('#member-tools .tool-card:nth-child(1) .submit-btn');
+            } else {
+                btn = document.querySelector('#member-tools .tool-card:nth-child(2) .submit-btn');
+            }
+            if(btn) {
+                originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uzman İnceliyor...';
+            }
 
+            // Verileri Hazırla
+            let fd = new FormData();
+            let url = "";
+            
             if(type === 'isim') {
                 const isim = document.getElementById('isim').value;
                 const soyisim = document.getElementById('soyisim').value;
                 const mentor = document.getElementById('isim_mentor').value;
-                if(!isim) return alert("İsim giriniz");
+                if(!isim) { alert("İsim giriniz"); if(btn) {btn.disabled=false; btn.innerHTML=originalText;} return; }
                 fd.append("isim", isim);
                 fd.append("soyisim", soyisim);
                 fd.append("mentor", mentor);
-                mentorName = mentor === 'yahya' ? "Yahya Bey" : (mentor === 'asli' ? "Aslı Hanım" : "Dr. Mustafa");
-                
-                await fetch("/api/isim-analizi-yap", {method:"POST", headers:{"Authorization":`Bearer ${token}`}, body:fd});
-            
+                url = "/api/isim-analizi-yap";
             } else {
                 const ruya = document.getElementById('ruya-metni').value;
                 const mentor = document.getElementById('ruya_mentor').value;
-                if(!ruya) return alert("Rüya giriniz");
+                if(!ruya) { alert("Rüya giriniz"); if(btn) {btn.disabled=false; btn.innerHTML=originalText;} return; }
                 fd.append("ruya_metni", ruya);
                 fd.append("mentor", mentor);
-                mentorName = mentor === 'yahya' ? "Yahya Bey" : (mentor === 'asli' ? "Aslı Hanım" : "Dr. Mustafa");
-                
-                await fetch("/api/ruya-analizi", {method:"POST", headers:{"Authorization":`Bearer ${token}`}, body:fd});
+                url = "/api/ruya-analizi";
             }
 
-            document.getElementById("successMsg").innerText = `${mentorName} talebinizi aldı. Dosyanız sıraya alındı ve inceleniyor. 10 dakika sonra sonucunuz hazır olacak.`;
-            openModal('successModal');
-            
-            if(document.getElementById('isim')) document.getElementById('isim').value = "";
-            if(document.getElementById('ruya-metni')) document.getElementById('ruya-metni').value = "";
+            try {
+                // İsteği Gönder (Bu sırada buton dönüyor olacak)
+                let res = await fetch(url, {method:"POST", headers:{"Authorization":`Bearer ${token}`}, body:fd});
+                
+                // 2. BUTONU ESKİ HALİNE GETİR
+                if(btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+
+                if(res.ok) {
+                    // 3. MESAJI GÜNCELLE (10 dk yazısını kaldırdık)
+                    document.getElementById("successMsg").innerText = "Analiziniz başarıyla tamamlandı! Sonucu hemen 'Analizlerim' menüsünden okuyabilirsiniz.";
+                    openModal('successModal');
+                    
+                    // Inputları temizle
+                    if(document.getElementById('isim')) document.getElementById('isim').value = "";
+                    if(document.getElementById('ruya-metni')) document.getElementById('ruya-metni').value = "";
+                } else {
+                    alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+                }
+            } catch(e) {
+                if(btn) { btn.disabled = false; btn.innerHTML = originalText; }
+                alert("Bağlantı hatası.");
+            }
         }
 
         // --- GEÇMİŞ VE DURUM KONTROLÜ ---
