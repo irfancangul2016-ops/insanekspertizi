@@ -164,12 +164,45 @@
         }
 
         @media (max-width: 768px) { .nav-actions { display: none; } .nav-center { display:none; } .hero h1 { font-size: 2.2rem; } }
+        /* --- RENK DÜZELTME YAMASI --- */
+        
+        /* 1. Inputların içini zorla koyu yap, yazıyı beyaz yap */
+        input, textarea, select {
+            background-color: rgba(0, 0, 0, 0.4) !important; 
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+        /* Tarayıcı otomatik doldurma yapınca arka planı sarı/beyaz yapmasın */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #ffffff;
+            -webkit-box-shadow: 0 0 0px 1000px #24243e inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* 2. Modalların (Giriş/Sonuç Ekranı) arka planını netleştir */
+        .modal-box {
+            background-color: #1e1b4b !important; /* Çok koyu lacivert */
+            color: #ffffff !important;
+            border: 1px solid #6c5ce7;
+        }
+        
+        /* 3. Mentor seçim kutularındaki yazılar okunmuyorsa */
+        .m-option {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #b2bec3;
+        }
+        .m-option.selected {
+            background-color: rgba(108, 92, 231, 0.3);
+            color: #ffffff;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <audio id="bgMusic" loop>
-    <source src="https://cdn.pixabay.com/download/audio/2022/02/07/audio_13b5368314.mp3?filename=cinematic-atmosphere-score-2-22136.mp3" type="audio/mpeg">
-    Tarayıcınız ses elementini desteklemiyor.
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
     </audio>
 
     <div id="musicControl" onclick="toggleMusic()" style="position:fixed; bottom:20px; right:20px; z-index:1000; background:rgba(255,255,255,0.1); backdrop-filter:blur(5px); padding:10px; border-radius:50%; cursor:pointer; border:1px solid rgba(255,255,255,0.2); transition:0.3s;">
@@ -328,7 +361,7 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             const music = document.getElementById('bgMusic');
-            music.volume = 0.2; // SES SEVİYESİ (%20) - Rahatsız etmesin diye kısık
+            music.volume = 0.9; // SES SEVİYESİ (%20) - Rahatsız etmesin diye kısık
             
             // Kullanıcı sayfada herhangi bir yere tıkladığında müziği başlat
             document.body.addEventListener('click', function startMusic() {
