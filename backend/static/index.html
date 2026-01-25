@@ -261,6 +261,59 @@
             background: #6c5ce7;
             color: white;
         }
+        /* --- MİLYAR DOLARLIK UX GÜNCELLEMESİ --- */
+
+        /* 1. Z-INDEX HİYERARŞİSİ (Vercel Standardı) */
+        :root {
+            --z-base: 0;
+            --z-dropdown: 100;
+            --z-modal: 1000;
+            --z-toast: 2000;
+            --z-tooltip: 3000;
+            /* Framer Motion benzeri yaylanma efekti */
+            --spring-easing: cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+
+        /* 2. BUTON MİKRO-ETKİLEŞİMLERİ (Physics-Based) */
+        .btn-base, .tool-card, .h-item, .m-option {
+            transition: transform 0.2s var(--spring-easing), box-shadow 0.2s ease, background-color 0.2s ease !important;
+        }
+        /* Tıklama anında içeri göçme (Tactile Feel) */
+        .btn-base:active, .tool-card:active, .h-item:active {
+            transform: scale(0.96) translateY(2px) !important;
+        }
+        /* Hover durumunda hafif yükselme */
+        .btn-base:hover, .tool-card:hover {
+            transform: scale(1.02) translateY(-2px);
+            box-shadow: 0 10px 20px rgba(108, 92, 231, 0.3);
+        }
+
+        /* 3. SKELETON LOADING (İskelet Yükleme) */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite linear;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .sk-item { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center; }
+        .sk-text-line { height: 12px; width: 60%; margin-bottom: 8px; }
+        .sk-text-short { height: 10px; width: 30%; }
+        .sk-btn { height: 30px; width: 80px; border-radius: 50px; }
+
+        /* 4. AKILLI BOŞ DURUM (Smart Empty State) */
+        .empty-state {
+            text-align: center; padding: 40px 20px;
+            animation: popIn 0.4s var(--spring-easing);
+        }
+        .empty-icon {
+            font-size: 4rem; color: rgba(255,255,255,0.1); margin-bottom: 20px;
+            display: inline-block;
+            transform: rotate(-10deg);
+        }
+        .empty-cta { margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -586,31 +639,74 @@
         }
 
         // --- GEÇMİŞ VE DURUM KONTROLÜ (DÜZELTİLDİ) ---
+        // --- GÜNCELLENMİŞ PREMIUM GEÇMİŞ FONKSİYONU ---
         async function openHistory() {
             openModal('historyModal');
             const list = document.getElementById('historyList');
-            list.innerHTML = '<p style="padding:20px; text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Yükleniyor...</p>';
+            
+            // 1. SKELETON LOADING (YENİ): "Yükleniyor" yazısı yerine bu havalı iskeleti gösteriyoruz
+            let skeletonHTML = "";
+            for(let i=0; i<3; i++) { // 3 tane sahte satır oluşturur
+                skeletonHTML += `
+                    <div class="sk-item">
+                        <div style="flex:1">
+                            <div class="skeleton sk-text-line"></div>
+                            <div class="skeleton sk-text-short"></div>
+                        </div>
+                        <div class="skeleton sk-btn"></div>
+                    </div>
+                `;
+            }
+            list.innerHTML = skeletonHTML;
             
             try {
                 const token = localStorage.getItem("token");
+                
+                // Token Yoksa -> Akıllı Boş Durum
+                if(!token) {
+                    list.innerHTML = renderEmptyState(
+                        "Giriş Yapmalısınız", 
+                        "Geçmiş analizlerinizi görmek için hesabınıza giriş yapın.", 
+                        "Giriş Yap", 
+                        "openModal('loginModal')"
+                    );
+                    return;
+                }
+
                 const res = await fetch("/api/users/me", {headers:{"Authorization":`Bearer ${token}`}});
-                if(!res.ok) { list.innerHTML = '<p style="color:red; text-align:center;">Veri alınamadı.</p>'; return; }
+                
+                // Hata Varsa -> Akıllı Hata Durumu
+                if(!res.ok) { 
+                    list.innerHTML = renderEmptyState(
+                        "Bağlantı Sorunu", 
+                        "Verilerinize şu an ulaşamıyoruz. Lütfen tekrar deneyin.", 
+                        "Tekrar Dene", 
+                        "openHistory()"
+                    ); 
+                    return; 
+                }
 
                 const user = await res.json();
                 
-                // VERİLERİ GLOBALE KAYDET (Hata Çözümü)
+                // VERİLERİ GLOBALE KAYDET (Senin orijinal kodun)
                 currentUserAnalyses = user.analyses || [];
 
+                // Analiz Yoksa -> Akıllı "Hemen Başla" Durumu
                 if(currentUserAnalyses.length === 0) {
-                    list.innerHTML = '<p style="padding:20px; text-align:center;">Henüz analiz yok.</p>';
+                    list.innerHTML = renderEmptyState(
+                        "Henüz Analiz Yok", 
+                        "İlk analizinizi yaptırın ve potansiyelinizi keşfedin.", 
+                        "Hemen Başla", 
+                        "closeModal('historyModal')"
+                    );
                     return;
                 }
 
                 list.innerHTML = "";
                 
-                // index parametresi ile döngü
+                // LİSTELEME (Mevcut mantık + Yeni Tasarım Renkleri)
                 currentUserAnalyses.forEach((a, index) => {
-                    // Tarih Düzeltme (UTC -> TR)
+                    // Tarih Düzeltme (Senin kodun aynen korundu)
                     let tarihStr = "Tarih Yok";
                     if(a.created_at) {
                         let rawDate = a.created_at.endsWith("Z") ? a.created_at : a.created_at + "Z";
@@ -619,24 +715,43 @@
                         });
                     }
 
-                    // BUTON: Artık metni değil, index numarasını gönderiyoruz
-                    let btnHtml = `<button class="h-btn btn-view" onclick="openResultByIndex(${index})">Sonucu Oku</button>`;
+                    // İkon Seçimi
+                    let iconHtml = a.analysis_type === 'ISIM' 
+                        ? '<i class="fa-solid fa-fingerprint" style="color:#a29bfe"></i> İsim Analizi' 
+                        : '<i class="fa-solid fa-moon" style="color:#a29bfe"></i> Rüya Yorumu';
 
                     list.innerHTML += `
-                        <div class="h-item">
+                        <div class="h-item" onclick="openResultByIndex(${index})" style="cursor:pointer;">
                             <div class="h-info">
-                                <div style="font-weight:bold;">${a.analysis_type === 'ISIM' ? 'İsim Analizi' : 'Rüya Yorumu'}</div>
-                                <div style="font-size:0.8rem; color:#888;">${a.input_text.substring(0,25)}...</div>
-                                <div style="font-size:0.7rem; color:#aaa;">${tarihStr}</div>
+                                <div style="font-weight:bold; color:white;">${iconHtml}</div>
+                                <div style="font-size:0.8rem; color:#b2bec3; margin-top:4px;">${a.input_text.substring(0,25)}...</div>
+                                <div style="font-size:0.7rem; color:#636e72; margin-top:2px;">${tarihStr}</div>
                             </div>
                             <div style="text-align:right;">
-                                <span class="h-status status-ready"><i class="fa-solid fa-check"></i> Hazır</span>
-                                ${btnHtml}
+                                <span class="h-status status-ready" style="margin-right:10px;"><i class="fa-solid fa-check"></i> Hazır</span>
+                                <button class="h-btn btn-view">Sonucu Oku</button>
                             </div>
                         </div>
                     `;
                 });
-            } catch(e) { list.innerHTML = "Hata oluştu."; }
+
+            } catch(e) { 
+                console.log(e);
+                list.innerHTML = renderEmptyState("Hata", "Bir şeyler ters gitti.", "Yenile", "window.location.reload()");
+            }
+        }
+
+        // --- YARDIMCI FONKSİYON: BOŞ DURUM TASARIMI (YENİ) ---
+        // Bunu openHistory fonksiyonunun altına ekle
+        function renderEmptyState(title, desc, btnText, btnAction) {
+            return `
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fa-solid fa-scroll"></i></div>
+                    <h3 style="color:#a29bfe; margin-bottom:10px;">${title}</h3>
+                    <p style="color:#b2bec3; font-size:0.9rem; margin-bottom:20px;">${desc}</p>
+                    <button class="btn-base btn-outline" onclick="${btnAction}">${btnText}</button>
+                </div>
+            `;
         }
 
         // --- YENİ SONUÇ GÖSTERME FONKSİYONU ---
