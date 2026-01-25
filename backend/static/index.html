@@ -314,6 +314,12 @@
             transform: rotate(-10deg);
         }
         .empty-cta { margin-top: 20px; }
+        /* İŞLEM MODALI ANİMASYONLARI */
+        @keyframes pulse {
+            0% { transform: scale(1); text-shadow: 0 0 0px rgba(162, 155, 254, 0); }
+            50% { transform: scale(1.1); text-shadow: 0 0 20px rgba(162, 155, 254, 0.5); }
+            100% { transform: scale(1); text-shadow: 0 0 0px rgba(162, 155, 254, 0); }
+        }
     </style>
 </head>
 <body>
@@ -419,7 +425,7 @@
             <div style="font-size:4rem; color:#00b894; margin-bottom:20px;"><i class="fa-regular fa-circle-check"></i></div>
             <h2>Talep İletildi!</h2>
             <p id="successMsg" style="color:#666; margin-bottom:20px;"></p>
-            <p style="font-size:0.9rem; background:#f8f9fa; padding:10px; border-radius:10px;">
+            <p style="font-size:0.9rem; background:#fc0000; padding:10px; border-radius:10px;">
                 <i class="fa-solid fa-bell"></i> Analiz tamamlandığında "Analizlerim" kısmından görüntüleyebilirsiniz.
             </p>
             <button class="submit-btn" onclick="closeModal('successModal')" style="margin-top:20px;">Tamam</button>
@@ -480,7 +486,7 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             const music = document.getElementById('bgMusic');
-            music.volume = 0.05; // SES SEVİYESİ (%20) - Rahatsız etmesin diye kısık
+            music.volume = 0.0001; // SES SEVİYESİ (%20) - Rahatsız etmesin diye kısık
             
             // Kullanıcı sayfada herhangi bir yere tıkladığında müziği başlat
             document.body.addEventListener('click', function startMusic() {
@@ -579,61 +585,106 @@
         }
 
         // --- İSTEK GÖNDERME ---
+        // --- İYİMSER UI SİMÜLASYONLU İSTEK FONKSİYONU ---
         async function submitRequest(type) {
             const token = localStorage.getItem("token");
             if(!token) return openModal('loginModal');
 
-            // 1. BUTONU KİLİTLE
-            let btn;
-            let originalText;
-            if(type === 'isim') {
-                btn = document.querySelector('#member-tools .tool-card:nth-child(1) .submit-btn');
-            } else {
-                btn = document.querySelector('#member-tools .tool-card:nth-child(2) .submit-btn');
-            }
-            if(btn) {
-                originalText = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uzman İnceliyor...';
-            }
-
-            // Verileri Hazırla
+            // 1. VERİLERİ AL
             let fd = new FormData();
             let url = "";
-            
+            let simulationMessages = [];
+
             if(type === 'isim') {
                 const isim = document.getElementById('isim').value;
                 const soyisim = document.getElementById('soyisim').value;
                 const mentor = document.getElementById('isim_mentor').value;
-                if(!isim) { alert("İsim giriniz"); if(btn) {btn.disabled=false; btn.innerHTML=originalText;} return; }
+                if(!isim) { alert("İsim giriniz"); return; }
                 fd.append("isim", isim);
                 fd.append("soyisim", soyisim);
                 fd.append("mentor", mentor);
                 url = "/api/isim-analizi-yap";
+                
+                // İsim Analizi için Özel Mesajlar
+                simulationMessages = [
+                    "İsim harfleri analiz ediliyor...",
+                    "Ebced değerleri hesaplanıyor...",
+                    "Karakteristik özellikler taranıyor...",
+                    "Rapor hazırlanıyor..."
+                ];
             } else {
                 const ruya = document.getElementById('ruya-metni').value;
                 const mentor = document.getElementById('ruya_mentor').value;
-                if(!ruya) { alert("Rüya giriniz"); if(btn) {btn.disabled=false; btn.innerHTML=originalText;} return; }
+                if(!ruya) { alert("Rüya giriniz"); return; }
                 fd.append("ruya_metni", ruya);
                 fd.append("mentor", mentor);
                 url = "/api/ruya-analizi";
+
+                // Rüya Analizi için Özel Mesajlar
+                simulationMessages = [
+                    "Rüya metni yapay zekaya iletiliyor...",
+                    "Bilinçaltı sembolleri ayrıştırılıyor...",
+                    "İslami kaynaklar taranıyor...",
+                    "Rüya tabiri oluşturuluyor..."
+                ];
             }
 
+            // 2. İŞLEM MODALINI AÇ VE SİMÜLASYONU BAŞLAT
+            openModal('processingModal');
+            let progress = 0;
+            const bar = document.getElementById('progressBar');
+            const percentTxt = document.getElementById('progressPercent');
+            const statusTxt = document.getElementById('processText');
+            
+            // Simülasyon Zamanlayıcısı (Gerçek API yanıt verene kadar döner)
+            let simInterval = setInterval(() => {
+                // %90'a kadar yavaşça ilerle, orada bekle
+                if(progress < 90) {
+                    progress += Math.random() * 5; // Rastgele artış
+                    if(progress > 90) progress = 90;
+                    
+                    bar.style.width = progress + "%";
+                    percentTxt.innerText = Math.floor(progress) + "%";
+                    
+                    // Mesajları ilerlemeye göre değiştir
+                    let msgIndex = Math.floor((progress / 100) * simulationMessages.length);
+                    if(simulationMessages[msgIndex]) {
+                        statusTxt.innerText = simulationMessages[msgIndex];
+                    }
+                }
+            }, 500); // Yarım saniyede bir güncelle
+
             try {
+                // 3. GERÇEK İSTEĞİ GÖNDER (Arka planda)
                 let res = await fetch(url, {method:"POST", headers:{"Authorization":`Bearer ${token}`}, body:fd});
                 
-                if(btn) { btn.disabled = false; btn.innerHTML = originalText; }
+                // 4. İŞLEM BİTTİ, SİMÜLASYONU TAMAMLA
+                clearInterval(simInterval);
+                bar.style.width = "100%";
+                percentTxt.innerText = "100%";
+                statusTxt.innerText = "İşlem Tamamlandı!";
 
-                if(res.ok) {
-                    document.getElementById("successMsg").innerText = "Analiziniz tamamlandı! 'Analizlerim' menüsünden hemen okuyabilirsiniz.";
-                    openModal('successModal');
-                    if(document.getElementById('isim')) document.getElementById('isim').value = "";
-                    if(document.getElementById('ruya-metni')) document.getElementById('ruya-metni').value = "";
-                } else {
-                    alert("Bir hata oluştu.");
-                }
+                // Kısa bir bekleme (kullanıcı %100'ü görsün)
+                setTimeout(async () => {
+                    closeModal('processingModal'); // Yükleme ekranını kapat
+
+                    if(res.ok) {
+                        // Başarılı!
+                        document.getElementById("successMsg").innerText = "Analiziniz başarıyla tamamlandı!";
+                        openModal('successModal');
+                        
+                        // Inputları temizle
+                        if(document.getElementById('isim')) document.getElementById('isim').value = "";
+                        if(document.getElementById('ruya-metni')) document.getElementById('ruya-metni').value = "";
+                    } else {
+                        // Hata
+                        alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+                    }
+                }, 800);
+
             } catch(e) {
-                if(btn) { btn.disabled = false; btn.innerHTML = originalText; }
+                clearInterval(simInterval);
+                closeModal('processingModal');
                 alert("Bağlantı hatası.");
             }
         }
@@ -876,6 +927,24 @@
             <div style="font-size: 40px; color: #fff; font-weight: bold; margin-bottom: 20px;">Senin Rüyaların Ne Söylüyor?</div>
             <div style="background: white; color: #0f0c29; padding: 15px 40px; border-radius: 50px; font-size: 35px; font-weight: 800; display: inline-block;">
                 insanekspertizi.org
+            </div>
+        </div>
+    </div>
+    <div id="processingModal" class="modal-overlay" style="z-index: 9999;">
+        <div class="modal-box" style="text-align:center; max-width:400px;">
+            <div style="font-size: 3rem; color:#a29bfe; margin-bottom:20px; animation: pulse 1.5s infinite;">
+                <i class="fa-solid fa-microchip"></i>
+            </div>
+            
+            <h3 id="processTitle" style="margin-bottom:10px; color:white;">Analiz Başlatılıyor...</h3>
+            <p id="processText" style="color:#b2bec3; font-size:0.9rem; margin-bottom:20px;">Veriler güvenli sunucuya iletiliyor...</p>
+            
+            <div style="background:rgba(255,255,255,0.1); border-radius:10px; height:8px; width:100%; overflow:hidden; position:relative;">
+                <div id="progressBar" style="width:0%; height:100%; background: linear-gradient(90deg, #6c5ce7, #a29bfe); transition: width 0.5s ease; border-radius:10px;"></div>
+            </div>
+            
+            <div style="margin-top:10px; font-size:0.8rem; color:#636e72; text-align:right;">
+                <span id="progressPercent">0%</span>
             </div>
         </div>
     </div>
