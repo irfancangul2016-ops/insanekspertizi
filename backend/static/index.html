@@ -320,6 +320,46 @@
             50% { transform: scale(1.1); text-shadow: 0 0 20px rgba(162, 155, 254, 0.5); }
             100% { transform: scale(1); text-shadow: 0 0 0px rgba(162, 155, 254, 0); }
         }
+        /* --- MÜHENDİSLİK STANDARTLARI (PERFORMANS & HİYERARŞİ) --- */
+
+        :root {
+            /* Vercel Standardı Katmanlama */
+            --z-negative: -1;
+            --z-base: 0;
+            --z-nav: 100;      /* Menü */
+            --z-dropdown: 200; 
+            --z-modal: 1000;   /* Pencereler */
+            --z-overlay: 999;  /* Karartma perdesi */
+            --z-toast: 2000;   /* Bildirimler */
+            --z-max: 9999;     /* Çarpı butonu, Mouse imleci vb. */
+        }
+
+        /* 1. GLASSMORPHISM PERFORMANS OPTİMİZASYONU */
+        /* 'contain: paint' komutu tarayıcıya "Sadece bu kutunun içini bulanıklaştır, tüm sayfayı yorma" der */
+        .tool-card, .modal-box, nav, .post-card {
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            contain: paint; /* GPU'yu rahatlatır */
+        }
+
+        /* 2. Z-INDEX DÜZELTMELERİ (Rastgele sayılar yerine değişkenler) */
+        nav { 
+            z-index: var(--z-nav) !important; 
+        }
+        
+        .modal-overlay, #processingModal { 
+            z-index: var(--z-modal) !important; 
+        }
+
+        /* Çarpı butonu her zaman modalın üstünde olmalı */
+        .close-modal { 
+            z-index: var(--z-max) !important; 
+        }
+
+        /* Bildirim balonları en üstte */
+        #successModal {
+            z-index: var(--z-toast) !important;
+        }
     </style>
 </head>
 <body>
@@ -486,7 +526,7 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             const music = document.getElementById('bgMusic');
-            music.volume = 0.0001; // SES SEVİYESİ (%20) - Rahatsız etmesin diye kısık
+            music.volume = 0.005; // SES SEVİYESİ (%20) - Rahatsız etmesin diye kısık
             
             // Kullanıcı sayfada herhangi bir yere tıkladığında müziği başlat
             document.body.addEventListener('click', function startMusic() {
@@ -743,13 +783,27 @@
                 currentUserAnalyses = user.analyses || [];
 
                 // Analiz Yoksa -> Akıllı "Hemen Başla" Durumu
+                // --- AKILLI BOŞ DURUM (GÜNCELLENMİŞ VERSİYON) ---
                 if(currentUserAnalyses.length === 0) {
-                    list.innerHTML = renderEmptyState(
-                        "Henüz Analiz Yok", 
-                        "İlk analizinizi yaptırın ve potansiyelinizi keşfedin.", 
-                        "Hemen Başla", 
-                        "closeModal('historyModal')"
-                    );
+                    list.innerHTML = `
+                        <div class="empty-state" style="animation: popIn 0.5s var(--spring-easing);">
+                            <div class="empty-icon"><i class="fa-solid fa-wand-magic-sparkles" style="color:#a29bfe;"></i></div>
+                            <h3 style="color:white; margin-bottom:5px;">Henüz Analiz Yok</h3>
+                            <p style="color:#b2bec3; font-size:0.9rem; margin-bottom:20px;">İlk analizinizi yapın, sonuçlarınız böyle görünsün:</p>
+                            
+                            <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; text-align:left; margin-bottom:20px; border:1px dashed #6c5ce7; position:relative; overflow:hidden;">
+                                <div style="position:absolute; top:10px; right:10px; background:#6c5ce7; color:white; font-size:0.6rem; padding:2px 8px; border-radius:4px;">ÖRNEK</div>
+                                <div style="font-weight:bold; color:#a29bfe; font-size:0.9rem; margin-bottom:5px;"><i class="fa-solid fa-fingerprint"></i> İsim Analizi</div>
+                                <div style="color:#dfe6e9; font-size:0.8rem; line-height:1.4;">
+                                    "İsminizdeki 'A' harfi liderlik vasfını, 'K' harfi ise güçlü sezgileri temsil ediyor..."
+                                </div>
+                                <div style="margin-top:10px; height:6px; background:rgba(255,255,255,0.1); border-radius:4px; width:80%;"></div>
+                                <div style="margin-top:5px; height:6px; background:rgba(255,255,255,0.1); border-radius:4px; width:60%;"></div>
+                            </div>
+
+                            <button class="btn-base btn-fill" onclick="closeModal('historyModal')">Kendi Analizini Gör</button>
+                        </div>
+                    `;
                     return;
                 }
 
@@ -940,7 +994,7 @@
             <p id="processText" style="color:#b2bec3; font-size:0.9rem; margin-bottom:20px;">Veriler güvenli sunucuya iletiliyor...</p>
             
             <div style="background:rgba(255,255,255,0.1); border-radius:10px; height:8px; width:100%; overflow:hidden; position:relative;">
-                <div id="progressBar" style="width:0%; height:100%; background: linear-gradient(90deg, #6c5ce7, #a29bfe); transition: width 0.5s ease; border-radius:10px;"></div>
+                <div id="progressBar" style="width:0%; height:100%; background: linear-gradient(90deg, #6c5ce7, #a29bfe); transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>
             </div>
             
             <div style="margin-top:10px; font-size:0.8rem; color:#636e72; text-align:right;">
