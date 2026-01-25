@@ -11,6 +11,29 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
+        /* KOMUT PALETİ STİLLERİ */
+        .cmd-item {
+            padding: 12px 15px;
+            display: flex; align-items: center;
+            color: #b2bec3;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.1s;
+        }
+        .cmd-item:hover {
+            background: rgba(108, 92, 231, 0.2);
+            color: white;
+        }
+        .cmd-item i { width: 25px; color: #a29bfe; }
+        .cmd-key {
+            margin-left: auto;
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            min-width: 20px;
+            text-align: center;
+        }
         @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
         /* --- KOZMİK PREMIUM TEMA --- */
         :root { 
@@ -367,6 +390,33 @@
     <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
     </audio>
 
+    <div id="commandPalette" class="modal-overlay" style="align-items:flex-start; padding-top:100px;">
+        <div class="modal-box" style="width:600px; max-width:90%; padding:0; overflow:hidden; border:1px solid #6c5ce7; box-shadow:0 0 50px rgba(108, 92, 231, 0.4);">
+            <div style="padding:15px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center;">
+                <i class="fa-solid fa-magnifying-glass" style="color:#a29bfe; margin-right:10px;"></i>
+                <input type="text" placeholder="Ne yapmak istiyorsun? (Örn: Rüya, İsim, Geçmiş...)" 
+                       style="border:none !important; background:transparent !important; box-shadow:none !important; padding:0; font-size:1.1rem; height:auto;"
+                       id="cmdInput">
+                <span style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; font-size:0.7rem; color:#b2bec3;">ESC</span>
+            </div>
+            
+            <div style="padding:10px;" id="cmdList">
+                <div class="cmd-item" onclick="closeModal('commandPalette'); document.getElementById('ruya-tab').click(); document.getElementById('ruya-metni').focus();">
+                    <i class="fa-solid fa-moon"></i> <span>Rüya Yorumla</span> <span class="cmd-key">R</span>
+                </div>
+                <div class="cmd-item" onclick="closeModal('commandPalette'); document.getElementById('isim-tab').click(); document.getElementById('isim').focus();">
+                    <i class="fa-solid fa-fingerprint"></i> <span>İsim Analizi Yap</span> <span class="cmd-key">İ</span>
+                </div>
+                <div class="cmd-item" onclick="closeModal('commandPalette'); openHistory();">
+                    <i class="fa-solid fa-clock-rotate-left"></i> <span>Geçmiş Analizlerim</span> <span class="cmd-key">G</span>
+                </div>
+                <div class="cmd-item" onclick="closeModal('commandPalette'); window.location.href='/blog';">
+                    <i class="fa-solid fa-feather"></i> <span>Blog Yazılarını Oku</span> <span class="cmd-key">B</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="musicControl" onclick="toggleMusic()" style="position:fixed; bottom:20px; right:20px; z-index:1000; background:rgba(255,255,255,0.1); backdrop-filter:blur(5px); padding:10px; border-radius:50%; cursor:pointer; border:1px solid rgba(255,255,255,0.2); transition:0.3s;">
         <i id="musicIcon" class="fa-solid fa-volume-xmark" style="color:white; font-size:1.2rem; width:20px; text-align:center;"></i>
     </div>
@@ -540,6 +590,33 @@
                     document.body.removeEventListener('click', startMusic);
                 }
             });
+            // --- KLAVYE KISAYOLLARI (Command Palette & Navigasyon) ---
+        document.addEventListener('keydown', (e) => {
+            
+            // 1. ESC: Tüm modalları kapat
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+            }
+
+            // 2. CMD+K veya CTRL+K: Komut Paletini Aç
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault(); // Tarayıcının arama çubuğunu engelle
+                openModal('commandPalette');
+                document.getElementById('cmdInput').focus();
+            }
+
+            // 3. "/" TUŞU: Arama veya Inputa Odaklan (Eğer yazı yazmıyorsak)
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                // O an hangi sekme açıksa onun inputuna git
+                let visibleInput = document.getElementById('ruya-metni').offsetParent ? 'ruya-metni' : 'isim';
+                document.getElementById(visibleInput).focus();
+            }
+        });
+
+        // --- SEKME GEÇİŞLERİ İÇİN UFAK BİR DÜZELTME ---
+        // (Eğer sekme değiştirme kodun yoksa veya butonlara ID vermediysen, 
+        // HTML'deki butonlarına id="isim-tab" ve id="ruya-tab" eklemeyi unutma)
         });
 
         function toggleMusic() {
