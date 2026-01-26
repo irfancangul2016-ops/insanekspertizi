@@ -9,6 +9,9 @@ from typing import List
 from sqlalchemy import desc
 # Pydantic modelleri için
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Modül yollarını ayarla
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -43,6 +46,9 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="İnsan Ekspertizi")
 
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -138,6 +144,7 @@ def get_me(request: Request, db: Session = Depends(get_db)):
         "analyses": analiz_listesi
     }
 @app.post("/api/isim-analizi-yap")
+@limiter.limit("5/minute")
 async def isim_analiz(request: Request, 
                       isim: str = Form(...), 
                       soyisim: str = Form(...), 
@@ -154,6 +161,7 @@ async def isim_analiz(request: Request,
     except Exception as e: return JSONResponse({"hata": str(e)}, status_code=500)
 
 @app.post("/api/ruya-analizi")
+@limiter.limit("5/minute")
 async def ruya_analiz(request: Request, 
                       ruya_metni: str = Form(...), 
                       mentor: str = Form("yahya"), # <--- YENİ EKLENDİ

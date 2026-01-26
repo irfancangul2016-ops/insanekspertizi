@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İnsan Ekspertizi | Premium Analiz</title>
@@ -383,6 +384,91 @@
         #successModal {
             z-index: var(--z-toast) !important;
         }
+        /* PROFİL VE ROZET SİSTEMİ */
+        .profile-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(162, 155, 254, 0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Parlayan Rozet Efekti */
+        .badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(90deg, #fd79a8, #e84393);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(232, 67, 147, 0.4);
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .stat-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;
+        }
+        .stat-box {
+            background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px;
+        }
+        .stat-num { font-size: 1.5rem; font-weight: bold; color: #a29bfe; }
+        .stat-label { font-size: 0.75rem; color: #b2bec3; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+        /* --- PROFİL VE OYUNLAŞTIRMA STİLLERİ --- */
+        .profile-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(162, 155, 254, 0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        /* Parlayan Rozet Efekti */
+        .badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(90deg, #fd79a8, #e84393);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(232, 67, 147, 0.4);
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        /* İstatistik Kutuları */
+        .stat-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;
+        }
+        .stat-box {
+            background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: 0.2s;
+        }
+        .stat-box:hover { background: rgba(0,0,0,0.4); transform: translateY(-2px); }
+        .stat-num { font-size: 1.5rem; font-weight: bold; color: #a29bfe; }
+        .stat-label { font-size: 0.75rem; color: #b2bec3; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
     </style>
 </head>
 <body>
@@ -475,7 +561,8 @@
                     </div>
                     <input type="hidden" id="isim_mentor" value="yahya">
                 </div>
-
+                <input type="text" id="honey_trap" name="website_url" tabindex="-1" autocomplete="off" 
+                        style="opacity: 0; position: absolute; top: 0; left: 0; height: 0; width: 0; z-index: -1;">
                 <input type="text" id="isim" placeholder="Adınız">
                 <input type="text" id="soyisim" placeholder="Soyadınız" autocomplete="off" name="user_surname_field">
                 <button class="submit-btn" onclick="submitRequest('isim')">
@@ -707,6 +794,14 @@
             const token = localStorage.getItem("token");
             if(!token) return openModal('loginModal');
 
+            // --- BAL KÜPÜ KONTROLÜ (BOT TUZAĞI) ---
+            const trap = document.getElementById('honey_trap');
+            if (trap && trap.value !== "") {
+                console.log("Bot tespit edildi! 🤖");
+                return; // Sessizce işlemi durdur, botu uyarmana gerek yok.
+            }
+            
+
             // 1. VERİLERİ AL
             let fd = new FormData();
             let url = "";
@@ -789,7 +884,7 @@
                         // Başarılı!
                         document.getElementById("successMsg").innerText = "Analiziniz başarıyla tamamlandı!";
                         openModal('successModal');
-                        
+                        fireConfetti();
                         // Inputları temizle
                         if(document.getElementById('isim')) document.getElementById('isim').value = "";
                         if(document.getElementById('ruya-metni')) document.getElementById('ruya-metni').value = "";
@@ -811,6 +906,92 @@
         async function openHistory() {
             openModal('historyModal');
             const list = document.getElementById('historyList');
+            // --- GÜNCELLENMİŞ PROFİL & GEÇMİŞ FONKSİYONU ---
+        async function openHistory() {
+            openModal('historyModal');
+            const list = document.getElementById('historyList');
+            
+            // Yükleniyor İskeleti
+            list.innerHTML = `<div class="skeleton" style="height:150px; margin-bottom:20px;"></div>` + 
+                             `<div class="sk-item"><div class="skeleton sk-text-line"></div></div>`.repeat(3);
+            
+            try {
+                const token = localStorage.getItem("token");
+                if(!token) {
+                    list.innerHTML = renderEmptyState("Giriş Yapmalısınız", "Profilinizi görmek için giriş yapın.", "Giriş Yap", "openModal('loginModal')");
+                    return;
+                }
+
+                const res = await fetch("/api/users/me", {headers:{"Authorization":`Bearer ${token}`}});
+                if(!res.ok) throw new Error("Hata");
+
+                const user = await res.json();
+                currentUserAnalyses = user.analyses || [];
+                const userEmail = user.email.split('@')[0]; // @ işaretinden öncesini al (Ad gibi kullan)
+
+                // --- 1. OYUNLAŞTIRMA: PROFİL KARTI OLUŞTUR ---
+                // Herkese otomatik "Erken Erişim" rozeti veriyoruz.
+                // Analiz sayısına göre unvanı değiştiriyoruz.
+                let unvan = "Meraklı Ruh";
+                let count = currentUserAnalyses.length;
+                if(count > 2) unvan = "Rüya Gezgini";
+                if(count > 5) unvan = "Analiz Üstadı";
+                
+                let profileHTML = `
+                    <div class="profile-card">
+                        <div class="badge"><i class="fa-solid fa-star"></i> Erken Erişim Üyesi</div>
+                        <h2 style="color:white; margin:0; text-transform:capitalize;">${userEmail}</h2>
+                        <div style="color:#a29bfe; font-size:0.9rem; margin-top:5px;">${unvan}</div>
+                        
+                        <div class="stat-grid">
+                            <div class="stat-box">
+                                <div class="stat-num">${count}</div>
+                                <div class="stat-label">Toplam Analiz</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-num">1. Seviye</div>
+                                <div class="stat-label">Üyelik Durumu</div>
+                            </div>
+                        </div>
+                    </div>
+                    <h4 style="color:#dfe6e9; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">Son İşlemler</h4>
+                `;
+
+                // --- 2. LİSTEYİ OLUŞTUR ---
+                if(count === 0) {
+                    // (Buraya daha önce yaptığımız Akıllı Boş Durum kodu gelecek)
+                    // Kısaca:
+                    list.innerHTML = profileHTML + renderEmptyState("Henüz Analiz Yok", "İlk analizini yap, istatistiklerin yükselsin!", "Hemen Başla", "closeModal('historyModal')");
+                } else {
+                    let historyHTML = "";
+                    currentUserAnalyses.forEach((a, index) => {
+                        // ... (Eski liste oluşturma kodun aynen buraya) ...
+                        let tarihStr = new Date(a.created_at).toLocaleString('tr-TR', {day:'2-digit', month:'2-digit'});
+                        let iconHtml = a.analysis_type === 'ISIM' 
+                            ? '<i class="fa-solid fa-fingerprint" style="color:#a29bfe"></i>' 
+                            : '<i class="fa-solid fa-moon" style="color:#a29bfe"></i>';
+                            
+                        historyHTML += `
+                            <div class="h-item" onclick="openResultByIndex(${index})">
+                                <div style="display:flex; align-items:center; gap:15px;">
+                                    <div style="font-size:1.2rem; background:rgba(255,255,255,0.05); width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:50%;">${iconHtml}</div>
+                                    <div>
+                                        <div style="color:white; font-weight:500;">${a.analysis_type === 'ISIM' ? 'İsim Analizi' : 'Rüya Yorumu'}</div>
+                                        <div style="color:#636e72; font-size:0.8rem;">${tarihStr}</div>
+                                    </div>
+                                </div>
+                                <button class="btn-base btn-outline" style="padding:5px 15px; font-size:0.8rem;">İncele</button>
+                            </div>
+                        `;
+                    });
+                    list.innerHTML = profileHTML + historyHTML;
+                }
+
+            } catch(e) {
+                console.log(e);
+                list.innerHTML = renderEmptyState("Hata", "Profil yüklenemedi.", "Yenile", "openHistory()");
+            }
+            }
             
             // 1. SKELETON LOADING (YENİ): "Yükleniyor" yazısı yerine bu havalı iskeleti gösteriyoruz
             let skeletonHTML = "";
@@ -1019,6 +1200,26 @@
         }
 
         function logout() { localStorage.removeItem("token"); window.location.reload(); }
+        // --- KUTLAMA EFEKTİ (CONFETTI) ---
+        function fireConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 99999 };
+
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) { return clearInterval(interval); }
+
+                var particleCount = 50 * (timeLeft / duration);
+                
+                // Ekranın solundan ve sağından rastgele fırlat
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
     </script>
     <div id="storyTemplate" style="
         position: fixed; left: -9999px; top: 0; 
