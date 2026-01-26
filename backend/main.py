@@ -14,6 +14,10 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
 from models import User, Analysis, BlogPost
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from database import Base
 # ... diğer importlar ...
 # Modül yollarını ayarla
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -33,18 +37,42 @@ import dto
 from services.auth import AuthService
 from services.ai_writer import AIWriter
 
-# --- BYPASS: BLOG POST MODELİ (Main İçinde) ---
-class BlogPost(models.Base):
+class User(Base):
+    __tablename__ = "users"
+    # 👇 BU SATIRI EKLE (Hata Çözücü)
+    __table_args__ = {'extend_existing': True} 
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    password_hash = Column(String)
+    
+    analyses = relationship("Analysis", back_populates="owner")
+
+class Analysis(Base):
+    __tablename__ = "analyses"
+    # 👇 BU SATIRI EKLE
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    analysis_type = Column(String) # "ISIM" veya "RUYA"
+    input_text = Column(Text)
+    result_text = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    owner = relationship("User", back_populates="analyses")
+
+class BlogPost(Base):
     __tablename__ = "blog_posts"
+    # 👇 BU SATIRI EKLE
+    __table_args__ = {'extend_existing': True}
+
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
-    slug = Column(String, unique=True, index=True)
     content = Column(Text)
     image_url = Column(String)
     views = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
-
-models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="İnsan Ekspertizi")
 
