@@ -905,239 +905,118 @@
         // --- GEÇMİŞ VE DURUM KONTROLÜ (DÜZELTİLDİ) ---
         // --- GÜNCELLENMİŞ PREMIUM GEÇMİŞ FONKSİYONU ---
         async function openHistory() {
-            openModal('historyModal');
-            const list = document.getElementById('historyList');
-            // --- GÜNCELLENMİŞ PROFİL & GEÇMİŞ FONKSİYONU ---
-        async function openHistory() {
-            openModal('historyModal');
-            const list = document.getElementById('historyList');
-            
-            // Yükleniyor İskeleti
-            list.innerHTML = `<div class="skeleton" style="height:150px; margin-bottom:20px;"></div>` + 
-                             `<div class="sk-item"><div class="skeleton sk-text-line"></div></div>`.repeat(3);
-            
-            try {
-                const token = localStorage.getItem("token");
-                if(!token) {
-                    list.innerHTML = renderEmptyState("Giriş Yapmalısınız", "Profilinizi görmek için giriş yapın.", "Giriş Yap", "openModal('loginModal')");
-                    return;
-                }
-
-                const res = await fetch("/api/users/me", {headers:{"Authorization":`Bearer ${token}`}});
-                if(!res.ok) throw new Error("Hata");
-
-                const user = await res.json();
-                currentUserAnalyses = user.analyses || [];
-                const userEmail = user.email.split('@')[0]; // @ işaretinden öncesini al (Ad gibi kullan)
-
-                // --- 1. OYUNLAŞTIRMA: PROFİL KARTI OLUŞTUR ---
-                // Herkese otomatik "Erken Erişim" rozeti veriyoruz.
-                // Analiz sayısına göre unvanı değiştiriyoruz.
-                let unvan = "Meraklı Ruh";
-                let count = currentUserAnalyses.length;
-                if(count > 2) unvan = "Rüya Gezgini";
-                if(count > 5) unvan = "Analiz Üstadı";
-                
-                let profileHTML = `
-                    <div class="profile-card">
-                        <div class="badge"><i class="fa-solid fa-star"></i> Erken Erişim Üyesi</div>
-                        <h2 style="color:white; margin:0; text-transform:capitalize;">${userEmail}</h2>
-                        <div style="color:#a29bfe; font-size:0.9rem; margin-top:5px;">${unvan}</div>
-                        
-                        <div class="stat-grid">
-                            <div class="stat-box">
-                                <div class="stat-num">${count}</div>
-                                <div class="stat-label">Toplam Analiz</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-num">1. Seviye</div>
-                                <div class="stat-label">Üyelik Durumu</div>
-                            </div>
-                        </div>
-                    </div>
-                    <h4 style="color:#dfe6e9; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">Son İşlemler</h4>
-                `;
-
-                // --- 2. LİSTEYİ OLUŞTUR ---
-                if(count === 0) {
-                    // (Buraya daha önce yaptığımız Akıllı Boş Durum kodu gelecek)
-                    // Kısaca:
-                    list.innerHTML = profileHTML + renderEmptyState("Henüz Analiz Yok", "İlk analizini yap, istatistiklerin yükselsin!", "Hemen Başla", "closeModal('historyModal')");
-                } else {
-                    let historyHTML = "";
-                    currentUserAnalyses.forEach((a, index) => {
-                        // ... (Eski liste oluşturma kodun aynen buraya) ...
-                        let tarihStr = new Date(a.created_at).toLocaleString('tr-TR', {day:'2-digit', month:'2-digit'});
-                        let iconHtml = a.analysis_type === 'ISIM' 
-                            ? '<i class="fa-solid fa-fingerprint" style="color:#a29bfe"></i>' 
-                            : '<i class="fa-solid fa-moon" style="color:#a29bfe"></i>';
-                            
-                        historyHTML += `
-                            <div class="h-item" onclick="openResultByIndex(${index})">
-                                <div style="display:flex; align-items:center; gap:15px;">
-                                    <div style="font-size:1.2rem; background:rgba(255,255,255,0.05); width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:50%;">${iconHtml}</div>
-                                    <div>
-                                        <div style="color:white; font-weight:500;">${a.analysis_type === 'ISIM' ? 'İsim Analizi' : 'Rüya Yorumu'}</div>
-                                        <div style="color:#636e72; font-size:0.8rem;">${tarihStr}</div>
-                                    </div>
-                                </div>
-                                <button class="btn-base btn-outline" style="padding:5px 15px; font-size:0.8rem;">İncele</button>
-                            </div>
-                        `;
-                    });
-                    list.innerHTML = profileHTML + historyHTML;
-                }
-
-            } catch(e) {
-                console.log(e);
-                list.innerHTML = renderEmptyState("Hata", "Profil yüklenemedi.", "Yenile", "openHistory()");
-            }
-            }
-            
-            // 1. SKELETON LOADING (YENİ): "Yükleniyor" yazısı yerine bu havalı iskeleti gösteriyoruz
-            let skeletonHTML = "";
-            for(let i=0; i<3; i++) { // 3 tane sahte satır oluşturur
-                skeletonHTML += `
-                    <div class="sk-item">
-                        <div style="flex:1">
-                            <div class="skeleton sk-text-line"></div>
-                            <div class="skeleton sk-text-short"></div>
-                        </div>
-                        <div class="skeleton sk-btn"></div>
-                    </div>
-                `;
-            }
-            list.innerHTML = skeletonHTML;
-            
-            try {
-                const token = localStorage.getItem("token");
-                
-                // Token Yoksa -> Akıllı Boş Durum
-                if(!token) {
-                    list.innerHTML = renderEmptyState(
-                        "Giriş Yapmalısınız", 
-                        "Geçmiş analizlerinizi görmek için hesabınıza giriş yapın.", 
-                        "Giriş Yap", 
-                        "openModal('loginModal')"
-                    );
-                    return;
-                }
-
-                const res = await fetch("/api/users/me", {headers:{"Authorization":`Bearer ${token}`}});
-                
-                // Hata Varsa -> Akıllı Hata Durumu
-                if(!res.ok) { 
-                    list.innerHTML = renderEmptyState(
-                        "Bağlantı Sorunu", 
-                        "Verilerinize şu an ulaşamıyoruz. Lütfen tekrar deneyin.", 
-                        "Tekrar Dene", 
-                        "openHistory()"
-                    ); 
-                    return; 
-                }
-
-                const user = await res.json();
-                // --- ROZET VE PROFİL HESAPLAMA ---
-                const userEmail = user.email.split('@')[0]; // Mailin başını al
-
-                // Oyunlaştırma Mantığı
-                let count = currentUserAnalyses.length;
-                let unvan = "Meraklı Ruh";
-                let rozet = "Yeni Üye";
-                let rozetIcon = "fa-user";
-                let rozetColor = "linear-gradient(90deg, #b2bec3, #636e72)"; // Gri
-
-                // Seviye Kuralları
-                if(count >= 1) { unvan = "Analist Çırağı"; rozet="Erken Erişim"; rozetColor="linear-gradient(90deg, #fd79a8, #e84393)"; rozetIcon="fa-star"; }
-                if(count >= 5) { unvan = "Rüya Gezgini"; rozet="Sadık Üye"; rozetColor="linear-gradient(90deg, #0984e3, #74b9ff)"; rozetIcon="fa-shield-halved"; }
-                if(count >= 10) { unvan = "Bilinçaltı Üstadı"; rozet="Efsane"; rozetColor="linear-gradient(90deg, #f1c40f, #f39c12)"; rozetIcon="fa-crown"; }
-
-                // HTML Bloğu
-                let profileHTML = `
-                    <div class="profile-card">
-                        <div class="badge" style="background:${rozetColor}"><i class="fa-solid ${rozetIcon}"></i> ${rozet}</div>
-                        <h2 style="color:white; margin:0; text-transform:capitalize;">${userEmail}</h2>
-                        <div style="color:#a29bfe; font-size:0.9rem; margin-top:5px;">${unvan}</div>
-                        
-                        <div class="stat-grid">
-                            <div class="stat-box">
-                                <div class="stat-num">${count}</div>
-                                <div class="stat-label">Toplam Analiz</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-num">Aktif</div>
-                                <div class="stat-label">Hesap Durumu</div>
-                            </div>
-                        </div>
-                    </div>
-                    <h4 style="color:#dfe6e9; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">Son İşlemler</h4>
-                `;
-                // VERİLERİ GLOBALE KAYDET (Senin orijinal kodun)
-                currentUserAnalyses = user.analyses || [];
-
-                // Analiz Yoksa -> Akıllı "Hemen Başla" Durumu
-                // --- AKILLI BOŞ DURUM (GÜNCELLENMİŞ VERSİYON) ---
-                if(currentUserAnalyses.length === 0) {
-                    list.innerHTML = `
-                        <div class="empty-state" style="animation: popIn 0.5s var(--spring-easing);">
-                            <div class="empty-icon"><i class="fa-solid fa-wand-magic-sparkles" style="color:#a29bfe;"></i></div>
-                            <h3 style="color:white; margin-bottom:5px;">Henüz Analiz Yok</h3>
-                            <p style="color:#b2bec3; font-size:0.9rem; margin-bottom:20px;">İlk analizinizi yapın, sonuçlarınız böyle görünsün:</p>
-                            
-                            <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; text-align:left; margin-bottom:20px; border:1px dashed #6c5ce7; position:relative; overflow:hidden;">
-                                <div style="position:absolute; top:10px; right:10px; background:#6c5ce7; color:white; font-size:0.6rem; padding:2px 8px; border-radius:4px;">ÖRNEK</div>
-                                <div style="font-weight:bold; color:#a29bfe; font-size:0.9rem; margin-bottom:5px;"><i class="fa-solid fa-fingerprint"></i> İsim Analizi</div>
-                                <div style="color:#dfe6e9; font-size:0.8rem; line-height:1.4;">
-                                    "İsminizdeki 'A' harfi liderlik vasfını, 'K' harfi ise güçlü sezgileri temsil ediyor..."
-                                </div>
-                                <div style="margin-top:10px; height:6px; background:rgba(255,255,255,0.1); border-radius:4px; width:80%;"></div>
-                                <div style="margin-top:5px; height:6px; background:rgba(255,255,255,0.1); border-radius:4px; width:60%;"></div>
-                            </div>
-
-                            <button class="btn-base btn-fill" onclick="closeModal('historyModal')">Kendi Analizini Gör</button>
-                        </div>
-                    `;
-                    return;
-                }
-
-                list.innerHTML = "";
-                
-                // LİSTELEME (Mevcut mantık + Yeni Tasarım Renkleri)
-                currentUserAnalyses.forEach((a, index) => {
-                    // Tarih Düzeltme (Senin kodun aynen korundu)
-                    let tarihStr = "Tarih Yok";
-                    if(a.created_at) {
-                        let rawDate = a.created_at.endsWith("Z") ? a.created_at : a.created_at + "Z";
-                        tarihStr = new Date(rawDate).toLocaleString('tr-TR', {
-                            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-                        });
-                    }
-
-                    // İkon Seçimi
-                    let iconHtml = a.analysis_type === 'ISIM' 
-                        ? '<i class="fa-solid fa-fingerprint" style="color:#a29bfe"></i> İsim Analizi' 
-                        : '<i class="fa-solid fa-moon" style="color:#a29bfe"></i> Rüya Yorumu';
-
-                    list.innerHTML += `
-                        <div class="h-item" onclick="openResultByIndex(${index})" style="cursor:pointer;">
-                            <div class="h-info">
-                                <div style="font-weight:bold; color:white;">${iconHtml}</div>
-                                <div style="font-size:0.8rem; color:#b2bec3; margin-top:4px;">${a.input_text.substring(0,25)}...</div>
-                                <div style="font-size:0.7rem; color:#636e72; margin-top:2px;">${tarihStr}</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <span class="h-status status-ready" style="margin-right:10px;"><i class="fa-solid fa-check"></i> Hazır</span>
-                                <button class="h-btn btn-view">Sonucu Oku</button>
-                            </div>
-                        </div>
-                    `;
-                });
-
-            } catch(e) { 
-                console.log(e);
-                list.innerHTML = renderEmptyState("Hata", "Bir şeyler ters gitti.", "Yenile", "window.location.reload()");
-            }
+    openModal('historyModal');
+    const list = document.getElementById('historyList');
+    
+    // Yükleniyor İskeleti
+    list.innerHTML = `<div class="skeleton" style="height:150px; margin-bottom:20px;"></div>` + 
+                     `<div class="sk-item"><div class="skeleton sk-text-line"></div></div>`.repeat(3);
+    
+    try {
+        const token = localStorage.getItem("token");
+        if(!token) {
+            list.innerHTML = renderEmptyState("Giriş Yapmalısınız", "Profilinizi görmek için giriş yapın.", "Giriş Yap", "openModal('loginModal')");
+            return;
         }
+
+        const res = await fetch("/api/users/me", {headers:{"Authorization":`Bearer ${token}`}});
+        if(!res.ok) throw new Error("Hata");
+
+        const user = await res.json();
+        currentUserAnalyses = user.analyses || [];
+        const userEmail = user.email.split('@')[0]; 
+
+        // --- OYUNLAŞTIRMA: PROFİL KARTI OLUŞTUR ---
+        let count = currentUserAnalyses.length;
+        let unvan = "Meraklı Ruh";
+        let rozet = "Yeni Üye";
+        let rozetIcon = "fa-user";
+        let rozetColor = "linear-gradient(90deg, #b2bec3, #636e72)"; 
+
+        if(count >= 1) { unvan = "Analist Çırağı"; rozet="Erken Erişim"; rozetColor="linear-gradient(90deg, #fd79a8, #e84393)"; rozetIcon="fa-star"; }
+        if(count >= 5) { unvan = "Rüya Gezgini"; rozet="Sadık Üye"; rozetColor="linear-gradient(90deg, #0984e3, #74b9ff)"; rozetIcon="fa-shield-halved"; }
+        if(count >= 10) { unvan = "Bilinçaltı Üstadı"; rozet="Efsane"; rozetColor="linear-gradient(90deg, #f1c40f, #f39c12)"; rozetIcon="fa-crown"; }
+        
+        let profileHTML = `
+            <div class="profile-card">
+                <div class="badge" style="background:${rozetColor}"><i class="fa-solid ${rozetIcon}"></i> ${rozet}</div>
+                <h2 style="color:white; margin:0; text-transform:capitalize;">${userEmail}</h2>
+                <div style="color:#a29bfe; font-size:0.9rem; margin-top:5px;">${unvan}</div>
+                
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div class="stat-num">${count}</div>
+                        <div class="stat-label">Toplam Analiz</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-num">Aktif</div>
+                        <div class="stat-label">Hesap Durumu</div>
+                    </div>
+                </div>
+            </div>
+            <h4 style="color:#dfe6e9; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">Son İşlemler</h4>
+        `;
+
+        // --- LİSTELEME ---
+        if(count === 0) {
+            // Analiz yoksa: Profil + Örnek Gösterim
+            list.innerHTML = profileHTML + `
+                <div class="empty-state" style="animation: popIn 0.5s var(--spring-easing);">
+                    <div class="empty-icon"><i class="fa-solid fa-wand-magic-sparkles" style="color:#a29bfe;"></i></div>
+                    <h3 style="color:white; margin-bottom:5px;">Henüz Analiz Yok</h3>
+                    <p style="color:#b2bec3; font-size:0.9rem; margin-bottom:20px;">İlk analizinizi yapın, sonuçlarınız böyle görünsün:</p>
+                    
+                    <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; text-align:left; margin-bottom:20px; border:1px dashed #6c5ce7; position:relative; overflow:hidden;">
+                        <div style="position:absolute; top:10px; right:10px; background:#6c5ce7; color:white; font-size:0.6rem; padding:2px 8px; border-radius:4px;">ÖRNEK</div>
+                        <div style="font-weight:bold; color:#a29bfe; font-size:0.9rem; margin-bottom:5px;"><i class="fa-solid fa-fingerprint"></i> İsim Analizi</div>
+                        <div style="color:#dfe6e9; font-size:0.8rem; line-height:1.4;">
+                            "İsminizdeki 'A' harfi liderlik vasfını, 'K' harfi ise güçlü sezgileri temsil ediyor..."
+                        </div>
+                        <div style="margin-top:10px; height:6px; background:rgba(255,255,255,0.1); border-radius:4px; width:80%;"></div>
+                        <div style="margin-top:5px; height:6px; background:rgba(255,255,255,0.1); border-radius:4px; width:60%;"></div>
+                    </div>
+
+                    <button class="btn-base btn-fill" onclick="closeModal('historyModal')">Kendi Analizini Gör</button>
+                </div>
+            `;
+        } else {
+            // Analiz varsa: Önce Profil HTML'i ekle, sonra listeyi döngüye sok
+            list.innerHTML = profileHTML; // <--- DÜZELTME BURADA YAPILDI
+            
+            currentUserAnalyses.forEach((a, index) => {
+                let tarihStr = "Tarih Yok";
+                if(a.created_at) {
+                    let rawDate = a.created_at.endsWith("Z") ? a.created_at : a.created_at + "Z";
+                    tarihStr = new Date(rawDate).toLocaleString('tr-TR', {
+                        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                    });
+                }
+
+                let iconHtml = a.analysis_type === 'ISIM' 
+                    ? '<i class="fa-solid fa-fingerprint" style="color:#a29bfe"></i> İsim Analizi' 
+                    : '<i class="fa-solid fa-moon" style="color:#a29bfe"></i> Rüya Yorumu';
+
+                list.innerHTML += `
+                    <div class="h-item" onclick="openResultByIndex(${index})" style="cursor:pointer;">
+                        <div class="h-info">
+                            <div style="font-weight:bold; color:white;">${iconHtml}</div>
+                            <div style="font-size:0.8rem; color:#b2bec3; margin-top:4px;">${a.input_text.substring(0,25)}...</div>
+                            <div style="font-size:0.7rem; color:#636e72; margin-top:2px;">${tarihStr}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span class="h-status status-ready" style="margin-right:10px;"><i class="fa-solid fa-check"></i> Hazır</span>
+                            <button class="h-btn btn-view">Sonucu Oku</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+    } catch(e) {
+        console.log(e);
+        list.innerHTML = renderEmptyState("Hata", "Profil yüklenemedi.", "Yenile", "openHistory()");
+    }
+}
 
         // --- YARDIMCI FONKSİYON: BOŞ DURUM TASARIMI (YENİ) ---
         // Bunu openHistory fonksiyonunun altına ekle
