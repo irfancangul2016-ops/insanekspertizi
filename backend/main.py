@@ -12,7 +12,9 @@ from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
+from models import User, Analysis, BlogPost
+# ... diğer importlar ...
 # Modül yollarını ayarla
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -313,3 +315,35 @@ def admin(): return FileResponse(os.path.join(STATIC_DIR, "admin.html"))
 @app.get("/blog")
 @app.get("/blog/{slug}")
 def blog(slug: str = None): return FileResponse(os.path.join(STATIC_DIR, "blog.html"))
+
+# --- ADMIN PANELİ API UÇLARI ---
+
+def admin_only(current_user: dict = Depends(get_current_user)):
+    # BURAYA KENDİ MAİL ADRESİNİ YAZ 👇
+    admins = ["irfancangul2016@gmail.com", "admin@insanekspertizi.org"] 
+    
+    if current_user["email"] not in admins:
+        raise HTTPException(status_code=403, detail="Yetersiz Yetki: Sadece adminler girebilir.")
+    return current_user
+
+@app.get("/api/admin/stats")
+def get_admin_stats(user: dict = Depends(admin_only), db: Session = Depends(get_db)):
+    # 1. İstatistikleri Topla
+    total_users = db.query(User).count()
+    total_analyses = db.query(Analysis).count()
+    
+    # 2. Son 10 Analizi Çek
+    recent_analyses = db.query(Analysis).order_by(Analysis.created_at.desc()).limit(10).all()
+    
+    return {
+        "total_users": total_users,
+        "total_analyses": total_analyses,
+        "recent_activity": [
+            {
+                "id": a.id,
+                "type": a.analysis_type,
+                "text": a.input_text[:50] + "...",
+                "date": a.created_at.isoformat() if a.created_at else None
+            } for a in recent_analyses
+        ]
+    }
