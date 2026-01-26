@@ -469,6 +469,7 @@
             50% { transform: translateY(-5px); }
             100% { transform: translateY(0px); }
         }
+        
     </style>
 </head>
 <body>
@@ -1036,7 +1037,41 @@
                 }
 
                 const user = await res.json();
-                
+                // --- ROZET VE PROFİL HESAPLAMA ---
+                const userEmail = user.email.split('@')[0]; // Mailin başını al
+
+                // Oyunlaştırma Mantığı
+                let count = currentUserAnalyses.length;
+                let unvan = "Meraklı Ruh";
+                let rozet = "Yeni Üye";
+                let rozetIcon = "fa-user";
+                let rozetColor = "linear-gradient(90deg, #b2bec3, #636e72)"; // Gri
+
+                // Seviye Kuralları
+                if(count >= 1) { unvan = "Analist Çırağı"; rozet="Erken Erişim"; rozetColor="linear-gradient(90deg, #fd79a8, #e84393)"; rozetIcon="fa-star"; }
+                if(count >= 5) { unvan = "Rüya Gezgini"; rozet="Sadık Üye"; rozetColor="linear-gradient(90deg, #0984e3, #74b9ff)"; rozetIcon="fa-shield-halved"; }
+                if(count >= 10) { unvan = "Bilinçaltı Üstadı"; rozet="Efsane"; rozetColor="linear-gradient(90deg, #f1c40f, #f39c12)"; rozetIcon="fa-crown"; }
+
+                // HTML Bloğu
+                let profileHTML = `
+                    <div class="profile-card">
+                        <div class="badge" style="background:${rozetColor}"><i class="fa-solid ${rozetIcon}"></i> ${rozet}</div>
+                        <h2 style="color:white; margin:0; text-transform:capitalize;">${userEmail}</h2>
+                        <div style="color:#a29bfe; font-size:0.9rem; margin-top:5px;">${unvan}</div>
+                        
+                        <div class="stat-grid">
+                            <div class="stat-box">
+                                <div class="stat-num">${count}</div>
+                                <div class="stat-label">Toplam Analiz</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-num">Aktif</div>
+                                <div class="stat-label">Hesap Durumu</div>
+                            </div>
+                        </div>
+                    </div>
+                    <h4 style="color:#dfe6e9; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">Son İşlemler</h4>
+                `;
                 // VERİLERİ GLOBALE KAYDET (Senin orijinal kodun)
                 currentUserAnalyses = user.analyses || [];
 
