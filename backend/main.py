@@ -33,16 +33,7 @@ import dto
 from services.auth import AuthService
 from services.ai_writer import AIWriter
 
-# --- BYPASS: BLOG POST MODELİ (Main İçinde) ---
-class BlogPost(models.Base):
-    __tablename__ = "blog_posts"
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String)
-    slug = Column(String, unique=True, index=True)
-    content = Column(Text)
-    image_url = Column(String)
-    views = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+
 
 models.Base.metadata.create_all(bind=engine)
 
