@@ -20,26 +20,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # --- TABLO MODELLERİ ---
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    is_active = Column(Boolean, default=True)
-    is_admin = Column(Boolean, default=False) # <--- İŞTE BU EKSİKTİ! GERİ GELDİ.
-    
-    analyses = relationship("Analysis", back_populates="owner")
 
-class Analysis(Base):
-    __tablename__ = "analyses"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    analysis_type = Column(String)
-    input_text = Column(Text)
-    result_text = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    
-    owner = relationship("User", back_populates="analyses")
 
 Base.metadata.create_all(bind=engine)
 
