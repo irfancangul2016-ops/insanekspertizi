@@ -47,14 +47,3 @@ class BlogPost(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-class Analysis(Base):
-    __tablename__ = "analyses"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id")) # Hangi kullanıcıya ait?
-    analysis_type = Column(String) # "ISIM" veya "RUYA"
-    input_text = Column(Text)      # Kullanıcının girdiği (Rüya veya İsim)
-    result_text = Column(Text)     # Yapay Zekanın cevabı
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    owner = relationship("User", back_populates="analyses")
