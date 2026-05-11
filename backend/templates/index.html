@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Ana Sayfa - İnsan Ekspertizi{% endblock %}
+
+{% block content %}
+<section style="text-align: center; padding: 60px 20px;">
+    <h1 style="font-size: 3rem; color: var(--primary-color); margin-bottom: 20px;">Kendini Yeniden Keşfet</h1>
+    <p style="font-size: 1.2rem; color: #94a3b8; max-width: 800px; margin: 0 auto 40px;">
+        Yapay zeka algoritmalarımızla isim analizi yapın, rüyalarınızın derinliklerine inin veya kadim bilgilerin ışığında kendinizi tanıyın.
+    </p>
+
+    <div id="analiz" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 50px;">
+        <div style="background: #1e293b; padding: 30px; border-radius: 20px; border: 1px solid rgba(139, 92, 246, 0.2);">
+            <i class="fa-solid fa-signature" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 20px;"></i>
+            <h3>İsim Analizi</h3>
+            <p style="color: #94a3b8;">İsminin frekansı karakterini nasıl şekillendiriyor? Hemen öğren.</p>
+            <a href="/isim-analizi" style="display: inline-block; margin-top: 20px; color: var(--primary-color); text-decoration: none; font-weight: bold;">Hemen Başla →</a>
+        </div>
+
+        <div style="background: #1e293b; padding: 30px; border-radius: 20px; border: 1px solid rgba(139, 92, 246, 0.2);">
+            <i class="fa-solid fa-moon" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 20px;"></i>
+            <h3>Rüya Tabiri</h3>
+            <p style="color: #94a3b8;">Bilinçaltının sana gönderdiği mesajları yapay zeka ile çöz.</p>
+            <a href="/ruya-tabiri" style="display: inline-block; margin-top: 20px; color: var(--primary-color); text-decoration: none; font-weight: bold;">Tabir Et →</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

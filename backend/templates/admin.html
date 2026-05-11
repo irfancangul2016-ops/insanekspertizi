@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Yönetici Paneli - İnsan Ekspertizi{% endblock %}
+
+{% block content %}
+<div style="padding: 20px;">
+    <h2 style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Analiz Kayıtları</h2>
+    
+    <div style="margin-top: 20px; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 10px; overflow: hidden;">
+            <thead>
+                <tr style="background: var(--primary-color); color: white; text-align: left;">
+                    <th style="padding: 15px;">ID</th>
+                    <th style="padding: 15px;">Tür</th>
+                    <th style="padding: 15px;">Giriş</th>
+                    <th style="padding: 15px;">Tarih</th>
+                    <th style="padding: 15px;">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 15px;">1</td>
+                    <td style="padding: 15px;">İsim Analizi</td>
+                    <td style="padding: 15px;">Irfan Can Gül</td>
+                    <td style="padding: 15px;">2026-05-11</td>
+                    <td style="padding: 15px;"><button style="background: #ef4444; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Sil</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
