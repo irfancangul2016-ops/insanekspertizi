@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}İletişim - İnsan Ekspertizi{% endblock %}
+
+{% block content %}
+<section style="max-width: 600px; margin: 0 auto; padding: 40px 20px; text-align: center;">
+    <h1 style="color: var(--primary-color); font-size: 2.5rem; margin-bottom: 20px;">Bize Ulaşın</h1>
+    <p style="color: #94a3b8; margin-bottom: 30px;">Soru, öneri ve işbirlikleri için mesajınızı bırakın.</p>
+
+    <form action="#" method="POST" style="background: #1e293b; padding: 30px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px;">
+        <input type="text" placeholder="Adınız Soyadınız" style="padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white;" required>
+        
+        <input type="email" placeholder="E-posta Adresiniz" style="padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white;" required>
+        
+        <textarea placeholder="Mesajınız..." rows="5" style="padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; resize: vertical;" required></textarea>
+        
+        <button type="submit" style="background: var(--primary-color); color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; margin-top: 10px;">Gönder</button>
+    </form>
+</section>
+{% endblock %}

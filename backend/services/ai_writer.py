@@ -396,29 +396,42 @@ class AIWriter:
 
     @staticmethod
     def _send_request(prompt_text):
-        api_key = os.getenv("GOOGLE_API_KEY") # Veya GEMINI_API_KEY, .env dosyana bak
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not api_key: 
-            # Yedek kontrol (bazıları GEMINI_API_KEY kullanır)
-            api_key = os.getenv("GEMINI_API_KEY")
-        
-        if not api_key: return "HATA: API Key yok. Lütfen .env dosyasını kontrol et."
-        
-        active_model = AIWriter._find_active_model(api_key)
-        if not active_model: return "HATA: Google API aktif model bulamadı."
-
-        url = f"https://generativelanguage.googleapis.com/v1beta/{active_model}:generateContent?key={api_key}"
-        headers = {'Content-Type': 'application/json'}
-        payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
+            return "HATA: API Key yok. Lütfen .env dosyasını kontrol et."
 
         try:
+            # 1. OTO-PİLOT: Hangi modellerin aktif olduğunu Google'a soralım
+            modeller_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+            modeller_cevap = requests.get(modeller_url).json()
+            
+            aktif_model = None
+            if 'models' in modeller_cevap:
+                # İçinde 'flash' geçen (ücretsiz ve çok hızlı) modeli otomatik bul
+                flash_modelleri = [m['name'] for m in modeller_cevap['models'] if 'flash' in m['name'] and 'generateContent' in m.get('supportedGenerationMethods', [])]
+                
+                if flash_modelleri:
+                    aktif_model = flash_modelleri[0]  # Örn: models/gemini-3.1-flash
+                else:
+                    aktif_model = modeller_cevap['models'][0]['name'] # Yoksa ilkini al
+            
+            if not aktif_model:
+                return "HATA: Google'dan model listesi alınamadı."
+
+            # 2. BULUNAN GÜNCEL MODEL İLE ANALİZİ ATEŞLE
+            url = f"https://generativelanguage.googleapis.com/v1beta/{aktif_model}:generateContent?key={api_key}"
+            headers = {'Content-Type': 'application/json'}
+            payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
+
             response = requests.post(url, headers=headers, json=payload, timeout=60)
             if response.status_code == 200:
                 return response.json()['candidates'][0]['content']['parts'][0]['text']
             else:
                 return f"Google API Hatası: {response.text}"
+                
         except Exception as e:
             return f"Bağlantı Hatası: {str(e)}"
-
+        
     @staticmethod
     def veri_madenciligi(isim: str):
         """İsim hakkında elimizdeki teknik verileri toplar."""

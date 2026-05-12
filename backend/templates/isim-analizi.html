@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}İsim Analizi - İnsan Ekspertizi{% endblock %}
+
+{% block content %}
+<section style="max-width: 600px; margin: 0 auto; padding: 40px 20px; text-align: center;">
+    <h1 style="color: var(--primary-color);"><i class="fa-solid fa-signature"></i> İsim Frekans Analizi</h1>
+    <p style="color: #94a3b8; margin-bottom: 30px;">İsminizin ardındaki gizli potansiyeli yapay zeka ile keşfedin.</p>
+
+    <form id="isimForm" style="background: #1e293b; padding: 30px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px;">
+        <input type="text" id="isim" placeholder="Adınız" required style="padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white;">
+        <input type="text" id="soyisim" placeholder="Soyadınız" required style="padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white;">
+        <button type="button" onclick="analizEt()" style="background: var(--primary-color); color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Analiz Et</button>
+    </form>
+
+    <div id="sonucAlani" style="display: none; margin-top: 30px; background: #1e293b; padding: 20px; border-radius: 15px; border-left: 5px solid var(--primary-color); text-align: left;">
+        <h3 style="color: white; margin-top: 0;">Analiz Sonucu:</h3>
+        <p id="analizMetni" style="color: #e2e8f0; line-height: 1.6;"></p>
+    </div>
+</section>
+
+<script>
+async function analizEt() {
+    const isim = document.getElementById("isim").value;
+    const soyisim = document.getElementById("soyisim").value;
+    if(!isim || !soyisim) return alert("Lütfen isim ve soyisim girin!");
+
+    const formData = new FormData();
+    formData.append("isim", isim);
+    formData.append("soyisim", soyisim);
+
+    document.getElementById("analizMetni").innerText = "Yapay zeka analiz ediyor, lütfen bekleyin...";
+    document.getElementById("sonucAlani").style.display = "block";
+
+    try {
+        const response = await fetch("/api/isim-analizi-yap", {
+            method: "POST",
+            body: formData
+        });
+        const data = await response.json();
+        
+        if(data.analiz_sonucu) {
+            document.getElementById("analizMetni").innerHTML = data.analiz_sonucu.replace(/\n/g, "<br>");
+        } else {
+            document.getElementById("analizMetni").innerText = "Hata: " + (data.hata || "Analiz yapılamadı.");
+        }
+    } catch (err) {
+        document.getElementById("analizMetni").innerText = "Sunucuya bağlanırken bir hata oluştu.";
+    }
+}
+</script>
+{% endblock %}
